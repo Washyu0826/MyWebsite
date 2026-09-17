@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">
+  <rect width="1200" height="675" fill="#F5F5F6"/>
+  <g fill="none" stroke="#5C5F66" stroke-width="2">
+    <rect x="90" y="270" width="240" height="130" rx="8"/><rect x="480" y="270" width="240" height="130" rx="8"/><rect x="870" y="270" width="240" height="130" rx="8"/>
+    <path d="M330 335h145m-15-10 15 10-15 10M720 335h145m-15-10 15 10-15 10"/>
+  </g>
+  <g font-family="sans-serif" fill="#121316"><text x="90" y="130" font-size="32">System flow</text><text x="90" y="172" font-size="18" fill="#5C5F66">Illustrative architecture</text><text x="143" y="345" font-size="24">Input</text><text x="514" y="345" font-size="24">Process</text><text x="918" y="345" font-size="24">Storage</text></g>
+</svg>

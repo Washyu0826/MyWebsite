@@ -1,0 +1,42 @@
+{
+  "Site": {
+    "brand": "冼冠宇", "about": "關於", "projects": "作品集", "contact": "聯絡",
+    "navigation": "主要導覽", "openMenu": "開啟選單", "closeMenu": "關閉選單",
+    "skip": "跳至主要內容", "language": "Switch to English", "languageShort": "EN",
+    "theme": "切換主題", "light": "淺色", "dark": "深色", "system": "跟隨系統",
+    "copyright": "© {year} 冼冠宇", "footerNote": "持續學習，認真把事情做好。",
+    "demo": "示範內容", "demoNote": "目前的專案、經歷與數據為版面示範，非個人實績。",
+    "email": "Email", "resume": "下載履歷 PDF", "resumeUnavailable": "履歷準備中，歡迎來信索取。",
+    "write": "寄信給我", "contactUnavailable": "聯絡資訊準備中，歡迎稍後回來。",
+    "backHome": "返回首頁", "notFoundTitle": "這份檔案不在這裡。",
+    "notFoundBody": "網址可能已變更，或內容尚未公開。你可以從作品集重新開始。",
+    "errorTitle": "暫時無法載入內容。", "errorBody": "請稍後再試，或重新整理頁面。",
+    "retry": "重新載入", "loading": "正在載入內容"
+  },
+  "Home": {
+    "title": "關於 冼冠宇", "description": "冼冠宇的全端與資料工程作品集、專案案例及學習經歷。",
+    "now": "目前", "featured": "Project", "allProjects": "所有作品（{count}）",
+    "experience": "經歷", "skills": "技能", "present": "至今",
+    "invitation": "Tangible Outcomes. Powered by Engineering.",
+    "invitationBody": "歡迎聊聊工程職缺、專案合作，或交換技術想法。",
+    "noProjects": "新的案例正在整理中，歡迎先聊聊你想解決的問題。",
+    "noExperience": "經歷整理中，歡迎來信進一步認識我。",
+    "noSkills": "技能整理中，可以先看看專案中的技術選擇。"
+  },
+  "Projects": {
+    "title": "作品集", "description": "從問題出發，記錄設計、取捨與實作。",
+    "filter": "依專案類型篩選", "all": "全部", "web": "網頁", "data-ai": "資料／AI", "tool": "工具",
+    "role": "角色", "team": "團隊", "people": "{count} 人", "period": "期間", "tech": "技術",
+    "links": "連結", "demo": "Live Demo", "repository": "GitHub", "video": "Demo 影片",
+    "back": "返回作品集", "problem": "問題", "solution": "解法", "architecture": "系統架構",
+    "body": "實作細節", "outcome": "成果", "contribution": "我的貢獻", "screenshots": "畫面紀錄",
+    "previous": "上一個專案", "next": "下一個專案", "empty": "這個分類還沒有公開案例。看看其他作品，或聊聊你的想法。",
+    "clear": "查看全部作品", "enlarge": "放大圖片：{alt}", "closeImage": "關閉圖片", "image": "專案圖片"
+  },
+  "Contact": {
+    "title": "聯絡", "description": "聊聊職缺、專案合作，或一個值得解決的問題。",
+    "intro": "一封信，是很好的開始。", "body": "簡單介紹你自己與想討論的事情，期待聽見你的想法。",
+    "copy": "複製 Email", "copied": "已複製", "copyFailed": "複製失敗，請選取上方 Email 複製。",
+    "resumeTitle": "想更了解我的經歷？", "social": "其他聯絡方式"
+  }
+}

@@ -1,0 +1,30 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { pickLocale } from '../src/lib/locale';
+import { documentUrl, emailUrl, resumeUrl, safeUrl } from '../src/lib/urls';
+import zh from '../messages/zh.json';
+import en from '../messages/en.json';
+test('blank English content falls back to Chinese; nonlocalized data is not projected', () => {
+  assert.deepEqual(pickLocale({ title_zh: '中文', title_en: '  ', body_zh: null, body_en: null, id: 1 }, 'en'), { title: '中文', body: '' });
+  assert.deepEqual(pickLocale({ title_zh: '中文', title_en: 'English' }, 'zh'), { title: '中文' });
+});
+test('resume selects exact language and does not offer the other language as a substitute', () => {
+  const profile = { resume_zh_url: 'https://example.com/zh.pdf', resume_en_url: null };
+  assert.equal(resumeUrl(profile, 'en'), null);
+  assert.equal(resumeUrl(profile, 'zh'), profile.resume_zh_url);
+  assert.equal(documentUrl('/resumes/kuan-yu-hsien-resume-en.pdf'), '/resumes/kuan-yu-hsien-resume-en.pdf');
+  assert.equal(documentUrl('//example.com/resume.pdf'), null);
+});
+test('content links reject executable schemes and email values cannot inject headers', () => {
+  assert.equal(safeUrl('javascript:alert(1)'), null);
+  assert.equal(safeUrl('data:text/html,test'), null);
+  assert.equal(safeUrl('https://example.com/work'), 'https://example.com/work');
+  assert.equal(emailUrl('a@example.com\nBcc: b@example.com'), null);
+  assert.equal(emailUrl('a@example.com?subject=x'), 'mailto:a%40example.com%3Fsubject%3Dx');
+});
+test('both interface dictionaries expose the same translation keys', () => {
+  function keys(value: object, prefix = ''): string[] {
+    return Object.entries(value).flatMap(([key, entry]) => typeof entry === 'object' ? keys(entry, `${prefix}${key}.`) : `${prefix}${key}`).sort();
+  }
+  assert.deepEqual(keys(zh), keys(en));
+});

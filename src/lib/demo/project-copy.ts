@@ -1,0 +1,38 @@
+export const projectCopy = [
+  {
+    slug: 'document-search', title_zh: '文件檢索工作台', title_en: 'Document search workspace',
+    summary_zh: '讓分散的技術文件，成為附有來源的答案。', summary_en: 'Turn scattered technical documents into answers with sources.',
+    tags: ['web', 'data-ai'], tech_stack: ['Next.js', 'TypeScript', 'PostgreSQL', 'pgvector'],
+    problem_zh: '這是一份示範案例。文件散落在不同資料夾，使用者需要重複搜尋與比對，才能確認答案來源。',
+    problem_en: 'This is an illustrative case study. Documents are spread across folders, requiring repeated searches to verify sources.',
+    solution_zh: '將文件切分為可追溯的段落，結合關鍵字與向量搜尋。每個結果保留文件名稱與原始段落，方便核對。',
+    solution_en: 'Split documents into traceable passages and combine keyword and vector search. Keep the source document and original passage with each result.',
+  },
+  {
+    slug: 'data-quality', title_zh: '資料品質觀測站', title_en: 'Data quality observatory',
+    summary_zh: '在資料進入報表之前，找出缺漏與異常。', summary_en: 'Find missing values and anomalies before they reach a report.',
+    tags: ['data-ai', 'tool'], tech_stack: ['Python', 'pandas', 'PostgreSQL', 'Docker'],
+    problem_zh: '這是一份示範案例。定期匯入的資料格式不一致，問題通常到產出報表時才被發現。',
+    problem_en: 'This is an illustrative case study. Imported data has inconsistent formats, and problems often surface only when reports are generated.',
+    solution_zh: '建立欄位型別、空值比例與重複資料檢查。每次執行保留結果，讓資料品質變化可以追蹤。',
+    solution_en: 'Validate field types, missing-value ratios and duplicate records. Keep the results of each run to track quality over time.',
+  },
+  {
+    slug: 'task-queue', title_zh: '非同步任務佇列', title_en: 'Asynchronous task queue',
+    summary_zh: '把耗時工作移出請求流程，讓失敗能夠重試。', summary_en: 'Move slow work out of requests and make failures retryable.',
+    tags: ['web', 'tool'], tech_stack: ['TypeScript', 'Redis', 'PostgreSQL', 'Docker'],
+    problem_zh: '這是一份示範案例。耗時任務會阻塞使用者請求，重新送出又可能造成重複處理。',
+    problem_en: 'This is an illustrative case study. Slow tasks block requests, and resubmission can cause duplicate processing.',
+    solution_zh: '將任務存入佇列，使用冪等鍵與明確的狀態轉移，支援重試與執行紀錄查詢。',
+    solution_en: 'Queue tasks with idempotency keys and explicit state transitions. Support retries and an inspectable execution history.',
+  },
+  {
+    slug: 'personal-site', title_zh: '雙語個人檔案', title_en: 'Bilingual personal index',
+    summary_zh: '用可快速檢索的案例，記錄工程實作與取捨。', summary_en: 'An accessible index of engineering work and decisions.',
+    tags: ['web'], tech_stack: ['Next.js', 'Supabase', 'Tailwind CSS', 'next-intl'],
+    problem_zh: '這是一份示範案例。作品只列技術名稱，難以讓讀者快速理解問題背景與個人貢獻。',
+    problem_en: 'This is an illustrative case study. Technology lists alone do not explain the problem or individual contribution.',
+    solution_zh: '以案例敘事為核心，將角色、期間與技術放在固定欄位，提供中英雙語與手機優先的閱讀介面。',
+    solution_en: 'Build around case studies, with fixed fields for role, period and technology. Provide bilingual content and a mobile-first reading experience.',
+  },
+];

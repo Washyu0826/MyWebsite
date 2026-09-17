@@ -1,0 +1,14 @@
+node_modules/
+.next/
+out/
+.env*
+!.env.example
+*.tsbuildinfo
+playwright-report/
+test-results/
+artifacts/
+.vercel/
+# personal source assets live in D:\website-assets, never in the repo
+*.pdf
+!public/resumes/*.pdf
+website-assets/
