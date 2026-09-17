@@ -2,8 +2,10 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Container } from '@/components/container';
+import { requireAdminPage } from '@/lib/auth/admin';
 import { adminDb } from '@/lib/db/admin';
 import { getProfile } from '@/lib/db/profile';
+import { cleanPathPart } from '@/lib/uploads';
 import { DeleteFileForm, ProfilePhotoForm, UploadFileForm } from './file-manager-forms';
 import { storageBuckets, type StorageBucket } from './storage-config';
 
@@ -34,15 +36,6 @@ function firstValue(value: string | string[] | undefined) {
 
 function parseBucket(value: string | undefined): StorageBucket {
   return storageBuckets.includes(value as StorageBucket) ? (value as StorageBucket) : 'media';
-}
-
-function cleanPrefix(value: string | undefined) {
-  return (value || '')
-    .replace(/\\/g, '/')
-    .split('/')
-    .map((part) => part.trim())
-    .filter((part) => part && part !== '.' && part !== '..')
-    .join('/');
 }
 
 function formatBytes(value: number | null) {
@@ -94,9 +87,10 @@ async function listStorageItems(bucket: StorageBucket, prefix: string) {
 }
 
 export default async function FileManagerPage({ searchParams }: PageProps) {
+  await requireAdminPage('/admin/files');
   const params = await searchParams;
   const bucket = parseBucket(firstValue(params?.bucket));
-  const prefix = cleanPrefix(firstValue(params?.prefix));
+  const prefix = cleanPathPart(firstValue(params?.prefix) || '');
   let files: StorageItem[] = [];
   let loadError = '';
   let profile: Awaited<ReturnType<typeof getProfile>> | null = null;
@@ -119,7 +113,7 @@ export default async function FileManagerPage({ searchParams }: PageProps) {
     <header className="admin-heading">
       <p className="text-meta text-graphite">Admin</p>
       <h1>檔案管理</h1>
-      <p>管理 Supabase Storage 的公開素材與履歷檔案。上傳和刪除都需要管理密碼。</p>
+      <p>管理 Supabase Storage 的公開素材與履歷檔案。上傳的檔案會依內容檢查格式，並自動改成不重複的檔名。</p>
     </header>
 
     <section className="admin-panel" aria-labelledby="file-browser">

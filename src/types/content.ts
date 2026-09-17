@@ -55,3 +55,8 @@ export type Post = Bilingual<'title'> & {
   tags: string[]; reading_minutes: number | null; status: ContentStatus;
   published_at: string | null; created_at: string; updated_at: string;
 };
+export type ContactMessage = {
+  id: string; name: string; email: string; subject: string; body: string; locale: string;
+  ip_hash: string | null; user_agent: string | null; is_read: boolean; is_replied: boolean; created_at: string;
+};
+export type ContactRateLimit = { ip_hash: string; hits: number; window_start: string };

@@ -180,3 +180,53 @@ Security note:
 ### Homepage CTA Copy Update
 
 - Updated the homepage invitation heading in both locale files to `Tangible Outcomes. Powered by Engineering.`.
+
+### Article Publishing Feature And Responsive Homepage Tweaks
+
+- Added public article routes:
+  - `/zh/articles` and `/en/articles`
+  - `/zh/articles/[slug]` and `/en/articles/[slug]`
+- Added `Articles` to the main navigation.
+- Wired public article pages to the existing Supabase `posts` table, showing only published articles whose `published_at` is not in the future.
+- Integrated the existing admin article workflow:
+  - `/admin/articles`
+  - `/admin/articles/new`
+  - `/admin/articles/[id]`
+- Article admin supports Markdown content, draft/published/scheduled/archived status, tags, cover image URL, excerpts, reading minutes, and delete confirmation.
+- Cleaned article server actions to use the logged-in admin session and revalidate public article pages after changes.
+- Moved homepage focus keywords under the Gmail/LinkedIn/GitHub icons.
+- Changed homepage focus keywords from boxed `#Hashtag` pills to small-dot keyword items.
+- Changed the homepage `Experience` heading to use the previous oval pill visual style.
+- Kept `Project` with the small-dot heading style.
+- Relaxed forced no-wrap styling in the hero status line so narrow screens can wrap cleanly instead of overflowing.
+
+## 2026-09-18
+
+### Site Audit And Infrastructure Fixes
+
+Full-site audit covering security, database, unfinished features, admin tooling and engineering hygiene. Decisions recorded from the user:
+
+- Replace `ADMIN_TOKEN` with Supabase Auth login at `/admin/login`, restricted to the `ADMIN_EMAIL` allowlist.
+- No SVG uploads; the `media` bucket MIME allowlist is PNG / JPEG / WebP / GIF only.
+- `public/resumes/*.pdf` stay as intentionally public static files; original assets live outside the repo in `D:\website-assets`.
+- Analytics via Vercel Analytics (no env var); translation drafts via Claude API (`ANTHROPIC_API_KEY`); `GOOGLE_TRANSLATE_API_KEY` and `NEXT_PUBLIC_GA_ID` removed.
+- Scheduled publishing via `GET /api/cron/publish` with `CRON_SECRET`, hourly in `vercel.json` (daily on Vercel Hobby).
+
+Infrastructure changes:
+
+- Split the root `supabase-schema.sql` into idempotent Supabase CLI migrations: `supabase/migrations/20260918000000_init.sql` (schema, RLS, buckets, `publish_due_content()`) and `20260918000100_contact_rate_limit_fn.sql` (`contact_rate_limit_hit(p_ip_hash, p_limit, p_window)`, `security definer`, service_role only). Removed the root schema and the stale `docs/supabase-schema.sql`. Added a minimal `supabase/config.toml`.
+- Moved the development-only profile / social_links seed out of the schema and into `supabase/seed.sql` (`where not exists` guards) so re-running migrations never overwrites real profile data.
+- `src/lib/db/config.ts`: `DEMO_MODE=true` is ignored on production deployments (`VERCEL_ENV=production`, or `NODE_ENV=production` with `NEXT_PUBLIC_SUPABASE_URL`) with a single `console.warn`.
+- `src/app/api/cron/publish/route.ts`: Bearer check, RPC call, `revalidateTag` for `posts` / `projects` and per-slug tags.
+- `next.config.ts`: clear error when `NEXT_PUBLIC_SUPABASE_URL` is not a URL; added `X-Frame-Options: DENY`, `Content-Security-Policy: frame-ancestors 'none'`, `Permissions-Policy`.
+- `.env.example` rewritten with comments for the new variable set.
+- Tests: unit test for the `DEMO_MODE` guard (runs `config.ts` in a child process under the `react-server` condition); Playwright theme matrix now selects light mode through the theme `<select>` because the default theme is fixed to dark; new e2e cases for articles pages, admin login redirect, `/resume/xx.pdf` 404 and the contact form. `playwright.config.ts` uses bundled Chromium when `CI` is set.
+- `.github/workflows/ci.yml`: typecheck, lint, unit tests, demo build, Playwright Chromium, report upload on failure, cancel-in-progress concurrency.
+- `scripts/audit-site.mjs`: `SITE_URL` override defaulting to `127.0.0.1`, random remote-debugging port, null-safe Lighthouse scores.
+- README and `docs/implementation-status.md` rewritten for the end state; verification items marked pending re-run.
+
+Verification:
+
+- `npx tsx --test tests/content.test.ts`: 5 passed.
+- `npx tsc --noEmit` and `npx eslint` on the owned files: see implementation-status for the post-merge re-run.
+- Migration SQL reviewed by hand for idempotency; not yet applied to a live database.

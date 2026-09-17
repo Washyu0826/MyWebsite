@@ -1,4 +1,4 @@
--- OPTIONAL SAMPLE CONTENT. Run only in a development Supabase project after schema.sql.
+-- OPTIONAL SAMPLE CONTENT. Run only in a development Supabase project after `supabase db push`.
 
 -- Idempotent inserts; existing records are preserved. Replace samples before production.
 
@@ -6,6 +6,14 @@ begin;
 
 update public.profile set name_zh = 'Hsien', name_en = 'Hsien', headline_zh = 'Software Engineer', headline_en = 'Software Engineer', bio_zh = '我做能被量測的系統。', bio_en = 'I build systems whose impact can be measured.', now_zh = 'CS undergrad · Looking for 2027 new-grad roles', now_en = 'CS undergrad · Looking for 2027 new-grad roles', location_zh = '台灣', location_en = 'Taiwan', email = 'hi@example.com', avatar_url = null, resume_zh_url = null, resume_en_url = null, resume_updated_at = null, seo_description_zh = '', seo_description_en = '', updated_at = '2026-09-01T00:00:00Z'
 where id = 1 and name_zh in ('', '你的中文名');
+
+insert into public.social_links (platform, label, url, sort_order)
+select 'linkedin', 'LinkedIn', 'https://linkedin.com/in/', 2
+where not exists (select 1 from public.social_links where platform = 'linkedin');
+
+insert into public.social_links (platform, label, url, sort_order)
+select 'github', 'GitHub', 'https://github.com/', 3
+where not exists (select 1 from public.social_links where platform = 'github');
 
 insert into public.experiences (id, kind, org_zh, org_en, role_zh, role_en, description_zh, description_en, start_date, end_date, is_current, url, sort_order, is_visible, created_at, updated_at)
 values ('10000000-0000-4000-8000-000000000001', 'education', '資訊科學系（示範）', 'Computer Science (sample)', '學士班', 'Undergraduate', '透過專案實作，學習系統設計、資料處理與軟體工程。', 'Learning system design, data processing and software engineering through projects.', '2023-09-01', null, true, null, 0, true, '2026-09-01T00:00:00Z', '2026-09-01T00:00:00Z')

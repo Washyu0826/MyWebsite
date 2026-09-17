@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { spawnSync } from 'node:child_process';
 import { pickLocale } from '../src/lib/locale';
 import { documentUrl, emailUrl, resumeUrl, safeUrl } from '../src/lib/urls';
 import zh from '../messages/zh.json';
@@ -27,4 +28,24 @@ test('both interface dictionaries expose the same translation keys', () => {
     return Object.entries(value).flatMap(([key, entry]) => typeof entry === 'object' ? keys(entry, `${prefix}${key}.`) : `${prefix}${key}`).sort();
   }
   assert.deepEqual(keys(zh), keys(en));
+});
+// config.ts imports `server-only`, so it is evaluated in a child process under the `react-server`
+// export condition with a controlled environment instead of being imported into this test file.
+function demoMode(env: Record<string, string>) {
+  const script = "import('./src/lib/db/config.ts').then(m => { const c = m.default?.isDemoMode ? m.default : m; console.log(JSON.stringify([c.isDemoMode(), c.isDemoMode()])); })";
+  const result = spawnSync(process.execPath, ['--import', 'tsx', '--conditions=react-server', '-e', script], {
+    cwd: process.cwd(), encoding: 'utf8',
+    env: { PATH: process.env.PATH, SYSTEMROOT: process.env.SYSTEMROOT ?? '', HOME: process.env.HOME ?? '', ...env } as unknown as NodeJS.ProcessEnv,
+  });
+  assert.equal(result.status, 0, result.stderr);
+  const warnings = result.stderr.split('DEMO_MODE=true ignored in production').length - 1;
+  return { values: JSON.parse(result.stdout.trim()) as [boolean, boolean], warnings };
+}
+test('DEMO_MODE=true is honoured outside production but ignored, with a single warning, on production deployments', () => {
+  assert.deepEqual(demoMode({ DEMO_MODE: 'true', NODE_ENV: 'development' }), { values: [true, true], warnings: 0 });
+  assert.deepEqual(demoMode({ DEMO_MODE: 'true', NODE_ENV: 'production' }), { values: [true, true], warnings: 0 });
+  assert.deepEqual(demoMode({ DEMO_MODE: 'true', VERCEL_ENV: 'production' }), { values: [false, false], warnings: 1 });
+  assert.deepEqual(demoMode({ DEMO_MODE: 'true', NODE_ENV: 'production', NEXT_PUBLIC_SUPABASE_URL: 'https://x.supabase.co' }), { values: [true, true], warnings: 0 });
+  assert.deepEqual(demoMode({ NODE_ENV: 'production' }), { values: [false, false], warnings: 0 });
+  assert.deepEqual(demoMode({ NODE_ENV: 'development' }), { values: [true, true], warnings: 0 });
 });

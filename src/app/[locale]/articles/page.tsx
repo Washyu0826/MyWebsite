@@ -1,15 +1,23 @@
+import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import type { Locale } from '@/i18n/routing';
-import { listPosts } from '@/lib/db/posts';
+import { countPosts, listPosts, listPostTags } from '@/lib/db/posts';
 import { pageMetadata } from '@/lib/metadata';
 import { ArticleList } from '@/components/article-list';
 import { Container } from '@/components/container';
 
+const PAGE_SIZE = 12;
+
 type Props = {
   params: Promise<{ locale: Locale }>;
-  searchParams: Promise<{ tag?: string | string[] }>;
+  searchParams: Promise<{ tag?: string | string[]; page?: string | string[] }>;
 };
+
+function parsePage(value: string | string[] | undefined) {
+  if (typeof value !== 'string' || !/^\d+$/.test(value)) return 1;
+  return Math.max(1, Number(value));
+}
 
 export async function generateMetadata({ params }: Props) {
   const { locale } = await params;
@@ -20,14 +28,20 @@ export async function generateMetadata({ params }: Props) {
 export default async function Articles({ params, searchParams }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const { tag: rawTag } = await searchParams;
-  const tag = typeof rawTag === 'string' ? rawTag : undefined;
-  const [all, posts, t] = await Promise.all([
-    listPosts({ limit: 50 }),
-    listPosts({ tag, limit: 50 }),
+  const { tag: rawTag, page: rawPage } = await searchParams;
+  const tag = typeof rawTag === 'string' && rawTag ? rawTag : undefined;
+  const page = parsePage(rawPage);
+  const [tags, totalAll, totalTagged, posts, t] = await Promise.all([
+    listPostTags(),
+    countPosts(),
+    tag ? countPosts({ tag }) : undefined,
+    listPosts({ tag, page, limit: PAGE_SIZE }),
     getTranslations('Articles'),
   ]);
-  const tags = Array.from(new Set(all.flatMap(post => post.tags)));
+  const total = totalTagged ?? totalAll;
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  if (page > totalPages && totalPages > 0) notFound();
+  const pageHref = (target: number) => ({ pathname: '/articles' as const, query: { ...(tag ? { tag } : {}), ...(target > 1 ? { page: String(target) } : {}) } });
 
   return <Container className="page">
     <header className="page-heading">
@@ -36,16 +50,21 @@ export default async function Articles({ params, searchParams }: Props) {
     </header>
     <nav className="filter-list" aria-label={t('filter')}>
       <Link href="/articles" className="filter-link" aria-current={!tag ? 'true' : undefined}>
-        {t('all')}<span>{all.length}</span>
+        {t('all')}<span>{totalAll}</span>
       </Link>
-      {tags.map(category => <Link key={category} href={{ pathname: '/articles', query: { tag: category } }}
+      {tags.map(({ tag: category, count }) => <Link key={category} href={{ pathname: '/articles', query: { tag: category } }}
         className="filter-link" aria-current={tag === category ? 'true' : undefined}>
-        {category}<span>{all.filter(post => post.tags.includes(category)).length}</span>
+        {category}<span>{count}</span>
       </Link>)}
     </nav>
     {posts.length ? <ArticleList posts={posts} locale={locale} /> : <div className="border-t border-rule py-10">
       <p>{t('empty')}</p>
       <Link className="text-link" href="/articles">{t('clear')}</Link>
     </div>}
+    {totalPages > 1 ? <nav className="pagination" aria-label={t('pagination')}>
+      {page > 1 ? <Link className="text-link" href={pageHref(page - 1)} rel="prev">{t('previousPage')}</Link> : <span />}
+      <span className="text-meta text-graphite">{t('page', { page })} / {totalPages}</span>
+      {page < totalPages ? <Link className="text-link" href={pageHref(page + 1)} rel="next">{t('nextPage')}</Link> : <span />}
+    </nav> : null}
   </Container>;
 }

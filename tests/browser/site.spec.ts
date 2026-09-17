@@ -1,6 +1,14 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-for (const locale of ['zh', 'en']) {
+const themeLabel = { zh: '切換主題', en: 'Change theme' } as const;
+const paper = { light: 'rgb(247, 246, 241)', dark: 'rgb(13, 14, 16)' } as const;
+// The default theme is a fixed `dark`; light is opted into through the theme <select>.
+async function chooseTheme(page: Page, locale: 'zh' | 'en', theme: 'light' | 'dark') {
+  const select = page.getByRole('combobox', { name: themeLabel[locale] });
+  await expect(select).not.toHaveValue('system');
+  await select.selectOption(theme);
+}
+for (const locale of ['zh', 'en'] as const) {
   for (const colorScheme of ['light', 'dark'] as const) {
     for (const path of ['', '/projects', '/projects/document-search', '/contact']) {
     test(`${locale} / ${colorScheme} / ${path || 'home'}: mobile layout and accessibility`, async ({ page }) => {
@@ -9,8 +17,10 @@ for (const locale of ['zh', 'en']) {
         await page.goto(`/${locale}${path}`, { waitUntil: 'domcontentloaded' });
         await expect(page.locator('html')).toHaveAttribute('lang', locale === 'zh' ? 'zh-TW' : 'en');
         await expect(page.locator('h1')).toBeVisible();
+        await expect(page.locator('html')).toHaveClass(/dark/);
+        if (colorScheme === 'light') await chooseTheme(page, locale, 'light');
         await expect(page.locator('html')).toHaveClass(colorScheme === 'dark' ? /dark/ : /light/);
-        await expect(page.locator('body')).toHaveCSS('background-color', colorScheme === 'dark' ? 'rgb(12, 13, 16)' : 'rgb(255, 255, 255)', { timeout: 15000 });
+        await expect(page.locator('body')).toHaveCSS('background-color', paper[colorScheme], { timeout: 15000 });
         await page.evaluate(() => document.fonts.ready);
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
         const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
@@ -60,4 +70,28 @@ test('404, resume PDF and Accept-Language negotiation have usable destinations',
   const resume = await request.get('/resume/en.pdf', { maxRedirects: 0 });
   expect(resume.status()).toBe(307);
   expect(resume.headers().location).toMatch(/\/resumes\/kuan-yu-hsien-resume-en\.pdf$/);
+  const unknown = await request.get('/resume/xx.pdf', { maxRedirects: 0 });
+  expect(unknown.status()).toBe(404);
+});
+for (const [locale, navLabel] of [['zh', '文章'], ['en', 'Articles']] as const) {
+  test(`${locale}: articles index renders translated heading and navigation link`, async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(`/${locale}/articles`, { waitUntil: 'domcontentloaded' });
+    const heading = page.getByRole('heading', { level: 1 });
+    await expect(heading).toBeVisible();
+    await expect(heading).not.toContainText('Articles.title');
+    await expect(page.getByRole('navigation').getByRole('link', { name: navLabel, exact: true })).toBeVisible();
+  });
+}
+test('admin pages redirect to the login screen when signed out', async ({ page }) => {
+  for (const path of ['/admin', '/admin/files']) {
+    await page.goto(path, { waitUntil: 'domcontentloaded' });
+    await expect(page).toHaveURL(/\/admin\/login/);
+  }
+});
+test('contact page exposes a form with a submit button', async ({ page }) => {
+  await page.goto('/zh/contact', { waitUntil: 'domcontentloaded' });
+  const form = page.locator('form').first();
+  await expect(form).toBeVisible();
+  await expect(form.getByRole('button', { name: /送出|傳送|Send|Submit/ })).toBeVisible();
 });

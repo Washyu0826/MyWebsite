@@ -4,18 +4,10 @@ import { listExperiences } from '@/lib/db/profile';
 import { dateLabel, pickLocale } from '@/lib/locale';
 import { Markdown } from './markdown';
 
-const hashtags = ['#SoftwareEngineer', '#Data', '#AI', '#FullStack', '#Cloud'];
-
 export async function HomeSections({ locale }: { locale: Locale }) {
   const [experiences, t] = await Promise.all([listExperiences(), getTranslations('Home')]);
 
   return <>
-    <section className="section hashtag-section" aria-label="Hashtags">
-      <ul className="hashtag-list">
-        {hashtags.map(tag => <li key={tag}>{tag}</li>)}
-      </ul>
-    </section>
-
     <section className="section experience-section" aria-labelledby="experience-heading">
       <div className="section-heading"><h2 id="experience-heading">{t('experience')}</h2></div>
       {!experiences.length && <p className="text-graphite">{t('noExperience')}</p>}

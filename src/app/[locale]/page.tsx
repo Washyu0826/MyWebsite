@@ -16,8 +16,9 @@ import { HomeSections } from '@/components/home-sections';
 import { ResumeLink } from '@/components/resume-link';
 import { buttonVariants } from '@/components/ui/button';
 type Props = { params: Promise<{ locale: Locale }> };
+const focusAreas = ['Software Engineer', 'Data', 'AI', 'Full Stack', 'Cloud'];
 
-function HeroSocialLinks({ profile }: { profile: Awaited<ReturnType<typeof getProfile>> }) {
+function HeroSocialLinks({ profile, label }: { profile: Awaited<ReturnType<typeof getProfile>>; label: string }) {
   const links = profile.social_links.filter(s => safeUrl(s.url));
   const emailSocial = links.find(s => ['email', 'gmail'].includes(s.platform.toLowerCase()));
   const email = emailUrl(profile.email) || emailSocial?.url;
@@ -31,11 +32,11 @@ function HeroSocialLinks({ profile }: { profile: Awaited<ReturnType<typeof getPr
 
   if (!items.length) return null;
 
-  return <div className="hero-socials" aria-label="Social links">
+  return <nav className="hero-socials" aria-label={label}>
     {items.map(({ label, href, Icon }) => <a key={label} href={href} aria-label={label} title={label} target={href.startsWith('mailto:') ? undefined : '_blank'} rel={href.startsWith('mailto:') ? undefined : 'noopener noreferrer'}>
       <Icon size={18} aria-hidden="true" />
     </a>)}
-  </div>;
+  </nav>;
 }
 
 export async function generateMetadata({ params }: Props) {
@@ -61,7 +62,10 @@ export default async function Home({ params }: Props) {
           <div className="status-line"><span>{t('now')}</span><span>{nowParts.length > 1 ? <>
             {nowParts[0]} <span aria-hidden="true">·</span> <strong>{nowParts.slice(1).join(' · ')}</strong>
           </> : p.now}</span></div>
-          <HeroSocialLinks profile={profile} />
+          <HeroSocialLinks profile={profile} label={site('socialLinks')} />
+          <ul className="hero-focus-list" aria-label={t('hashtags')}>
+            {focusAreas.map(area => <li key={area}>{area}</li>)}
+          </ul>
           <div className="mt-6 md:hidden"><ResumeLink profile={profile} locale={locale} /></div>
         </div>
         {profile.avatar_url ? <Reveal order={3}>

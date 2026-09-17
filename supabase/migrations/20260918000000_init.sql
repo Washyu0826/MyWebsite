@@ -1,11 +1,15 @@
 -- =============================================================
 -- 個人網站資料庫 Schema（Supabase / PostgreSQL）
--- 直接貼進 Supabase SQL Editor 執行
+-- 由 Supabase CLI 套用：supabase link --project-ref <id> && supabase db push
 -- 原則：
 --   1. 所有資料表開啟 RLS
 --   2. anon 只能讀「已發布且發布時間已到」的內容
---   3. 所有寫入只透過 service_role（Server Actions）
+--   3. 所有寫入只透過 service_role（Server Actions / Route Handlers）
 --   4. 雙語欄位一律 *_zh / *_en
+--   5. 本檔可重複執行：trigger / policy 先 drop 再 create，
+--      table / index 用 if not exists，function 用 create or replace，
+--      seed 一律 on conflict / where not exists。
+--   6. 不含任何示範內容；示範資料請用 supabase/seed.sql。
 -- =============================================================
 
 create extension if not exists "pgcrypto";
@@ -51,10 +55,11 @@ create table if not exists profile (
   seo_description_en text default '',
   updated_at        timestamptz not null default now()
 );
+drop trigger if exists profile_updated on profile;
 create trigger profile_updated before update on profile
   for each row execute function set_updated_at();
 
-insert into profile (id) values (1) on conflict do nothing;
+insert into profile (id) values (1) on conflict (id) do nothing;
 
 -- =============================================================
 -- social_links
@@ -106,6 +111,7 @@ create table if not exists experiences (
   created_at     timestamptz not null default now(),
   updated_at     timestamptz not null default now()
 );
+drop trigger if exists experiences_updated on experiences;
 create trigger experiences_updated before update on experiences
   for each row execute function set_updated_at();
 create index if not exists experiences_sort_idx on experiences (kind, start_date desc);
@@ -164,6 +170,7 @@ create table if not exists projects (
   created_at          timestamptz not null default now(),
   updated_at          timestamptz not null default now()
 );
+drop trigger if exists projects_updated on projects;
 create trigger projects_updated before update on projects
   for each row execute function set_updated_at();
 
@@ -206,7 +213,7 @@ create table if not exists project_metrics (
 create index if not exists project_metrics_idx on project_metrics (project_id, sort_order);
 
 -- =============================================================
--- posts（Blog）
+-- posts（文章 / Blog）
 -- =============================================================
 create table if not exists posts (
   id              uuid primary key default gen_random_uuid(),
@@ -227,6 +234,7 @@ create table if not exists posts (
   created_at      timestamptz not null default now(),
   updated_at      timestamptz not null default now()
 );
+drop trigger if exists posts_updated on posts;
 create trigger posts_updated before update on posts
   for each row execute function set_updated_at();
 create index if not exists posts_public_idx on posts (status, published_at desc);
@@ -250,7 +258,7 @@ create table if not exists messages (
 );
 create index if not exists messages_idx on messages (created_at desc);
 
--- 聯絡表單速率限制
+-- 聯絡表單速率限制（由 contact_rate_limit_hit() 原子更新，見下一個 migration）
 create table if not exists contact_rate_limit (
   ip_hash     text primary key,
   hits        int not null default 1,
@@ -281,11 +289,12 @@ create table if not exists site_settings (
   value      jsonb not null default '{}'::jsonb,
   updated_at timestamptz not null default now()
 );
+drop trigger if exists site_settings_updated on site_settings;
 create trigger site_settings_updated before update on site_settings
   for each row execute function set_updated_at();
 
 insert into site_settings (key, value) values
-  ('nav', '{"showBlog": false, "showContact": true}'),
+  ('nav', '{"showBlog": true, "showContact": true}'),
   ('seo', '{"defaultOgKind": "minimal"}')
 on conflict (key) do nothing;
 
@@ -306,19 +315,27 @@ alter table media_assets       enable row level security;
 alter table site_settings      enable row level security;
 
 -- 公開可讀（靜態內容）
+drop policy if exists "public read profile"  on profile;
 create policy "public read profile"   on profile      for select to anon, authenticated using (true);
+drop policy if exists "public read social"   on social_links;
 create policy "public read social"    on social_links for select to anon, authenticated using (is_visible);
+drop policy if exists "public read skills"   on skills;
 create policy "public read skills"    on skills       for select to anon, authenticated using (is_visible);
+drop policy if exists "public read exp"      on experiences;
 create policy "public read exp"       on experiences  for select to anon, authenticated using (is_visible);
+drop policy if exists "public read settings" on site_settings;
 create policy "public read settings"  on site_settings for select to anon, authenticated using (true);
 
 -- 公開可讀（受發布狀態控制）
+drop policy if exists "public read projects" on projects;
 create policy "public read projects" on projects for select to anon, authenticated
   using (status = 'published' and published_at is not null and published_at <= now());
 
+drop policy if exists "public read posts" on posts;
 create policy "public read posts" on posts for select to anon, authenticated
   using (status = 'published' and published_at is not null and published_at <= now());
 
+drop policy if exists "public read project media" on project_media;
 create policy "public read project media" on project_media for select to anon, authenticated
   using (exists (
     select 1 from projects p
@@ -328,6 +345,7 @@ create policy "public read project media" on project_media for select to anon, a
       and p.published_at <= now()
   ));
 
+drop policy if exists "public read project metrics" on project_metrics;
 create policy "public read project metrics" on project_metrics for select to anon, authenticated
   using (exists (
     select 1 from projects p
@@ -342,26 +360,33 @@ create policy "public read project metrics" on project_metrics for select to ano
 
 -- =============================================================
 -- Storage buckets
+-- 重跑時會同步 public / 大小上限 / MIME 白名單（不允許 SVG 上傳）
 -- =============================================================
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values
   ('media',  'media',  true, 8388608,
-   array['image/png','image/jpeg','image/webp','image/svg+xml','image/gif']),
+   array['image/png','image/jpeg','image/webp','image/gif']),
   ('resume', 'resume', true, 8388608,
    array['application/pdf'])
-on conflict (id) do nothing;
+on conflict (id) do update set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
 
+drop policy if exists "public read media bucket" on storage.objects;
 create policy "public read media bucket" on storage.objects
   for select to anon, authenticated using (bucket_id in ('media', 'resume'));
 -- 上傳一律走 service_role，不開放 anon 寫入
 
 -- =============================================================
 -- 排程發布：把時間已到的 scheduled 轉成 published
--- 由 /api/cron/publish 呼叫
+-- 由 /api/cron/publish 以 service_role client 呼叫
 -- =============================================================
 create or replace function publish_due_content()
 returns table (kind text, slug text)
-language plpgsql security definer as $$
+language plpgsql security definer
+set search_path = public
+as $$
 begin
   return query
   with p as (
@@ -377,23 +402,4 @@ begin
 end $$;
 
 revoke all on function publish_due_content() from public, anon, authenticated;
-
--- =============================================================
--- 開發用 seed（上線前請刪除或改成真實內容）
--- =============================================================
-update profile set
-  name_zh = '你的中文名',
-  name_en = 'Hsien',
-  headline_zh = '全端與資料工程',
-  headline_en = 'Full-stack & Data Engineering',
-  now_zh = '資訊科學系 · 尋找 2027 新鮮人職缺',
-  now_en = 'CS undergrad · Looking for 2027 new-grad roles',
-  bio_zh = '我做能被量測的系統。',
-  bio_en = 'I build systems whose impact can be measured.',
-  email = 'hi@example.com'
-where id = 1;
-
-insert into social_links (platform, label, url, sort_order) values
-  ('github',   'GitHub',   'https://github.com/',      1),
-  ('linkedin', 'LinkedIn', 'https://linkedin.com/in/', 2)
-on conflict do nothing;
+grant execute on function publish_due_content() to service_role;

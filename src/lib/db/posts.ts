@@ -16,6 +16,27 @@ export const listPosts = unstable_cache(async ({ tag, page = 1, limit = 20 }: { 
   return data;
 }, ['posts'], { tags: ['posts'], revalidate: 300 });
 
+export const countPosts = unstable_cache(async ({ tag }: { tag?: string } = {}): Promise<number> => {
+  if (isDemoMode()) return 0;
+  let query = publicDb().from('posts').select('id', { count: 'exact', head: true }).eq('status', 'published')
+    .lte('published_at', new Date().toISOString());
+  if (tag) query = query.contains('tags', [tag]);
+  const { count, error } = await query;
+  if (error) throw new Error('Unable to count posts.');
+  return count ?? 0;
+}, ['post-count'], { tags: ['posts'], revalidate: 300 });
+
+export const listPostTags = unstable_cache(async (): Promise<{ tag: string; count: number }[]> => {
+  if (isDemoMode()) return [];
+  const { data, error } = await publicDb().from('posts').select('tags').eq('status', 'published')
+    .lte('published_at', new Date().toISOString());
+  if (error) throw new Error('Unable to load article tags.');
+  const counts = new Map<string, number>();
+  for (const tag of data.flatMap(post => post.tags)) counts.set(tag, (counts.get(tag) ?? 0) + 1);
+  return Array.from(counts, ([tag, count]) => ({ tag, count }))
+    .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
+}, ['post-tags'], { tags: ['posts'], revalidate: 300 });
+
 export function getPostBySlug(slug: string) {
   return unstable_cache(async (): Promise<Post | null> => {
     if (isDemoMode()) return null;

@@ -17,7 +17,7 @@ export async function sessionDb() {
     getAll: () => jar.getAll(),
     setAll(values) {
       try { values.forEach(({ name, value, options }) => jar.set(name, value, options)); }
-      catch { /* Server Components cannot write cookies; auth middleware will refresh in Phase 2. */ }
+      catch { /* Server Components cannot write cookies; src/middleware.ts refreshes the session on /admin requests. */ }
     },
   } });
 }

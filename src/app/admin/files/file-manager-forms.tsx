@@ -10,6 +10,7 @@ import {
 import type { StorageBucket } from './storage-config';
 
 const initialState: FileManagerState = { ok: false, message: '' };
+const imageAccept = 'image/png,image/jpeg,image/webp,image/gif';
 
 function SubmitButton({ children, variant = 'primary' }: { children: string; variant?: 'primary' | 'danger' }) {
   const { pending } = useFormStatus();
@@ -36,12 +37,8 @@ export function UploadFileForm({ bucket, prefix }: { bucket: StorageBucket; pref
     <input type="hidden" name="bucket" value={bucket} />
     <input type="hidden" name="prefix" value={prefix} />
     <label>
-      <span>管理密碼</span>
-      <input name="token" type="password" autoComplete="current-password" required />
-    </label>
-    <label>
       <span>檔案</span>
-      <input name="file" type="file" accept={bucket === 'resume' ? 'application/pdf' : 'image/png,image/jpeg,image/webp,image/svg+xml,image/gif'} required />
+      <input name="file" type="file" accept={bucket === 'resume' ? 'application/pdf' : imageAccept} required />
     </label>
     <SubmitButton>上傳檔案</SubmitButton>
     <StatusMessage state={state} />
@@ -73,12 +70,8 @@ export function ProfilePhotoForm() {
 
   return <form className="admin-form" onSubmit={onSubmit}>
     <label>
-      <span>管理密碼</span>
-      <input name="token" type="password" autoComplete="current-password" required />
-    </label>
-    <label>
       <span>個人照</span>
-      <input name="file" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif" required />
+      <input name="file" type="file" accept={imageAccept} required />
     </label>
     <button className="admin-button" type="submit" disabled={pending}>
       {pending ? '處理中...' : '更新個人照'}
@@ -93,7 +86,6 @@ export function DeleteFileForm({ bucket, path }: { bucket: StorageBucket; path: 
   return <form className="admin-inline-form" action={formAction}>
     <input type="hidden" name="bucket" value={bucket} />
     <input type="hidden" name="path" value={path} />
-    <input className="admin-token-input" name="token" type="password" placeholder="管理密碼" aria-label="管理密碼" autoComplete="current-password" required />
     <SubmitButton variant="danger">刪除</SubmitButton>
     <StatusMessage state={state} />
   </form>;

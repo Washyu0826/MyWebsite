@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { requireAdminPage } from '@/lib/auth/admin';
 import { getProfile } from '@/lib/db/profile';
 import { Container } from '@/components/container';
 import { ResumeUploadForm } from './resume-upload-form';
@@ -11,6 +12,7 @@ export const metadata: Metadata = {
 };
 
 export default async function ResumeAdminPage() {
+  await requireAdminPage('/admin/resume');
   let profile: Awaited<ReturnType<typeof getProfile>> | null = null;
   let loadError = '';
   try {
@@ -23,7 +25,7 @@ export default async function ResumeAdminPage() {
     <header className="admin-heading">
       <p className="text-meta text-graphite">Admin</p>
       <h1>履歷管理</h1>
-      <p>上傳新的中英文 PDF 後，網站的履歷按鈕會指向最新檔案。</p>
+      <p>上傳新的中英文 PDF 後，網站的履歷按鈕會指向最新檔案，舊檔會自動從 Storage 刪除。</p>
     </header>
 
     <section className="admin-panel" aria-labelledby="current-resume">

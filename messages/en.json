@@ -1,6 +1,6 @@
 {
   "Site": {
-    "brand": "Kuan-Yu Hsien", "about": "About", "projects": "Projects", "contact": "Contact",
+    "brand": "Kuan-Yu Hsien", "about": "About", "projects": "Projects", "articles": "Articles", "contact": "Contact",
     "navigation": "Main navigation", "openMenu": "Open menu", "closeMenu": "Close menu",
     "skip": "Skip to content", "language": "切換至繁體中文", "languageShort": "中",
     "theme": "Change theme", "light": "Light", "dark": "Dark", "system": "System",
@@ -8,20 +8,19 @@
     "demo": "Sample content", "demoNote": "Projects, experience and metrics are illustrative samples, not personal achievements.",
     "email": "Email", "resume": "Download résumé PDF", "resumeUnavailable": "Résumé coming soon. Feel free to request it by email.",
     "write": "Email me", "contactUnavailable": "Contact details are on their way. Please check back soon.",
-    "backHome": "Back to home", "notFoundTitle": "This file isn't here.",
+    "notFoundTitle": "This file isn't here.",
     "notFoundBody": "The address may have changed, or this work isn't public yet. Start again with the project index.",
     "errorTitle": "Content is temporarily unavailable.", "errorBody": "Please try again in a moment or refresh the page.",
-    "retry": "Try again", "loading": "Loading content"
+    "retry": "Try again", "socialLinks": "Social links"
   },
   "Home": {
     "title": "About Kuan-Yu Hsien", "description": "Full-stack and data engineering projects, case studies and learning experiences by Kuan-Yu Hsien.",
     "now": "Currently", "featured": "Project", "allProjects": "All projects ({count})",
-    "experience": "Experience", "skills": "Skills", "present": "Present",
+    "experience": "Experience", "present": "Present", "hashtags": "Focus areas",
     "invitation": "Tangible Outcomes. Powered by Engineering.",
     "invitationBody": "Open to engineering roles, collaboration and conversations about technology.",
     "noProjects": "New case studies are in progress. Tell me about a problem you'd like to solve.",
-    "noExperience": "Experience details are being prepared. Get in touch to learn more.",
-    "noSkills": "Skills are being organized. Explore the technical decisions in my projects."
+    "noExperience": "Experience details are being prepared. Get in touch to learn more."
   },
   "Projects": {
     "title": "Projects", "description": "Starting with a problem. Documenting decisions, trade-offs and implementation.",
@@ -33,10 +32,31 @@
     "previous": "Previous project", "next": "Next project", "empty": "No public case studies in this category yet. Explore other projects or get in touch.",
     "clear": "View all projects", "enlarge": "Enlarge image: {alt}", "closeImage": "Close image", "image": "Project image"
   },
+  "Articles": {
+    "title": "Articles", "description": "Notes on engineering, data and the things I'm learning along the way.",
+    "filter": "Filter articles by tag", "all": "All", "empty": "No published articles yet. Please check back soon.",
+    "clear": "View all articles", "back": "Back to articles", "tags": "Article tags",
+    "readingTime": "{minutes, plural, one {# min read} other {# min read}}",
+    "page": "Page {page}", "previousPage": "Newer articles", "nextPage": "Older articles", "pagination": "Article pages"
+  },
   "Contact": {
     "title": "Contact", "description": "An opportunity, a collaboration, or a problem worth solving.",
     "intro": "A good conversation starts with an email.", "body": "Introduce yourself and what you have in mind. I'd love to hear about it.",
     "copy": "Copy email", "copied": "Copied", "copyFailed": "Couldn't copy. Please select and copy the email address above.",
-    "resumeTitle": "Want to know more about my experience?", "social": "Elsewhere"
+    "resumeTitle": "Want to know more about my experience?",
+    "form": {
+      "title": "Or send a message here", "intro": "Leave your name and email and I'll reply within a few days.",
+      "name": "Name", "email": "Email", "subject": "Subject", "message": "Message",
+      "optional": "optional", "required": "required",
+      "send": "Send message", "sending": "Sending…",
+      "success": "Thanks, your message is on its way. I'll reply to your email soon.",
+      "successStored": "Thanks, your message has been received. I'll reply to your email soon.",
+      "errorName": "Please enter your name (up to 80 characters).",
+      "errorEmail": "Please enter a valid email address.",
+      "errorMessage": "Please write a message between 10 and 4000 characters.",
+      "errorInvalid": "Some fields need attention.",
+      "errorRate": "Too many messages in a short time. Please try again in an hour or email me directly.",
+      "errorGeneric": "The message couldn't be sent. Please try again or email me directly."
+    }
   }
 }

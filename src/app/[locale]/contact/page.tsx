@@ -6,6 +6,7 @@ import { pageMetadata } from '@/lib/metadata';
 import { Container } from '@/components/container';
 import { CopyEmail } from '@/components/copy-email';
 import { ResumeLink } from '@/components/resume-link';
+import { ContactForm } from './contact-form';
 type Props = { params: Promise<{ locale: Locale }> };
 export async function generateMetadata({ params }: Props) {
   const { locale } = await params;
@@ -29,6 +30,11 @@ export default async function Contact({ params }: Props) {
         <dt className="text-meta text-graphite">{s.label || s.platform}</dt><dd><a href={s.url} className="text-link break-all" target="_blank" rel="noopener noreferrer">{s.url.replace(/^https?:\/\//, '')}</a></dd>
       </div>)}
     </dl>
+    <section className="mt-16" aria-labelledby="contact-form-heading">
+      <h2 id="contact-form-heading" className="text-h2">{t('form.title')}</h2>
+      <p className="mt-4 mb-8 max-w-[60ch] text-graphite">{t('form.intro')}</p>
+      <ContactForm />
+    </section>
     <section className="mt-16"><h2 className="mb-5 text-h2">{t('resumeTitle')}</h2><ResumeLink profile={profile} locale={locale} /></section>
   </Container>;
 }

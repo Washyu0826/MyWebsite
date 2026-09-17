@@ -1,0 +1,11 @@
+# Minimal Supabase CLI config. The workflow only uses `supabase link`,
+# `supabase db push` and `supabase gen types`; local `supabase start` is not required.
+# `project_id` is a local label. Pass the remote ref to `supabase link --project-ref <ref>`.
+project_id = "hsien-portfolio"
+
+[db]
+# Match the Postgres major version shown in the Supabase dashboard (Settings > Infrastructure).
+major_version = 17
+
+[db.migrations]
+enabled = true

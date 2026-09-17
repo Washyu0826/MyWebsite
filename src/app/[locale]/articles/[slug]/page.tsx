@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: Props) {
   const post = await getPostBySlug(slug);
   if (!post) notFound();
   const p = pickLocale(post, locale);
-  return pageMetadata(locale, `/articles/${slug}`, p.title, p.excerpt);
+  return pageMetadata(locale, `/articles/${slug}`, p.title, p.excerpt, post.cover_url);
 }
 
 export default async function ArticleDetail({ params }: Props) {
@@ -45,7 +45,7 @@ export default async function ArticleDetail({ params }: Props) {
     <header className="article-heading">
       <div className="article-meta-line">
         {post.published_at ? <span>{formatArticleDate(post.published_at, locale)}</span> : null}
-        {post.reading_minutes ? <span>{post.reading_minutes} min read</span> : null}
+        {post.reading_minutes ? <span>{t('readingTime', { minutes: post.reading_minutes })}</span> : null}
       </div>
       <h1>{p.title}</h1>
       {p.excerpt ? <p>{p.excerpt}</p> : null}

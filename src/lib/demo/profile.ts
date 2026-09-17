@@ -48,6 +48,7 @@ export const demoExperiences: Experience[] = [{
   updated_at: timestamp,
 }];
 
+// Skills are no longer rendered on the site; kept for scripts/generate-seed.ts.
 const categories = [
   ['語言', 'Languages', ['TypeScript', 'Python', 'SQL']],
   ['前端', 'Frontend', ['React', 'Next.js', 'Tailwind CSS']],

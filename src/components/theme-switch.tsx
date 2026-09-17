@@ -8,7 +8,8 @@ export function ThemeSwitch() {
   const [mounted, setMounted] = useState(false);
   const t = useTranslations('Site');
   useEffect(() => setMounted(true), []);
-  const current = mounted ? theme : 'system';
+  // Matches ThemeProvider defaultTheme="dark" so the icon does not jump after hydration.
+  const current = mounted ? theme ?? 'dark' : 'dark';
   const Icon = current === 'dark' ? Moon : current === 'light' ? Sun : Monitor;
   return <div className="relative flex min-h-11 min-w-11 items-center justify-center">
     <Icon size={18} aria-hidden="true" />

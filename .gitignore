@@ -12,3 +12,4 @@ artifacts/
 *.pdf
 !public/resumes/*.pdf
 website-assets/
+supabase/.temp/

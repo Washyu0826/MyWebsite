@@ -17,10 +17,6 @@ export function ResumeUploadForm() {
   const [state, formAction] = useActionState(uploadResumeAction, initialState);
   return <form className="admin-form" action={formAction}>
     <label>
-      <span>管理密碼</span>
-      <input name="token" type="password" autoComplete="current-password" required />
-    </label>
-    <label>
       <span>履歷語言</span>
       <select name="locale" defaultValue="zh" required>
         <option value="zh">中文履歷</option>
