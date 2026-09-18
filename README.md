@@ -37,6 +37,10 @@ npm run dev
 - `/admin/files`：Storage 檔案管理（`media`、`resume` bucket）、大頭照上傳；上傳只接受白名單 MIME（PNG／JPEG／WebP／GIF、PDF），不接受 SVG。
 - `/admin/resume`：中英履歷 PDF 上傳並更新 `profile.resume_*_url`。
 - `/admin/articles`：文章新增／編輯、草稿／排程／發布狀態，以及用 Claude API 產生另一語言的翻譯草稿（需要 `ANTHROPIC_API_KEY`）。
+- `/admin/projects`：專案新增／編輯（案例研究五段、資訊欄、標籤、精選、排序、發布狀態）、封面／架構圖上傳、媒體與量化成果管理，以及 AI 翻譯草稿。
+- `/admin/profile`：個人資料（姓名、定位句、目前狀態、簡介、地點、Email、SEO 描述）。
+- `/admin/experiences`：經歷（工作／學歷／獲獎／活動）新增、編輯、排序與顯示切換。
+- `/admin/social`：社群連結新增、編輯、排序與顯示切換。
 - 所有寫入都走 service role client，並在成功後呼叫 `revalidateTag()`。
 
 ### 排程發布
@@ -59,6 +63,8 @@ Schema 由 Supabase CLI migration 管理，位於 `supabase/migrations/`，可�
    ```
 
    這會建立資料表、RLS、Storage bucket（`media`、`resume`）、`publish_due_content()` 與 `contact_rate_limit_hit()`。若要預覽示範內容，可在**開發用**資料庫執行 [supabase/seed.sql](supabase/seed.sql)（固定 UUID，重複執行不會重複插入）。
+
+   真實內容（依履歷整理的個人資料、經歷與專案草稿）在 [supabase/seed-real.sql](supabase/seed-real.sql)，執行 `npm run db:seed:real`（需先 `supabase link`）或貼到 SQL Editor。專案一律以草稿建立，請到 `/admin/projects` 補齊後再發布；標示【請確認】的欄位為推估值。
 3. 在 Supabase 的 Authentication > Users 建立管理員帳號（Email + 密碼），Email 必須與 `ADMIN_EMAIL` 相符。
 4. 在 `.env.local` 設定 `NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_ANON_KEY`、`SUPABASE_SERVICE_ROLE_KEY`、`ADMIN_EMAIL`，並設 `DEMO_MODE=false`。
 5. 產生資料庫型別：
