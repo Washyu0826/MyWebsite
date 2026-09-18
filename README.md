@@ -46,7 +46,7 @@ npm run dev
 ### 排程發布
 
 - `GET /api/cron/publish`：驗證 `Authorization: Bearer $CRON_SECRET`，呼叫資料庫函式 `publish_due_content()` 把時間已到的 `scheduled` 內容改成 `published`，並對回傳的每個 slug 與列表快取標籤執行 `revalidateTag()`。
-- `vercel.json` 設定每小時執行一次（`0 * * * *`）。Vercel Hobby 方案的 Cron 最多每日一次，若使用 Hobby 請改成 `0 0 * * *`，或在後台直接把內容設為 `published`。
+- `vercel.json` 設定每日 00:00 UTC 執行一次（`0 0 * * *`，Vercel Hobby 方案的上限）。Pro 方案可改成 `0 * * * *` 每小時執行；急著上線的內容可在後台直接設為 `published`。
 - 在 Vercel 專案環境變數設定 `CRON_SECRET` 後，Vercel 會自動帶入該 header；本機可用 `curl -H "Authorization: Bearer <secret>" http://127.0.0.1:3000/api/cron/publish` 測試。
 
 ## Supabase 設定
@@ -112,7 +112,7 @@ Schema 由 Supabase CLI migration 管理，位於 `supabase/migrations/`，可�
 
 1. 將專案推送到 GitHub，在 Vercel 匯入，Framework 選 Next.js，Node.js 22。
 2. Production 環境變數：`NEXT_PUBLIC_SITE_URL`、Supabase 三把金鑰、`ADMIN_EMAIL`、`RESEND_*`／`CONTACT_*`、`CRON_SECRET`、`ANTHROPIC_API_KEY`（選填），並設 `DEMO_MODE=false`。Preview 環境可設 `DEMO_MODE=true`。
-3. `vercel.json` 已宣告 Cron；Hobby 方案請把排程改為每日一次。
+3. `vercel.json` 已宣告每日一次的 Cron（Hobby 方案上限）；Pro 方案可改為每小時。
 4. 部署後測試兩語言、兩主題、後台登入、真實履歷與圖片、聯絡表單寄信與排程發布。`next/image` 只允許設定的 Supabase 主機與公開 Storage 路徑，若使用其他圖片主機需調整 `next.config.ts`。
 5. 到 Vercel 的 Domains 加入網域，依顯示的 DNS 記錄設定，完成 HTTPS 驗證。
 
