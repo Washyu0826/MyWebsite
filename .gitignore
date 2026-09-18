@@ -13,3 +13,7 @@ artifacts/
 !public/resumes/*.pdf
 website-assets/
 supabase/.temp/
+# stray personal images in the repo root
+/*.jpg
+/*.jpeg
+/*.png
