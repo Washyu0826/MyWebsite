@@ -17,6 +17,23 @@ import { ResumeLink } from '@/components/resume-link';
 import { buttonVariants } from '@/components/ui/button';
 type Props = { params: Promise<{ locale: Locale }> };
 const focusAreas = ['Software Engineer', 'Data', 'AI', 'Full Stack', 'Cloud'];
+const designPrinciples = [
+  {
+    code: '01',
+    title: 'Clarity over decoration',
+    body: 'Interfaces should make intent visible before they ask for attention.',
+  },
+  {
+    code: '02',
+    title: 'Systems before surfaces',
+    body: 'Every screen should reveal how the work is structured underneath.',
+  },
+  {
+    code: '03',
+    title: 'Useful motion only',
+    body: 'Interaction should guide the eye, not compete with the content.',
+  },
+];
 
 function HeroSocialLinks({ profile, label }: { profile: Awaited<ReturnType<typeof getProfile>>; label: string }) {
   const links = profile.social_links.filter(s => safeUrl(s.url));
@@ -66,6 +83,13 @@ export default async function Home({ params }: Props) {
           <ul className="hero-focus-list" aria-label={t('hashtags')}>
             {focusAreas.map(area => <li key={area}>{area}</li>)}
           </ul>
+          <div className="signature-principles" aria-label="Design principles">
+            {designPrinciples.map(principle => <div key={principle.code} className="signature-principle">
+              <span>{principle.code}</span>
+              <strong>{principle.title}</strong>
+              <p>{principle.body}</p>
+            </div>)}
+          </div>
           <div className="mt-6 md:hidden"><ResumeLink profile={profile} locale={locale} /></div>
         </div>
         {profile.avatar_url ? <Reveal order={3}>
@@ -80,6 +104,10 @@ export default async function Home({ params }: Props) {
       <div className="section-heading"><h2 id="projects-heading">{t('featured')}</h2>
         <Link className="text-link text-meta" href="/projects">{t('allProjects', { count: projects.length })}</Link></div>
       {projects.some(p => p.is_featured) ? <ProjectList projects={projects.filter(p => p.is_featured).slice(0, 3)} locale={locale} headingLevel={3} /> : <p>{t('noProjects')}</p>}
+    </section>
+    <section className="section research-section" aria-labelledby="research-heading">
+      <div className="section-heading"><h2 id="research-heading">{t('research')}</h2></div>
+      <p>{t('noResearch')}</p>
     </section>
     <section className="contact-invitation"><h2>{t('invitation')}</h2><p className="mt-3 text-graphite">{t('invitationBody')}</p>
       <div className="actions">{email && <a className={buttonVariants()} href={email}>{site('write')}</a>}<ResumeLink profile={profile} locale={locale} /></div>

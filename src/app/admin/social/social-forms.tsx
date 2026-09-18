@@ -11,7 +11,7 @@ type FormValues = { platform: string; label: string; url: string; sort_order: st
 
 const initialState: SocialLinkState = { ok: false, message: '' };
 const emptyValues: FormValues = { platform: '', label: '', url: '', sort_order: '0', is_visible: true };
-const platformSuggestions = ['github', 'linkedin', 'email', 'x', 'medium', 'instagram', 'threads', 'facebook', 'youtube', 'website'];
+const platformSuggestions = ['github', 'linkedin', 'email', 'phone', 'line', 'instagram', 'x', 'threads', 'medium', 'facebook', 'youtube', 'website'];
 const platformListId = 'social-platform-suggestions';
 
 const labelClass = 'grid gap-2 text-sm text-[var(--graphite)]';
@@ -54,7 +54,7 @@ function LinkFields({ values, update, idPrefix }: {
       <input id={`${idPrefix}-label`} className={inputClass} name="label" value={values.label} onChange={event => update('label', event.target.value)} maxLength={80} autoComplete="off" />
     </label>
     <label className={`${labelClass} md:col-span-2`} htmlFor={`${idPrefix}-url`}>
-      <span>連結（http(s) 網址或 mailto:you@example.com）</span>
+      <span>連結（http(s) 網址、mailto:you@example.com 或 tel:+886912345678；LINE 請用 https://line.me/ti/p/~你的ID）</span>
       <input id={`${idPrefix}-url`} className={inputClass} name="url" value={values.url} onChange={event => update('url', event.target.value)} placeholder="https://github.com/your-handle" autoComplete="off" inputMode="url" required />
     </label>
     <label className={labelClass} htmlFor={`${idPrefix}-sort`}>

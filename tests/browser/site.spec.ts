@@ -73,7 +73,7 @@ test('404, resume PDF and Accept-Language negotiation have usable destinations',
   const unknown = await request.get('/resume/xx.pdf', { maxRedirects: 0 });
   expect(unknown.status()).toBe(404);
 });
-for (const [locale, navLabel] of [['zh', '文章'], ['en', 'Articles']] as const) {
+for (const [locale, navLabel] of [['zh', '文章'], ['en', 'Notes']] as const) {
   test(`${locale}: articles index renders translated heading and navigation link`, async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto(`/${locale}/articles`, { waitUntil: 'domcontentloaded' });

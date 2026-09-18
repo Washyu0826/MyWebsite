@@ -27,6 +27,10 @@ export const demoProfile: Profile = {
 export const demoSocial: SocialLink[] = [
   { id: '50000000-0000-4000-8000-000000000001', platform: 'linkedin', label: 'LinkedIn', url: 'https://linkedin.com/in/', sort_order: 2, is_visible: true, created_at: timestamp },
   { id: '50000000-0000-4000-8000-000000000002', platform: 'github', label: 'GitHub', url: 'https://github.com/', sort_order: 3, is_visible: true, created_at: timestamp },
+  // Sample contact channels so the contact page layout can be previewed in demo mode.
+  { id: '50000000-0000-4000-8000-000000000003', platform: 'phone', label: '', url: 'tel:+886 0900000000', sort_order: 4, is_visible: true, created_at: timestamp },
+  { id: '50000000-0000-4000-8000-000000000004', platform: 'line', label: 'LINE', url: 'https://line.me/ti/p/~sample-id', sort_order: 5, is_visible: true, created_at: timestamp },
+  { id: '50000000-0000-4000-8000-000000000005', platform: 'instagram', label: 'Instagram', url: 'https://www.instagram.com/sample.account', sort_order: 6, is_visible: true, created_at: timestamp },
 ];
 
 export const demoExperiences: Experience[] = [{

@@ -33,8 +33,8 @@ update public.profile set
   bio_en = 'I thrive on exploring the unknown, turning ideas into working solutions and levelling up through every iteration.
 
 My graduate research focuses on applied deep learning, with hands-on experience in model training, data pipelines and cloud deployment. I also bring practical data-analysis experience from the healthcare industry, and strong communication and leadership experience across several organisations.',
-  location_zh = '台北，台灣',
-  location_en = 'Taipei, Taiwan',
+  location_zh = '台灣 台北市 大安區',
+  location_en = 'Da''an Dist., Taipei, Taiwan',
   email = 'xianguanyu925@gmail.com',
   seo_description_zh = '冼冠宇（Kuan-Yu Hsien）：政大資訊科學碩士生，專注於深度學習應用、LLM／RAG 系統與雲端部署的軟體／AI 工程師。',
   seo_description_en = 'Kuan-Yu Hsien: MSCS student at National Chengchi University and software / AI engineer focused on applied deep learning, LLM / RAG systems and cloud deployment.',
@@ -42,11 +42,23 @@ My graduate research focuses on applied deep learning, with hands-on experience 
 where id = 1;
 
 -- -------------------------------------------------------------
--- social_links（網址請到 /admin/social 填入真實連結）
+-- social_links（網址可到 /admin/social 修改；電話用 tel:、LINE 用 line.me 加好友連結）
 -- -------------------------------------------------------------
 insert into public.social_links (platform, label, url, sort_order, is_visible)
 select 'email', 'Email', 'mailto:xianguanyu925@gmail.com', 1, true
 where not exists (select 1 from public.social_links where platform = 'email');
+
+insert into public.social_links (platform, label, url, sort_order, is_visible)
+select 'phone', '電話', 'tel:+886 0961160826', 4, true
+where not exists (select 1 from public.social_links where platform = 'phone');
+
+insert into public.social_links (platform, label, url, sort_order, is_visible)
+select 'line', 'LINE', 'https://line.me/ti/p/~zenobia0826', 5, true
+where not exists (select 1 from public.social_links where platform = 'line');
+
+insert into public.social_links (platform, label, url, sort_order, is_visible)
+select 'instagram', 'Instagram', 'https://www.instagram.com/ryan.hsien_ky0826', 6, true
+where not exists (select 1 from public.social_links where platform = 'instagram');
 
 insert into public.social_links (platform, label, url, sort_order, is_visible)
 select 'linkedin', 'LinkedIn', 'https://www.linkedin.com/in/', 2, false   -- 【請確認】填入網址後改 is_visible = true

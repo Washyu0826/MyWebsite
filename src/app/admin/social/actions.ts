@@ -47,7 +47,7 @@ function parseSocialLink(formData: FormData) {
   if (!platform) return { error: '請填寫平台代號（例如 github、linkedin、email、x）。' };
   if (tooLong(label, labelLimit)) return { error: `顯示名稱不能超過 ${labelLimit} 個字。` };
   if (!url) return { error: '請填寫連結網址。' };
-  if (!isValidSocialUrl(url)) return { error: '連結必須是 http(s) 網址或 mailto: 電子郵件。' };
+  if (!isValidSocialUrl(url)) return { error: '連結必須是 http(s) 網址、mailto: 電子郵件或 tel: 電話。' };
 
   return {
     error: '',

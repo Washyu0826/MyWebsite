@@ -1,6 +1,6 @@
 {
   "Site": {
-    "brand": "Kuan-Yu Hsien", "about": "About", "projects": "Projects", "articles": "Articles", "contact": "Contact",
+    "brand": "Kuan-Yu Hsien", "about": "About", "projects": "Projects", "articles": "Notes", "contact": "Contact",
     "navigation": "Main navigation", "openMenu": "Open menu", "closeMenu": "Close menu",
     "skip": "Skip to content", "language": "切換至繁體中文", "languageShort": "中",
     "theme": "Change theme", "light": "Light", "dark": "Dark", "system": "System",
@@ -16,11 +16,12 @@
   "Home": {
     "title": "About Kuan-Yu Hsien", "description": "Full-stack and data engineering projects, case studies and learning experiences by Kuan-Yu Hsien.",
     "now": "Currently", "featured": "Project", "allProjects": "All projects ({count})",
-    "experience": "Experience", "present": "Present", "hashtags": "Focus areas",
+    "experience": "Experience", "research": "Research", "present": "Present", "hashtags": "Focus areas",
     "invitation": "Tangible Outcomes. Powered by Engineering.",
     "invitationBody": "Open to engineering roles, collaboration and conversations about technology.",
     "noProjects": "New case studies are in progress. Tell me about a problem you'd like to solve.",
-    "noExperience": "Experience details are being prepared. Get in touch to learn more."
+    "noExperience": "Experience details are being prepared. Get in touch to learn more.",
+    "noResearch": "Research notes are being organized. I am collecting work on data, AI systems and engineering questions."
   },
   "Projects": {
     "title": "Projects", "description": "Starting with a problem. Documenting decisions, trade-offs and implementation.",
@@ -33,7 +34,7 @@
     "clear": "View all projects", "enlarge": "Enlarge image: {alt}", "closeImage": "Close image", "image": "Project image"
   },
   "Articles": {
-    "title": "Articles", "description": "Notes on engineering, data and the things I'm learning along the way.",
+    "title": "Engineering Notes", "description": "Notes on engineering, data and the things I'm learning along the way.",
     "filter": "Filter articles by tag", "all": "All", "empty": "No published articles yet. Please check back soon.",
     "clear": "View all articles", "back": "Back to articles", "tags": "Article tags",
     "readingTime": "{minutes, plural, one {# min read} other {# min read}}",
@@ -42,7 +43,9 @@
   "Contact": {
     "title": "Contact", "description": "An opportunity, a collaboration, or a problem worth solving.",
     "intro": "A good conversation starts with an email.", "body": "Introduce yourself and what you have in mind. I'd love to hear about it.",
-    "copy": "Copy email", "copied": "Copied", "copyFailed": "Couldn't copy. Please select and copy the email address above.",
+    "copy": "Copy email", "copyValue": "Copy", "copyEmail": "Copy email", "copyPhone": "Copy phone", "copyLink": "Copy link",
+    "copied": "Copied", "copyFailed": "Couldn't copy. Please select and copy the value above.",
+    "region": "Location", "phone": "Phone",
     "resumeTitle": "Want to know more about my experience?",
     "form": {
       "title": "Or send a message here", "intro": "Leave your name and email and I'll reply within a few days.",

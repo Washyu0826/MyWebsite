@@ -39,7 +39,9 @@ export function isValidHttpUrl(value: string) {
 
 /** Social links may also be mailto: addresses. */
 export function isValidSocialUrl(value: string) {
-  if (value.toLowerCase().startsWith('mailto:')) return isValidEmail(value.slice('mailto:'.length));
+  const lower = value.toLowerCase();
+  if (lower.startsWith('mailto:')) return isValidEmail(value.slice('mailto:'.length));
+  if (lower.startsWith('tel:')) return /^\+?\d{6,20}$/.test(value.slice('tel:'.length).replace(/[^\d+]/g, ''));
   return isValidHttpUrl(value);
 }
 

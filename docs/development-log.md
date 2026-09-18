@@ -200,6 +200,58 @@ Security note:
 - Kept `Project` with the small-dot heading style.
 - Relaxed forced no-wrap styling in the hero status line so narrow screens can wrap cleanly instead of overflowing.
 
+### Signature Frontend Design Pass
+
+- Preserved a rollback snapshot in `artifacts/version-backups/2026-09-18-before-signature-design/`.
+- Added a compact homepage `Design principles` strip below the social links:
+  - `Clarity over decoration`
+  - `Systems before surfaces`
+  - `Useful motion only`
+- Changed the English navigation label from `Articles` to `Notes` and the article index title to `Engineering Notes`.
+- Upgraded project rows from a simple portfolio list into a compact engineering case-study preview:
+  - `Problem`
+  - `System`
+  - `Outcome`
+- Added responsive styling for the new project signal grid so it stacks on mobile and becomes three columns on wider screens.
+- Refined nav underline spacing and project hover details to make the site feel more custom without adding decorative clutter.
+
+### Continuous Stroke Logo Revision
+
+- Preserved a rollback snapshot in `artifacts/version-backups/2026-09-18-before-logo-continuous-stroke/`.
+- Reworked the header brand SVG from separated strokes into one continuous stroke.
+- Synced the same continuous mark to `public/brand-logo.svg` and Open Graph cards.
+
+### Original Logo Cutout Update
+
+- Used `D:\website\網站LOGO.jpg` as the source logo image.
+- Generated a transparent-background logo cutout at `public/brand-logo-cutout.png`.
+- Generated a smaller header-optimized transparent PNG at `public/brand-logo-header.png`.
+- Updated the header `BrandMark` component to use the original-logo PNG instead of the hand-drawn SVG approximation.
+
+### Homepage Section Heading Style Sync
+
+- Preserved a rollback snapshot in `artifacts/version-backups/2026-09-18-before-section-heading-pill-sync/`.
+- Updated `Project` to use the same oval pill heading style as `Experience`.
+- Increased `Experience` heading text back to the same large heading scale as `Project`.
+- Removed the small dot icon from `Project`.
+
+### Section Heading Redesign
+
+- Preserved a rollback snapshot in `artifacts/version-backups/2026-09-18-before-section-heading-redesign/`.
+- Replaced the oval pill section headings with a more intentional index-heading system:
+  - circular section number
+  - large section title
+  - horizontal rule extending across the row
+- Kept the `All projects` link responsive: below the heading on narrow screens and aligned right on wider screens.
+- Adjusted the desktop `Project` heading grid so it keeps the same number/title/rule structure as `Experience`, with `All projects` sitting to the far right instead of replacing the rule.
+
+### Homepage Research Section
+
+- Preserved a rollback snapshot in `artifacts/version-backups/2026-09-18-before-research-section/`.
+- Added a third indexed homepage section: `03 Research`.
+- Added localized empty-state copy for research content in `messages/en.json` and `messages/zh.json`.
+- Extended the shared section-heading design to `research-section`.
+
 ## 2026-09-18
 
 ### Site Audit And Infrastructure Fixes
@@ -230,3 +282,18 @@ Verification:
 - `npx tsx --test tests/content.test.ts`: 5 passed.
 - `npx tsc --noEmit` and `npx eslint` on the owned files: see implementation-status for the post-merge re-run.
 - Migration SQL reviewed by hand for idempotency; not yet applied to a live database.
+
+### Contact List Redesign
+
+- Preserved a rollback snapshot in `artifacts/version-backups/2026-09-18-before-contact-list-redesign/`.
+- Reworked the Contact page list so Email uses the same visual scale as the other contact rows.
+- Added icon-led rows for `Country / Region`, `Phone`, `LineID`, `IG`, `LinkedIn`, and `GitHub`.
+- Added reusable copy-button behavior through `CopyValue`, with copy actions for Email, Phone, LineID, IG, LinkedIn, and GitHub.
+- Kept `Country / Region` as display-only text: `Taiwan, Taipei, Da'an Dist`.
+- Added responsive contact-list CSS so labels, values, and copy buttons stack cleanly on mobile and align in columns on wider screens.
+
+Verification:
+
+- `npm run typecheck`: passed.
+- `npm run lint`: passed.
+- Local page check confirmed the new Contact fields render at `/en/contact`.
