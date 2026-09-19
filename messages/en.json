@@ -17,6 +17,12 @@
     "title": "About Kuan-Yu Hsien", "description": "Full-stack and data engineering projects, case studies and learning experiences by Kuan-Yu Hsien.",
     "now": "Currently", "featured": "Project", "allProjects": "All projects ({count})",
     "experience": "Experience", "research": "Research", "present": "Present", "hashtags": "Focus areas",
+    "principles": {
+      "label": "Design principles",
+      "why": { "title": "Why before How", "body": "Intent matters most. I need to understand the fundamental reason behind a problem before jumping into execution." },
+      "candid": { "title": "Radically Candid", "body": "Honest feedback over polite silence. I value direct communication that helps everyone grow and keeps things moving." },
+      "iteration": { "title": "Embrace the Iteration", "body": "Nothing is perfect on the first try. I prefer acting fast, gathering feedback, and constantly refining the approach." }
+    },
     "invitation": "Tangible Outcomes. Powered by Engineering.",
     "invitationBody": "Open to engineering roles, collaboration and conversations about technology.",
     "noProjects": "New case studies are in progress. Tell me about a problem you'd like to solve.",

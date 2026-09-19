@@ -1,0 +1,75 @@
+/* interactions: see the motion design decisions of 2026-09-20.
+   Loaded after layout.css so the hover/focus states here replace the instant ones there.
+   Every effect keeps its end state reachable without motion: globals.css turns all
+   transitions and animations off under prefers-reduced-motion, so nothing here may
+   depend on an animation running to become visible. */
+
+/* Links: the underline grows from the left, on hover and on keyboard focus alike. */
+.text-link { position: relative; }
+.text-link:hover, .text-link:focus-visible { text-decoration: none; }
+/* .text-link is a 44px tall inline-flex hit area, so the rule is placed against the text, not the box. */
+.text-link::after { content: ''; position: absolute; left: 0; right: 0; top: calc(50% + 0.6em); height: 1px; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform 0.24s ease; }
+.text-link:hover::after, .text-link:focus-visible::after { transform: scaleX(1); }
+/* .contact-value-link is a plain inline link that may wrap, so it grows a background rule instead. */
+.contact-value-link { background: linear-gradient(currentColor, currentColor) no-repeat left bottom / 0 1px; padding-bottom: 2px; transition: background-size 0.24s ease; }
+.contact-value-link:hover, .contact-value-link:focus-visible { text-decoration: none; background-size: 100% 1px; }
+
+/* Footer links are .text-link, so they inherit the same growth. */
+
+/* Buttons fill from the bottom instead of swapping colour.
+   The fill is a z-index:-1 pseudo inside the button's own stacking context: it paints over
+   the button background but under the label, which cannot be z-indexed (bare text nodes). */
+[data-slot="button"] { position: relative; isolation: isolate; transition: color 0.2s ease, border-color 0.2s ease; }
+[data-slot="button"]::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: var(--btn-fill, transparent); transform: scaleY(0); transform-origin: bottom; transition: transform 0.26s cubic-bezier(0.22, 0.61, 0.36, 1); }
+[data-slot="button"]:hover::before, [data-slot="button"]:focus-visible::before { transform: scaleY(1); }
+[data-slot="button"]:disabled::before { content: none; }
+[data-slot="button"][data-variant="default"] { --btn-fill: var(--graphite); }
+[data-slot="button"][data-variant="outline"] { --btn-fill: var(--ash); }
+[data-slot="button"][data-variant="ghost"] { --btn-fill: var(--ash); }
+
+/* Navigation: one absolutely positioned rule that slides between items, measured in navigation.tsx.
+   The parent <nav> owns the positioning context; without JS the CSS underline in layout.css stays. */
+nav:has(> .nav-indicator) { position: relative; }
+.nav-indicator { position: absolute; left: 0; top: 0; width: 0; height: 1px; background: var(--ink); opacity: 0; pointer-events: none; }
+/* Transitions only once measured, so the first paint lands in place instead of sliding in from 0. */
+.nav-indicator[data-ready="1"] { opacity: 1; transition: transform 0.34s cubic-bezier(0.22, 0.61, 0.36, 1), width 0.34s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.2s ease; }
+nav:has(> .nav-indicator[data-ready="1"]) .nav-link[aria-current="page"] { text-decoration: none; }
+
+/* List rows: the row steps aside, the rule draws in from the left and the title takes the accent. */
+.project-row::after, .article-row::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px; background: var(--indigo); transform: scaleX(0); transform-origin: left; transition: transform 0.3s cubic-bezier(0.22, 0.61, 0.36, 1); }
+.project-row:hover::after, .project-row:focus-visible::after, .article-row:hover::after, .article-row:focus-visible::after { transform: scaleX(1); }
+.project-row:hover .project-row-content, .project-row:focus-visible .project-row-content { transform: translateX(6px); }
+.article-row > * { transition: transform 0.18s; }
+.article-row:hover > *, .article-row:focus-visible > * { transform: translateX(6px); }
+.project-row h2, .project-row h3, .article-row h2 { position: relative; display: inline-block; transition: color 0.2s ease; }
+.project-row h2::after, .project-row h3::after, .article-row h2::after { content: ''; position: absolute; left: 0; right: 0; bottom: -3px; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform 0.28s ease; }
+.project-row:hover h2, .project-row:focus-visible h2, .project-row:hover h3, .project-row:focus-visible h3, .article-row:hover h2, .article-row:focus-visible h2 { color: var(--indigo); }
+.project-row:hover h2::after, .project-row:focus-visible h2::after, .project-row:hover h3::after, .project-row:focus-visible h3::after, .article-row:hover h2::after, .article-row:focus-visible h2::after { transform: scaleX(1); }
+
+/* Cover preview: follows the cursor while a row with a cover is hovered. Portalled to <body>,
+   never hit-testable, and only mounted for fine pointers without a reduced-motion request. */
+.cover-preview { position: fixed; left: 0; top: 0; z-index: 30; width: 240px; aspect-ratio: 16 / 9; overflow: hidden; border: 1px solid color-mix(in srgb, var(--indigo) 40%, var(--rule)); background: var(--ash); box-shadow: 0 18px 50px color-mix(in srgb, #000 42%, transparent); pointer-events: none; opacity: 0; transition: opacity 0.18s ease; will-change: transform; }
+.cover-preview[data-visible="1"] { opacity: 1; }
+.cover-preview img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+/* Copy feedback: the tick draws itself, the confirmation fades in and back out. */
+.copy-field { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.copy-confirm { display: inline-flex; align-items: center; font-size: 0.875rem; color: var(--indigo); opacity: 0; transform: translateY(2px); transition: opacity 0.2s ease, transform 0.2s ease; }
+.copy-confirm[data-state="copied"] { opacity: 1; transform: translateY(0); }
+.copy-check path { stroke-dasharray: 26; stroke-dashoffset: 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .copy-check path { animation: copy-check-draw 0.34s cubic-bezier(0.65, 0, 0.35, 1) both; }
+}
+@keyframes copy-check-draw { from { stroke-dashoffset: 26; } to { stroke-dashoffset: 0; } }
+
+/* Page transition: one angled facet sweeps across and off. Decorative only: it never
+   takes pointer events, and the new page is already painted underneath it. */
+.page-wipe { position: fixed; inset: 0; z-index: 60; overflow: hidden; pointer-events: none; visibility: hidden; }
+.page-wipe[data-active="1"] { visibility: visible; }
+.page-wipe-facet { position: absolute; top: -8%; bottom: -8%; left: 0; width: 130vw; transform: translate3d(-145%, 0, 0); clip-path: polygon(18% 0, 100% 0, 82% 100%, 0 100%); background: linear-gradient(107deg, color-mix(in srgb, var(--ink) 14%, var(--paper)) 0 5%, var(--paper) 5% 88%, color-mix(in srgb, var(--indigo) 20%, var(--paper)) 88% 100%); }
+/* The accent runs along the leading edge itself, clipped to the same slant as the facet. */
+.page-wipe-facet::after { content: ''; position: absolute; inset: 0; background: var(--indigo); clip-path: polygon(calc(100% - 3px) 0, 100% 0, 82% 100%, calc(82% - 3px) 100%); }
+@media (prefers-reduced-motion: no-preference) {
+  .page-wipe[data-active="1"] .page-wipe-facet { animation: page-wipe 0.5s cubic-bezier(0.65, 0, 0.35, 1) both; }
+}
+@keyframes page-wipe { from { transform: translate3d(-145%, 0, 0); } to { transform: translate3d(145%, 0, 0); } }

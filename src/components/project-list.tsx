@@ -4,17 +4,19 @@ import Image from 'next/image';
 import { Link } from '@/i18n/navigation';
 import { pickLocale } from '@/lib/locale';
 import { getTranslations } from 'next-intl/server';
+import { CoverPreview } from './cover-preview';
 export async function ProjectList({ projects, locale, headingLevel = 2 }: { projects: Project[]; locale: Locale; headingLevel?: 2 | 3 }) {
   const t = await getTranslations('Projects');
   const Heading = headingLevel === 2 ? 'h2' : 'h3';
-  return <div className="project-list">{projects.map(project => {
+  return <CoverPreview className="project-list">{projects.map(project => {
     const p = pickLocale(project, locale);
     const signals = [
       { label: t('problem'), value: p.problem || p.summary },
       { label: 'System', value: p.solution || project.tech_stack.slice(0, 3).join(' + ') },
       { label: t('outcome'), value: p.outcome || project.tech_stack.join(' / ') },
     ].filter(signal => signal.value);
-    return <Link href={`/projects/${project.slug}`} className="project-row" key={project.id}>
+    return <Link href={`/projects/${project.slug}`} className="project-row" key={project.id}
+      data-cover-src={project.cover_url || undefined} data-cover-alt={p.cover_alt || p.title}>
       <div className="project-row-content">
         {project.cover_url ? <div className="project-thumb">
           <Image src={project.cover_url} alt={p.cover_alt || p.title} width={320} height={180} sizes="(min-width: 768px) 220px, 100vw" />
@@ -35,5 +37,5 @@ export async function ProjectList({ projects, locale, headingLevel = 2 }: { proj
         </div>
       </div>
     </Link>;
-  })}</div>;
+  })}</CoverPreview>;
 }

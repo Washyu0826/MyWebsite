@@ -1,0 +1,7 @@
+/* Backdrop container tuning; loaded after layout.css, so these rules win over the base .cubist-backdrop block.
+   The canvas itself is moved and faded on scroll by components/cubist-backdrop.tsx. */
+.cubist-backdrop canvas { will-change: transform, opacity; backface-visibility: hidden; }
+/* Light theme is pigment on paper: the paper veil has to stay thin or the earth colours turn to grey. */
+.light .cubist-backdrop::before { opacity: 0.1; }
+.light .cubist-backdrop::after { background: linear-gradient(180deg, color-mix(in srgb, var(--paper) 34%, transparent), transparent 12%), linear-gradient(90deg, color-mix(in srgb, var(--paper) 72%, transparent), color-mix(in srgb, var(--paper) 30%, transparent) 36%, transparent 64%), linear-gradient(180deg, transparent 60%, var(--paper) 96%); }
+@media (max-width: 767px) { .cubist-backdrop { opacity: 0.54; } }

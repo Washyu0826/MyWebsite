@@ -3,6 +3,7 @@ import type { Post } from '@/types/content';
 import type { Locale } from '@/i18n/routing';
 import { Link } from '@/i18n/navigation';
 import { pickLocale } from '@/lib/locale';
+import { CoverPreview } from './cover-preview';
 
 function formatArticleDate(value: string | null, locale: Locale) {
   if (!value) return '';
@@ -16,10 +17,11 @@ function formatArticleDate(value: string | null, locale: Locale) {
 
 export async function ArticleList({ posts, locale }: { posts: Post[]; locale: Locale }) {
   const t = await getTranslations('Articles');
-  return <div className="article-list">
+  return <CoverPreview className="article-list">
     {posts.map(post => {
       const p = pickLocale(post, locale);
-      return <Link href={`/articles/${post.slug}`} className="article-row" key={post.id}>
+      return <Link href={`/articles/${post.slug}`} className="article-row" key={post.id}
+        data-cover-src={post.cover_url || undefined} data-cover-alt={p.cover_alt || p.title}>
         <div className="article-row-meta">
           <span>{formatArticleDate(post.published_at, locale)}</span>
           {post.reading_minutes ? <span>{t('readingTime', { minutes: post.reading_minutes })}</span> : null}
@@ -33,5 +35,5 @@ export async function ArticleList({ posts, locale }: { posts: Post[]; locale: Lo
         </div>
       </Link>;
     })}
-  </div>;
+  </CoverPreview>;
 }

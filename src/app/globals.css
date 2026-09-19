@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @import "../styles/layout.css";
 @import "../styles/prose.css";
+@import "../styles/backdrop.css";
+@import "../styles/hero.css";
+@import "../styles/interactions.css";
 :root {
   --paper: #0D0E10; --ink: #F5F5F2; --graphite: #A7A9AD;
   --rule: #2B2D31; --ash: #17191D; --indigo: #C8B06A; --surface: #121418;

@@ -1,4 +1,5 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import Image from 'next/image';
 import { Github, Linkedin, Mail } from 'lucide-react';
 import type { Locale } from '@/i18n/routing';
 import { Link } from '@/i18n/navigation';
@@ -9,6 +10,8 @@ import { emailUrl, gmailComposeUrl, safeUrl } from '@/lib/urls';
 import { pageMetadata } from '@/lib/metadata';
 import { Container } from '@/components/container';
 import { Reveal } from '@/components/reveal';
+import { LetterReveal } from '@/components/letter-reveal';
+import { SectionReveal } from '@/components/section-reveal';
 import { Markdown } from '@/components/markdown';
 import { ProjectList } from '@/components/project-list';
 import { HomeSections } from '@/components/home-sections';
@@ -18,23 +21,7 @@ import { buttonVariants } from '@/components/ui/button';
 type Props = { params: Promise<{ locale: Locale }> };
 const focusAreas = ['Software Engineer', 'Data', 'AI', 'Full Stack', 'Cloud'];
 const heroTagline = 'Curiosity driven, clarity obsessed.';
-const designPrinciples = [
-  {
-    code: '01',
-    title: 'Why before How',
-    body: 'Intent matters most. I need to understand the fundamental reason behind a problem before jumping into execution.',
-  },
-  {
-    code: '02',
-    title: 'Radically Candid',
-    body: 'Honest feedback over polite silence. I value direct communication that helps everyone grow and keeps things moving.',
-  },
-  {
-    code: '03',
-    title: 'Embrace the Iteration',
-    body: 'Nothing is perfect on the first try. I prefer acting fast, gathering feedback, and constantly refining the approach.',
-  },
-];
+const designPrinciples = ['why', 'candid', 'iteration'];
 
 function HeroSocialLinks({ profile, label }: { profile: Awaited<ReturnType<typeof getProfile>>; label: string }) {
   const links = profile.social_links.filter(s => safeUrl(s.url));
@@ -70,12 +57,13 @@ export default async function Home({ params }: Props) {
   const p = pickLocale(profile, locale);
   const email = emailUrl(profile.email);
   const nowParts = p.now.split(' · ');
+  const featured = projects.filter(project => project.is_featured).slice(0, 3);
   return <div className="home-stage"><CubistBackdrop /><Container className="home-container">
     <section className="hero" aria-labelledby="intro-heading">
-      <div className="hero-grid hero-grid-text-only">
+      <div className={profile.avatar_url ? 'hero-grid' : 'hero-grid hero-grid-text-only'}>
         <div>
           <Reveal><p className="mb-5 text-meta text-graphite">{p.name}</p></Reveal>
-          <Reveal order={1}><h1 id="intro-heading">{p.headline}</h1></Reveal>
+          <Reveal order={1}><h1 id="intro-heading"><LetterReveal text={p.headline} /></h1></Reveal>
           <Reveal order={2}><div className="positioning"><Markdown>{heroTagline}</Markdown></div></Reveal>
           <div className="status-line"><span>{t('now')}</span><span>{nowParts.length > 1 ? <>
             {nowParts[0]} <span aria-hidden="true">·</span> <strong>{nowParts.slice(1).join(' · ')}</strong>
@@ -84,27 +72,33 @@ export default async function Home({ params }: Props) {
           <ul className="hero-focus-list" aria-label={t('hashtags')}>
             {focusAreas.map(area => <li key={area}>{area}</li>)}
           </ul>
-          <div className="signature-principles" aria-label="Design principles">
-            {designPrinciples.map(principle => <div key={principle.code} className="signature-principle">
-              <span>{principle.code}</span>
-              <strong>{principle.title}</strong>
-              <p>{principle.body}</p>
-            </div>)}
-          </div>
+          <SectionReveal as="div" className="signature-block">
+            <div className="enter-rule" aria-hidden="true" />
+            <div className="signature-principles" aria-label={t('principles.label')}>
+              {designPrinciples.map((key, index) => <div key={key} className="signature-principle" style={{ '--enter-index': index } as React.CSSProperties}>
+                <span>{`0${index + 1}`}</span>
+                <strong>{t(`principles.${key}.title`)}</strong>
+                <p>{t(`principles.${key}.body`)}</p>
+              </div>)}
+            </div>
+          </SectionReveal>
           <div className="mt-6 md:hidden"><ResumeLink profile={profile} locale={locale} /></div>
         </div>
+        {profile.avatar_url && <div className="hero-photo"><div className="hero-photo-inner">
+          <Image src={profile.avatar_url} alt={p.name} width={560} height={700} priority sizes="(min-width: 768px) 440px, 100vw" />
+        </div></div>}
       </div>
     </section>
     <HomeSections locale={locale} />
-    <section className="section project-section" aria-labelledby="projects-heading">
-      <div className="section-heading"><h2 id="projects-heading">{t('featured')}</h2>
-        <Link className="text-link text-meta" href="/projects">{t('allProjects', { count: projects.length })}</Link></div>
-      {projects.some(p => p.is_featured) ? <ProjectList projects={projects.filter(p => p.is_featured).slice(0, 3)} locale={locale} headingLevel={3} /> : <p>{t('noProjects')}</p>}
-    </section>
-    <section className="section research-section" aria-labelledby="research-heading">
-      <div className="section-heading"><h2 id="research-heading">{t('research')}</h2></div>
-      <p>{t('noResearch')}</p>
-    </section>
+    <SectionReveal className="section project-section" aria-labelledby="projects-heading">
+      <div className="section-heading"><h2 id="projects-heading" className="enter-item">{t('featured')}</h2>
+        <Link className="text-link text-meta enter-item" href="/projects">{t('allProjects', { count: projects.length })}</Link></div>
+      {featured.length ? <ProjectList projects={featured} locale={locale} headingLevel={3} /> : <p className="enter-item">{t('noProjects')}</p>}
+    </SectionReveal>
+    <SectionReveal className="section research-section" aria-labelledby="research-heading">
+      <div className="section-heading"><h2 id="research-heading" className="enter-item">{t('research')}</h2></div>
+      <p className="enter-item">{t('noResearch')}</p>
+    </SectionReveal>
     <section className="contact-invitation"><h2>{t('invitation')}</h2><p className="mt-3 text-graphite">{t('invitationBody')}</p>
       <div className="actions">{email && <a className={buttonVariants()} href={email}>{site('write')}</a>}<ResumeLink profile={profile} locale={locale} /></div>
     </section>

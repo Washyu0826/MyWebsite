@@ -41,6 +41,12 @@
     "research": "Research",
     "present": "至今",
     "hashtags": "關注領域",
+    "principles": {
+      "label": "設計原則",
+      "why": { "title": "先問為什麼，再談怎麼做", "body": "意圖最重要。動手執行之前，我會先弄清楚問題背後真正的原因。" },
+      "candid": { "title": "坦誠直言", "body": "與其客氣地沉默，不如誠實地回饋。我重視能讓彼此成長、也讓事情繼續往前的直接溝通。" },
+      "iteration": { "title": "擁抱迭代", "body": "沒有什麼能一次到位。我習慣先做出來、收集回饋，再持續修正做法。" }
+    },
     "invitation": "Tangible Outcomes. Powered by Engineering.",
     "invitationBody": "歡迎聊聊工程職缺、專案合作，或交換技術想法。",
     "noProjects": "新的案例正在整理中，歡迎先聊聊你想解決的問題。",

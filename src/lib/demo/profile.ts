@@ -15,7 +15,7 @@ export const demoProfile: Profile = {
   location_zh: 'Taiwan',
   location_en: 'Taiwan',
   email: 'hi@example.com',
-  avatar_url: null,
+  avatar_url: '/demo/portrait-cut.png',
   resume_zh_url: '/resumes/kuan-yu-hsien-resume-zh.pdf',
   resume_en_url: '/resumes/kuan-yu-hsien-resume-en.pdf',
   resume_updated_at: '2026-04-30T00:00:00Z',

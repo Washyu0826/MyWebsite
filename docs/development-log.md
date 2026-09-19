@@ -392,3 +392,26 @@ Verification:
 - `npm run typecheck`: passed.
 - `npm run lint`: passed.
 - Playwright screenshots (Edge channel) of `/en` at 1600px light and dark and 390px dark confirmed the backdrop renders, the portrait frame shows, and hero copy stays readable.
+
+### File Management Extension Research (2026-09-20)
+
+- Added [the extension research report](file-management-extension-research.md) for a single-admin content and asset library with public visitor access only to published content.
+- Reviewed the existing upload, deletion, profile-photo, resume, article, authentication, Storage schema, and publishing flows against the prior 11-page file-management presentation.
+- The requested legacy source directory was not present. The available reference was `檔案管理系統-垃圾桶.pdf`; its incomplete architecture sections are documented as proposals, not verified working legacy code.
+- Compared Supabase Free and Cloudflare R2 using official pricing and platform documentation, including Vercel upload and cron limits.
+- Proposed direct uploads, private originals, explicit publication, asset references, recoverable deletion, versions, sharing, audit events, capacity controls, and separate database/object backups.
+- Included staged migration, rollback constraints, a file-level implementation map, and acceptance criteria. No application code, database, or deployment was changed by this research task.
+
+Verification:
+
+- Extracted all PDF page text and inspected rendered architecture/schema pages 5, 7, 9, and 10.
+- Cross-checked the findings against local source and official provider documentation.
+- Application tests were not run for this documentation-only task; proposed integration and deployment checks are listed in the report.
+
+### Advanced File Management Architecture Research (2026-09-20)
+
+- Extended the research report with sections 17-19: release snapshots, durable jobs and recovery, deduplication, document search, draft conflicts, observability, and backup/fault drills.
+- Defined demo scenarios and acceptance criteria for each proposal, plus dependencies and recommended implementation order.
+- Clarified queue delivery versus idempotent effects, worker scheduling and resource limits, private search filtering, and database versus CDN publication consistency.
+- Cross-checked Supabase Queues/Cron, Postgres search and transaction documentation, and Next.js 15 OpenTelemetry guidance.
+- This continuation only updates research documentation; no feature implementation, infrastructure changes, or deployment. Application tests were not run.

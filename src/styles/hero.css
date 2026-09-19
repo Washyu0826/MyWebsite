@@ -1,0 +1,51 @@
+/* hero: see the motion design decisions of 2026-09-20. */
+
+/* --- hero portrait --------------------------------------------------------- */
+/* The portrait is cut out of its studio backdrop, so it stands among the facets rather than
+   sitting on them as a rectangle. One tilted plane leans behind the figure and a soft drop
+   shadow lifts it off the backdrop; no frame, because there is no longer an edge to frame. */
+.hero-photo { border: 0; background: transparent; box-shadow: none; overflow: visible; }
+/* The rotated facets behind the figure reach past the column; clip at the section so they
+   never add horizontal scroll on narrow screens. The sticky header sits outside this element. */
+.home-container .hero { overflow-x: clip; }
+/* No rectangular frame: the portrait is cut out, so an outline would float around nothing. */
+.hero-photo::before { content: none; }
+.hero-photo::after { inset: 16% 12% 6% -4%; transform: rotate(2.4deg); clip-path: polygon(0 8%, 100% 0, 92% 96%, 5% 100%); background: linear-gradient(168deg, color-mix(in srgb, var(--indigo) 15%, transparent), transparent 78%); }
+.hero-photo-inner { position: relative; overflow: visible; }
+.hero-photo-inner img { object-fit: contain; object-position: bottom center; filter: drop-shadow(0 26px 46px color-mix(in srgb, #000 58%, transparent)); transition: filter 0.42s ease, transform 0.42s ease; }
+.hero-photo:hover img { transform: translateY(-4px) scale(1.012); }
+.light .hero-photo-inner img { filter: drop-shadow(0 22px 40px color-mix(in srgb, #000 22%, transparent)); }
+/* A narrower column keeps the portrait a facet of the composition rather than its subject. */
+.home-container .hero-photo { width: min(100%, 420px); }
+@media (min-width: 1280px) {
+  .home-container .hero-grid { grid-template-columns: minmax(0, 1fr) minmax(320px, 440px); }
+  .home-container .hero-photo { width: min(100%, 440px); }
+}
+
+/* --- h1 letter reveal ------------------------------------------------------ */
+.letter-word { display: inline-block; white-space: nowrap; }
+/* Padding plus the matching negative margin keeps the mask clear of ascenders and descenders. */
+.letter { display: inline-block; overflow: hidden; padding: 0.14em 0.04em 0.2em; margin: -0.14em -0.04em -0.2em; }
+.letter > span { display: inline-block; }
+@keyframes letter-rise { from { transform: translateY(110%); } to { transform: translateY(0); } }
+@keyframes hero-photo-in { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: no-preference) {
+  html[data-js="1"] .letter-reveal:not([data-letters="done"]) .letter > span { animation: letter-rise 0.62s cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: calc(var(--letter-index, 0) * 26ms); }
+  html[data-js="1"] .hero-photo { animation: hero-photo-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.22s both; }
+}
+
+/* --- section entrances ----------------------------------------------------- */
+/* The rule draws left to right, then the heading and the items follow ~60ms apart.
+   Only [data-enter="out"] hides anything, and that value is set by JS alone. */
+.enter-rule { height: 1px; transform-origin: left center; background: linear-gradient(90deg, color-mix(in srgb, var(--ink) 46%, var(--rule)), transparent); }
+.signature-block { margin-top: 28px; max-width: 680px; }
+.signature-block .signature-principles { margin-top: 0; border-top: 0; }
+[data-enter] .section-heading::after { transform-origin: left center; }
+[data-enter="out"] .enter-rule, [data-enter="out"] .section-heading::after { transform: scaleX(0); }
+[data-enter="in"] .enter-rule, [data-enter="in"] .section-heading::after { transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1); }
+[data-enter="out"] .section-heading::before, [data-enter="out"] .enter-item,
+[data-enter="out"] .experience-row, [data-enter="out"] .project-row, [data-enter="out"] .signature-principle { opacity: 0; transform: translateY(10px); }
+[data-enter="in"] .section-heading::before, [data-enter="in"] .enter-item,
+[data-enter="in"] .experience-row, [data-enter="in"] .project-row, [data-enter="in"] .signature-principle { transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(300ms + var(--enter-index, 0) * 60ms); }
+[data-enter] .project-row:nth-child(2) { --enter-index: 1; }
+[data-enter] .project-row:nth-child(3) { --enter-index: 2; }
