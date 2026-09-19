@@ -1,0 +1,50 @@
+/* Per-language typography and the local CJK face that replaced the bundled Noto Sans TC webfont. */
+
+/* Han glyphs come from the OS, Latin never does: Inter has no Han coverage, so the browser only
+   reaches this family for the ranges below. ascent/descent are overridden to Inter's own metrics so
+   a Han run and a Latin run share one baseline grid and dropping the 4 MB webfont shifts no layout.
+   Two faces instead of one variable range: a single local() face would make the browser synthesise
+   bold instead of loading the real bold cut. */
+@font-face {
+  font-family: 'Han Fallback';
+  font-style: normal;
+  font-weight: 100 500;
+  src: local('PingFang TC'), local('PingFang TC Regular'), local('Microsoft JhengHei'), local('Microsoft JhengHei UI'),
+       local('Noto Sans TC'), local('Noto Sans CJK TC'), local('Source Han Sans TC'), local('Hiragino Sans GB'), local('Microsoft YaHei');
+  ascent-override: 96.88%; descent-override: 24.12%; line-gap-override: 0%; size-adjust: 100%;
+  unicode-range: U+2E80-2FDF, U+3000-303F, U+3040-30FF, U+3100-312F, U+31A0-31BF, U+3200-33FF,
+                 U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FE10-FE1F, U+FE30-FE4F, U+FF00-FFEF;
+}
+@font-face {
+  font-family: 'Han Fallback';
+  font-style: normal;
+  font-weight: 600 900;
+  src: local('PingFang TC Semibold'), local('PingFang TC Medium'), local('Microsoft JhengHei Bold'), local('Microsoft JhengHei UI Bold'),
+       local('Noto Sans TC Bold'), local('Source Han Sans TC Bold'), local('Microsoft YaHei Bold');
+  ascent-override: 96.88%; descent-override: 24.12%; line-gap-override: 0%; size-adjust: 100%;
+  unicode-range: U+2E80-2FDF, U+3000-303F, U+3040-30FF, U+3100-312F, U+31A0-31BF, U+3200-33FF,
+                 U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FE10-FE1F, U+FE30-FE4F, U+FF00-FFEF;
+}
+
+/* Han wants air, Latin wants the opposite. Both keys are inherited custom properties, so the whole
+   subtree — utilities included, since @theme inline resolves them at use time — follows :lang(). */
+:lang(zh) {
+  --lh-body: var(--lh-loose); --lh-heading: 1.4; --lh-meta: 1.6;
+  --tr-body: 0.01em; --tr-heading: 0;
+  /* The 。、」 family carries half an em of built-in blank; trimming it closes the visible holes,
+     and autospace adds the "pangu" gap between Han and Latin/numerals without touching the text.
+     Chrome 123+/133+; other engines ignore both and fall back to today's spacing. */
+  text-spacing-trim: space-first;
+  text-autospace: normal;
+  line-break: strict;
+}
+:lang(en) {
+  --lh-body: 1.65; --lh-heading: 1.2; --lh-meta: var(--lh-relaxed);
+  --tr-body: 0; --tr-heading: -0.011em;
+}
+
+/* Mixed runs inside a zh page: a Latin span keeps Latin leading so it does not drag the line open. */
+:lang(zh) :lang(en) { --lh-body: 1.65; --tr-body: 0; }
+
+/* Code is measured, not read: the Han tracking would push a monospace column out of alignment. */
+:lang(zh) code, :lang(zh) kbd, :lang(zh) pre { --tr-body: 0; letter-spacing: 0; }

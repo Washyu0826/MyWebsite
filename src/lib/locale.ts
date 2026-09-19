@@ -8,9 +8,3 @@ export function pickLocale<T extends object>(row: T, locale: Locale): Localized<
     return [base, typeof translated === 'string' && translated.trim() ? translated : entries[key] ?? ''];
   })) as Localized<T>;
 }
-export function dateLabel(value: string | null, locale: Locale) {
-  if (!value) return '';
-  return new Intl.DateTimeFormat(locale === 'zh' ? 'zh-TW' : 'en', {
-    year: 'numeric', month: 'short', timeZone: 'UTC',
-  }).format(new Date(value));
-}

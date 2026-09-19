@@ -17,3 +17,4 @@ supabase/.temp/
 /*.jpg
 /*.jpeg
 /*.png
+storybook-static/

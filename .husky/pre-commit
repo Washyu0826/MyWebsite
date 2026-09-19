@@ -1,0 +1,3 @@
+# Formats and lints only what is staged, so a commit stays fast. Typecheck and the test suites run
+# in CI; see docs/testing.md.
+npx lint-staged

@@ -2,14 +2,17 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import Image from 'next/image';
 import { Github, Instagram, Link as LinkIcon, Linkedin, Mail, MapPin, MessageCircle, Phone } from 'lucide-react';
 import type { Locale } from '@/i18n/routing';
-import { getProfile } from '@/lib/db/profile';
+import { getProfile, listExperiences } from '@/lib/db/profile';
 import { pickLocale } from '@/lib/locale';
-import { emailUrl } from '@/lib/urls';
+import { emailUrl, safeUrl } from '@/lib/urls';
 import { describeSocialLink, isExternalHref, type ContactLinkKind } from '@/lib/contact-links';
 import { pageMetadata } from '@/lib/metadata';
+import { breadcrumbSchema, personSchema } from '@/lib/structured-data';
 import { Container } from '@/components/container';
 import { CopyValue } from '@/components/copy-email';
 import { ResumeLink } from '@/components/resume-link';
+import { JsonLd } from '@/components/json-ld';
+import { PwaRegister } from '@/app/offline/pwa-register';
 import { ContactForm } from './contact-form';
 type Props = { params: Promise<{ locale: Locale }> };
 
@@ -28,7 +31,7 @@ export async function generateMetadata({ params }: Props) {
 export default async function Contact({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const [profile, t, site] = await Promise.all([getProfile(), getTranslations('Contact'), getTranslations('Site')]);
+  const [profile, experiences, t, site] = await Promise.all([getProfile(), listExperiences(), getTranslations('Contact'), getTranslations('Site')]);
   const p = pickLocale(profile, locale);
   const email = emailUrl(profile.email);
   const region = (locale === 'en' ? profile.location_en : profile.location_zh)?.trim();
@@ -51,7 +54,14 @@ export default async function Contact({ params }: Props) {
     });
   }
 
-  return <Container className="page"><header className="page-heading"><h1>{t('title')}</h1><p>{t('description')}</p></header>
+  // The homepage renders the same @id; both describe one person, so a crawler merges them.
+  const person = personSchema({
+    name: p.name, locale, jobTitle: p.headline, description: p.bio, email: profile.email, image: profile.avatar_url,
+    sameAs: profile.social_links.map(link => safeUrl(link.url)),
+    alumniOf: experiences.filter(row => row.kind === 'education').map(row => pickLocale(row, locale).org),
+  });
+  const crumbs = breadcrumbSchema([{ name: site('brand'), path: `/${locale}` }, { name: t('title'), path: `/${locale}/contact` }]);
+  return <Container className="page"><JsonLd nodes={[person, crumbs]} /><PwaRegister /><header className="page-heading"><h1>{t('title')}</h1><p>{t('description')}</p></header>
     <section className="contact-intro">
       <div><h2 className="text-h2">{t('intro')}</h2><p className="mt-4 text-graphite">{t('body')}</p></div>
       {profile.avatar_url ? <div className="contact-portrait">
@@ -74,10 +84,11 @@ export default async function Contact({ params }: Props) {
         </div>;
       })}
     </dl>}
-    <section className="mt-16" aria-labelledby="contact-form-heading">
+    <section className="mt-16" aria-labelledby="contact-form-heading" data-print="hide">
       <h2 id="contact-form-heading" className="text-h2">{t('form.title')}</h2>
       <p className="mt-4 mb-8 max-w-[60ch] text-graphite">{t('form.intro')}</p>
-      <ContactForm />
+      {/* Server-rendered clock so the form also submits without JavaScript; the client replaces it on mount. */}
+      <ContactForm startedAt={String(Date.now())} />
     </section>
     <section className="mt-16"><h2 className="mb-5 text-h2">{t('resumeTitle')}</h2><ResumeLink profile={profile} locale={locale} /></section>
   </Container>;

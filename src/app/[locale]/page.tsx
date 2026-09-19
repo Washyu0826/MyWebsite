@@ -5,9 +5,11 @@ import type { Locale } from '@/i18n/routing';
 import { Link } from '@/i18n/navigation';
 import { getProfile } from '@/lib/db/profile';
 import { listProjects } from '@/lib/db/projects';
+import { listExperiences } from '@/lib/db/profile';
 import { pickLocale } from '@/lib/locale';
 import { emailUrl, gmailComposeUrl, safeUrl } from '@/lib/urls';
 import { pageMetadata } from '@/lib/metadata';
+import { personSchema } from '@/lib/structured-data';
 import { Container } from '@/components/container';
 import { Reveal } from '@/components/reveal';
 import { LetterReveal } from '@/components/letter-reveal';
@@ -18,6 +20,8 @@ import { HomeSections } from '@/components/home-sections';
 import { CubistBackdrop } from '@/components/cubist-backdrop';
 import { ResumeLink } from '@/components/resume-link';
 import { buttonVariants } from '@/components/ui/button';
+import { JsonLd } from '@/components/json-ld';
+import { PwaRegister } from '@/app/offline/pwa-register';
 type Props = { params: Promise<{ locale: Locale }> };
 const focusAreas = ['Software Engineer', 'Data', 'AI', 'Full Stack', 'Cloud'];
 const heroTagline = 'Curiosity driven, clarity obsessed.';
@@ -53,12 +57,18 @@ export async function generateMetadata({ params }: Props) {
 export default async function Home({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const [profile, projects, t, site] = await Promise.all([getProfile(), listProjects(), getTranslations('Home'), getTranslations('Site')]);
+  const [profile, projects, experiences, t, site] = await Promise.all([getProfile(), listProjects(), listExperiences(), getTranslations('Home'), getTranslations('Site')]);
   const p = pickLocale(profile, locale);
   const email = emailUrl(profile.email);
   const nowParts = p.now.split(' · ');
   const featured = projects.filter(project => project.is_featured).slice(0, 3);
-  return <div className="home-stage"><CubistBackdrop /><Container className="home-container">
+  // Same @id as the contact page: one person described in two places, which crawlers merge.
+  const person = personSchema({
+    name: p.name, locale, jobTitle: p.headline, description: p.bio, email: profile.email, image: profile.avatar_url,
+    sameAs: profile.social_links.map(link => safeUrl(link.url)),
+    alumniOf: experiences.filter(row => row.kind === 'education').map(row => pickLocale(row, locale).org),
+  });
+  return <div className="home-stage"><JsonLd nodes={[person]} /><PwaRegister /><CubistBackdrop /><Container className="home-container">
     <section className="hero" aria-labelledby="intro-heading">
       <div className={profile.avatar_url ? 'hero-grid' : 'hero-grid hero-grid-text-only'}>
         <div>

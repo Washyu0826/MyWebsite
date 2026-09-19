@@ -1,0 +1,181 @@
+/* Admin shell: persistent sidebar, Markdown preview, reorder lists.
+   Imported from src/app/admin/layout.tsx only, so nothing here reaches the public site.
+   The admin never mounts next-themes, so :root (the dark palette in globals.css) always applies —
+   the contrast fixes below are measured against --paper #0D0E10. */
+
+.admin-shell {
+  /* globals.css uses #177245 / #B42318 for status text; both fall under 3.3:1 on the dark paper. */
+  --admin-ok: #5ED39A;   /* 10.3:1 */
+  --admin-bad: #FF8A80;  /*  8.5:1 */
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: 'topbar' 'nav' 'main';
+  align-content: start;
+}
+
+.admin-skip-link {
+  position: fixed; z-index: 100; top: calc(8px + env(safe-area-inset-top));
+  left: calc(12px + env(safe-area-inset-left));
+  display: inline-flex; align-items: center; min-height: 44px; padding: 8px 16px;
+  background: var(--paper); border: 1px solid var(--indigo); color: var(--ink);
+  transform: translateY(-250%);
+}
+.admin-skip-link:focus-visible { transform: translateY(0); }
+
+/* --- top bar ------------------------------------------------------------- */
+
+.admin-topbar {
+  grid-area: topbar;
+  position: sticky; top: 0; z-index: 30;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px;
+  border-bottom: 1px solid var(--rule);
+  background: color-mix(in srgb, var(--paper) 94%, transparent);
+  backdrop-filter: blur(14px);
+  padding: 8px max(20px, env(safe-area-inset-right)) 8px max(20px, env(safe-area-inset-left));
+  padding-top: calc(8px + env(safe-area-inset-top));
+  font-size: 0.875rem;
+}
+.admin-topbar-brand { color: var(--graphite); font-family: var(--font-mono, monospace); letter-spacing: 0.08em; text-transform: uppercase; }
+.admin-topbar-user { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+
+/* --- sidebar ------------------------------------------------------------- */
+
+.admin-sidebar {
+  grid-area: nav;
+  border-bottom: 1px solid var(--rule);
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  padding: 12px max(20px, env(safe-area-inset-left)) 12px max(20px, env(safe-area-inset-left));
+}
+.admin-sidebar-title { display: none; }
+.admin-sidebar-list {
+  display: flex; gap: 8px; overflow-x: auto; overscroll-behavior-x: contain;
+  scrollbar-width: thin; padding-bottom: 4px;
+}
+.admin-sidebar-link {
+  display: grid; align-content: center; gap: 2px;
+  min-height: 44px; min-width: 44px; padding: 6px 14px; white-space: nowrap;
+  border: 1px solid transparent; color: var(--graphite);
+  transition: color 0.18s, border-color 0.18s, background-color 0.18s;
+}
+.admin-sidebar-link:hover { color: var(--ink); border-color: var(--rule); }
+.admin-sidebar-link[aria-current='page'] {
+  color: var(--ink); border-color: color-mix(in srgb, var(--indigo) 60%, var(--rule));
+  background: var(--ash); font-weight: 600;
+}
+.admin-sidebar-label { font-size: 0.9375rem; }
+.admin-sidebar-hint { display: none; font-size: 0.75rem; color: var(--graphite); }
+.admin-sidebar-link[aria-current='page'] .admin-sidebar-hint { color: var(--ink); }
+.admin-sidebar-help { display: none; }
+.admin-sidebar-help h2 { font-size: 0.8125rem; color: var(--graphite); margin-bottom: 8px; }
+.admin-sidebar-help p { font-size: 0.75rem; color: var(--graphite); line-height: 1.6; }
+.admin-sidebar-help-link { display: inline-flex; align-items: center; min-height: 44px; color: var(--indigo); font-size: 0.8125rem; }
+.admin-sidebar-help-link:hover { text-decoration: underline; }
+
+.admin-main {
+  grid-area: main; min-width: 0;
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@media (min-width: 900px) {
+  .admin-shell { grid-template-columns: 248px minmax(0, 1fr); grid-template-areas: 'topbar topbar' 'nav main'; }
+  .admin-sidebar {
+    position: sticky; align-self: start; top: 61px; max-height: calc(100dvh - 61px); overflow-y: auto;
+    border-bottom: 0; border-right: 1px solid var(--rule);
+    display: flex; flex-direction: column; gap: 20px;
+    padding: 24px 16px calc(24px + env(safe-area-inset-bottom));
+  }
+  .admin-sidebar-title { display: block; font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--graphite); }
+  .admin-sidebar-list { flex-direction: column; overflow-x: visible; gap: 2px; }
+  .admin-sidebar-link { white-space: normal; padding: 8px 12px; }
+  .admin-sidebar-hint { display: block; }
+  .admin-sidebar-help { display: block; margin-top: auto; border-top: 1px solid var(--rule); padding-top: 16px; }
+  .admin-page { padding-block: 48px 96px; }
+}
+
+/* --- status colours (contrast) ------------------------------------------- */
+
+.admin-shell .admin-success { color: var(--admin-ok); }
+.admin-shell .admin-error { color: var(--admin-bad); }
+/* #B42318 under the near-black --paper label gives 2.9:1; white on the same red is 6.6:1. */
+.admin-shell .admin-button-danger { color: #FFFFFF; }
+
+/* --- dirty-form banner ---------------------------------------------------- */
+
+.admin-dirty-flag {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 32px;
+  border: 1px solid color-mix(in srgb, var(--indigo) 60%, var(--rule));
+  background: var(--ash); color: var(--ink);
+  padding: 4px 12px; font-size: 0.8125rem; justify-self: start;
+}
+.admin-dirty-flag::before { content: ''; width: 8px; height: 8px; border-radius: 999px; background: var(--indigo); flex: 0 0 auto; }
+
+/* --- Markdown preview ----------------------------------------------------- */
+
+.admin-editor-pane { display: grid; gap: 8px; min-width: 0; }
+@media (min-width: 1100px) {
+  .admin-editor-pane { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+  .admin-editor-pane > .admin-editor-input { grid-column: 1; }
+  .admin-editor-pane > .admin-preview { grid-column: 2; position: sticky; top: 72px; }
+}
+.admin-editor-input { display: grid; gap: 8px; min-width: 0; }
+.admin-preview {
+  min-width: 0; border: 1px solid var(--rule); background: color-mix(in srgb, var(--surface) 62%, transparent);
+  max-height: 60vh; overflow: auto;
+}
+.admin-preview-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  position: sticky; top: 0; z-index: 1;
+  border-bottom: 1px solid var(--rule); background: var(--surface);
+  padding: 6px 12px; font-size: 0.75rem; color: var(--graphite);
+}
+.admin-preview-toggle {
+  display: inline-flex; align-items: center; min-height: 32px; padding: 4px 10px;
+  border: 1px solid var(--rule); background: var(--paper); color: var(--ink); font-size: 0.75rem;
+}
+.admin-preview-body { padding: 12px 16px; }
+.admin-preview-body .prose { font-size: 0.9375rem; }
+.admin-preview-body > .admin-preview-empty { color: var(--graphite); font-size: 0.8125rem; }
+
+/* --- reorder list ---------------------------------------------------------- */
+
+.admin-reorder { display: grid; gap: 12px; }
+.admin-reorder-list { display: grid; gap: 8px; }
+.admin-reorder-item {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px 12px;
+  border: 1px solid var(--rule); background: var(--surface); padding: 8px 10px;
+}
+.admin-reorder-item[data-dragging='true'] { opacity: 0.55; }
+.admin-reorder-item[data-dropbefore='true'] { box-shadow: inset 0 3px 0 0 var(--indigo); }
+.admin-reorder-item[data-dropafter='true'] { box-shadow: inset 0 -3px 0 0 var(--indigo); }
+.admin-reorder-item[data-grabbed='true'] { border-color: var(--indigo); background: var(--ash); }
+.admin-reorder-handle {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px;
+  border: 1px solid var(--rule); background: var(--paper); color: var(--ink); cursor: grab; touch-action: none;
+}
+.admin-reorder-handle:active { cursor: grabbing; }
+.admin-reorder-text { display: grid; gap: 2px; min-width: 0; }
+.admin-reorder-index { font-family: var(--font-mono, monospace); font-size: 0.75rem; color: var(--graphite); }
+.admin-reorder-label { color: var(--ink); font-size: 0.875rem; overflow-wrap: anywhere; }
+.admin-reorder-meta { color: var(--graphite); font-size: 0.75rem; overflow-wrap: anywhere; }
+.admin-reorder-buttons { display: flex; gap: 6px; }
+.admin-reorder-move {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px;
+  border: 1px solid var(--rule); background: var(--paper); color: var(--ink); font-size: 0.875rem;
+}
+.admin-reorder-move:disabled { opacity: 0.4; cursor: not-allowed; }
+.admin-reorder-move:not(:disabled):hover { border-color: var(--indigo); color: var(--indigo); }
+.admin-reorder-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.admin-reorder-hint { color: var(--graphite); font-size: 0.75rem; line-height: 1.6; max-width: 62ch; }
+
+/* --- misc ----------------------------------------------------------------- */
+
+/* Focus is never clipped by the sticky top bar (WCAG 2.2 2.4.11 Focus Not Obscured). */
+.admin-main :focus-visible { scroll-margin-top: 96px; scroll-margin-bottom: 24px; }
+.admin-shell :focus-visible { outline: 3px solid var(--indigo); outline-offset: 2px; }
+
+.admin-visually-hidden {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
+}

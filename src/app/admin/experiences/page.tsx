@@ -5,6 +5,7 @@ import { requireAdminPage } from '@/lib/auth/admin';
 import { adminDb } from '@/lib/db/admin';
 import type { Experience } from '@/types/content';
 import { experienceKindLabels } from '../profile/validation';
+import { ReorderExperiences } from './reorder-experiences';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,7 +57,9 @@ export default async function ExperienceAdminPage() {
         <Link className="admin-button" href="/admin/experiences/new">新增經歷</Link>
       </div>
 
-      {loadError ? <p className="admin-error" role="status">{loadError}</p> : <div className="admin-table-wrap">
+      {loadError ? <p className="admin-error" role="status">{loadError}</p> : <>
+      {experiences.length > 1 ? <div className="mb-6"><ReorderExperiences experiences={experiences} /></div> : null}
+      <div className="admin-table-wrap">
         <table className="admin-table">
           <thead>
             <tr>
@@ -92,7 +95,7 @@ export default async function ExperienceAdminPage() {
             </tr>}
           </tbody>
         </table>
-      </div>}
+      </div></>}
     </section>
   </Container>;
 }

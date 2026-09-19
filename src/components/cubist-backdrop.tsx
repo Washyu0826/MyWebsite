@@ -212,11 +212,22 @@ function draw(ctx: CanvasRenderingContext2D, facets: Facet[], v: View) {
     ctx.beginPath(); ctx.arc(fx + x * s + v.px * 20, fy + y * s + v.py * 14, r * s, from + wob, from + wob + (to - from) * len); ctx.stroke();
   });
 }
-export function CubistBackdrop() {
-  const ref = useRef<HTMLCanvasElement>(null);
-  useEffect(() => {
-    const canvas = ref.current, host = canvas?.parentElement, ctx = canvas?.getContext('2d');
-    if (!canvas || !host || !ctx) return;
+/** Runs `job` on the first idle slice, falling back to a short timeout. Returns a canceller. */
+function whenIdle(job: () => void): () => void {
+  const request = typeof requestIdleCallback === 'function' ? requestIdleCallback : null;
+  if (request) {
+    const handle = request(job, { timeout: 1200 });
+    return () => cancelIdleCallback(handle);
+  }
+  const handle = window.setTimeout(job, 200);
+  return () => window.clearTimeout(handle);
+}
+
+/** Wires the canvas up and starts drawing. Returns the teardown for everything it attached. */
+function startBackdrop(canvas: HTMLCanvasElement | null): () => void {
+  const host = canvas?.parentElement, ctx = canvas?.getContext('2d');
+  if (!canvas || !host || !ctx) return () => {};
+  {
     const facets = buildFacets();
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
     const readTheme = (): Theme => (document.documentElement.classList.contains('light') ? 'light' : 'dark');
@@ -285,6 +296,18 @@ export function CubistBackdrop() {
       window.removeEventListener('blur', onLeave); document.removeEventListener('pointerleave', onLeave);
       document.removeEventListener('visibilitychange', sync); reduce.removeEventListener('change', sync);
     };
+  }
+}
+
+export function CubistBackdrop() {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    // Building 42 facets and starting the loop during hydration lands squarely in the window
+    // Lighthouse measures as blocking time, and the backdrop is decorative. Wait for the first
+    // idle slice so the text paints and becomes interactive first, then assemble the picture.
+    let stop = () => {};
+    const cancel = whenIdle(() => { stop = startBackdrop(ref.current); });
+    return () => { cancel(); stop(); };
   }, []);
   return <div className="cubist-backdrop" aria-hidden="true"><canvas ref={ref} /></div>;
 }

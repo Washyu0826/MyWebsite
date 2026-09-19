@@ -1,7 +1,9 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useActionState, useEffect, useRef, useState } from 'react';
 import type { ProjectMedia, ProjectMetric } from '@/types/content';
+import { ReorderList, type ReorderResult } from '../reorder-list';
 import {
   addMediaAction, addMetricAction, deleteMediaAction, deleteMetricAction, updateMediaAction, updateMetricAction,
   type ProjectEditorState,
@@ -133,10 +135,48 @@ function AddMediaForm({ projectId, prefix }: { projectId: string; prefix: string
   </form>;
 }
 
+/**
+ * Reordering writes the new positions back through the unchanged updateMediaAction, one row per call,
+ * resending every field the action requires so nothing else about the row changes.
+ */
+function MediaReorder({ projectId, media }: { projectId: string; media: ProjectMedia[] }) {
+  const router = useRouter();
+
+  async function save(ids: string[]): Promise<ReorderResult> {
+    const byId = new Map(media.map(item => [item.id, item]));
+    for (const [index, id] of ids.entries()) {
+      const item = byId.get(id);
+      if (!item || item.sort_order === index) continue;
+      const data = new FormData();
+      data.set('project_id', projectId);
+      data.set('id', item.id);
+      data.set('url', item.url);
+      data.set('media_type', item.media_type);
+      data.set('alt_zh', item.alt_zh || '');
+      data.set('alt_en', item.alt_en || '');
+      data.set('caption_zh', item.caption_zh || '');
+      data.set('caption_en', item.caption_en || '');
+      data.set('sort_order', String(index));
+      const result = await updateMediaAction(initialState, data);
+      if (!result.ok) return { ok: false, message: `第 ${index + 1} 項儲存失敗：${result.message}` };
+    }
+    router.refresh();
+    return { ok: true, message: '媒體排序已儲存。' };
+  }
+
+  return <ReorderList itemNoun="媒體" onSave={save} hint="畫廊會依這個順序顯示。"
+    rows={media.map(item => ({
+      id: item.id,
+      label: item.alt_zh || item.alt_en || item.caption_zh || item.url,
+      meta: `${mediaTypeLabels[item.media_type === 'video' ? 'video' : 'image']} · ${item.url}`,
+    }))} />;
+}
+
 export function MediaSection({ projectId, slug, media }: { projectId: string; slug: string; media: ProjectMedia[] }) {
   const prefix = `projects/${slug || projectId}`;
   return <div className="grid gap-6">
     <p className="text-sm text-[var(--graphite)]">截圖或影片會依排序顯示在案例頁的畫廊區。圖片可直接上傳到 media bucket；影片請貼上連結。</p>
+    {media.length > 1 ? <MediaReorder projectId={projectId} media={media} /> : null}
     {media.length ? media.map(item => <MediaRow key={item.id} projectId={projectId} prefix={prefix} media={item} />)
       : <p className="text-sm text-[var(--graphite)]">目前還沒有媒體。</p>}
     <AddMediaForm projectId={projectId} prefix={prefix} />
@@ -197,9 +237,36 @@ function AddMetricForm({ projectId }: { projectId: string }) {
   </form>;
 }
 
+function MetricReorder({ projectId, metrics }: { projectId: string; metrics: ProjectMetric[] }) {
+  const router = useRouter();
+
+  async function save(ids: string[]): Promise<ReorderResult> {
+    const byId = new Map(metrics.map(item => [item.id, item]));
+    for (const [index, id] of ids.entries()) {
+      const item = byId.get(id);
+      if (!item || item.sort_order === index) continue;
+      const data = new FormData();
+      data.set('project_id', projectId);
+      data.set('id', item.id);
+      data.set('value', item.value);
+      data.set('label_zh', item.label_zh || '');
+      data.set('label_en', item.label_en || '');
+      data.set('sort_order', String(index));
+      const result = await updateMetricAction(initialState, data);
+      if (!result.ok) return { ok: false, message: `第 ${index + 1} 項儲存失敗：${result.message}` };
+    }
+    router.refresh();
+    return { ok: true, message: '量化成果排序已儲存。' };
+  }
+
+  return <ReorderList itemNoun="量化成果" onSave={save} hint="案例頁會依這個順序顯示。"
+    rows={metrics.map(item => ({ id: item.id, label: `${item.value} · ${item.label_zh || item.label_en}` }))} />;
+}
+
 export function MetricSection({ projectId, metrics }: { projectId: string; metrics: ProjectMetric[] }) {
   return <div className="grid gap-6">
     <p className="text-sm text-[var(--graphite)]">量化成果會以「數值 + 標籤」的形式顯示在案例頁，例如「120ms · P95 延遲」。請填寫可驗證的真實數字。</p>
+    {metrics.length > 1 ? <MetricReorder projectId={projectId} metrics={metrics} /> : null}
     {metrics.length ? metrics.map(item => <MetricRow key={item.id} projectId={projectId} metric={item} />)
       : <p className="text-sm text-[var(--graphite)]">目前還沒有量化成果。</p>}
     <AddMetricForm projectId={projectId} />

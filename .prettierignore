@@ -1,0 +1,44 @@
+node_modules/
+.next/
+out/
+artifacts/
+coverage/
+test-results/
+playwright-report/
+storybook-static/
+public/
+supabase/
+package-lock.json
+*.tsbuildinfo
+tests/browser/**/*-snapshots/
+
+# Scratch copies and probes left at the repo root by ad-hoc tooling runs; not source.
+zz-*
+.typo-check/
+after/
+
+# --- Not formatted yet --------------------------------------------------------
+# The application source, the message catalogues, the docs and the original test suites predate
+# Prettier and are hand-formatted (dense one-liners, multi-declarator const, 160-column JSX).
+# Reformatting them rewrites ~130 files, which has to land as its own mechanical commit rather than
+# inside feature work:
+#
+#   npx prettier --write . --ignore-path /dev/null   (then delete this block)
+#
+# Until then Prettier is enforced on the tooling, the stories, the component tests and the configs,
+# and `npm run lint` still covers all of src/. See docs/testing.md.
+src/**
+!src/**/
+!src/**/*.stories.tsx
+messages/
+docs/
+README.md
+components.json
+playwright.config.ts
+scripts/*
+!scripts/lighthouse-ci.mjs
+tests/*
+!tests/components/
+!tests/browser/
+tests/browser/*
+!tests/browser/visual.spec.ts

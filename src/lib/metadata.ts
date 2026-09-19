@@ -6,7 +6,9 @@ export function pageMetadata(locale: Locale, path: string, title: string, descri
   const url = `/${locale}${path}`;
   return {
     title, description,
-    alternates: { canonical: url, languages: { 'zh-TW': `/zh${path}`, en: `/en${path}`, 'x-default': `/zh${path}` } },
+    // x-default deliberately points at the locale-less root: naming /zh here would make the zh
+    // canonical a member of its own hreflang set, which Lighthouse reports as a broken canonical.
+    alternates: { canonical: url, languages: { 'zh-TW': `/zh${path}`, en: `/en${path}`, 'x-default': path || '/' } },
     openGraph: {
       title, description, url, siteName: SITE_NAME, type: 'website', locale: locale === 'zh' ? 'zh_TW' : 'en_US',
       ...(image ? { images: [{ url: image, alt: title }] } : {}),

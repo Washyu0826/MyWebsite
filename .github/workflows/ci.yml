@@ -16,9 +16,12 @@ env:
   NEXT_TELEMETRY_DISABLED: '1'
 
 jobs:
-  verify:
+  # Everything that needs neither a production build nor a browser. Fails fast and in parallel
+  # with the browser job below.
+  checks:
+    name: Static checks and unit tests
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -36,8 +39,43 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Format check
+        run: npm run format:check
+
+      # Pure logic, node:test, no jsdom. This is the fast path and stays that way.
       - name: Unit tests
         run: npm test
+
+      # Component behaviour, Vitest + Testing Library + jsdom.
+      - name: Component tests
+        run: npm run test:components
+
+      - name: Build Storybook
+        run: npm run build-storybook
+
+      - name: Upload Storybook build
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: storybook-static
+          path: storybook-static/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  browser:
+    name: Build, end-to-end, visual and Lighthouse
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Build (demo content)
         run: npm run build
@@ -48,6 +86,21 @@ jobs:
       - name: End-to-end tests
         run: npm run test:e2e
 
+      # Screenshot comparison. Baselines are per platform, so the Linux set has to be committed from
+      # a CI run: if this step reports missing snapshots, download the visual-snapshots artifact and
+      # commit tests/browser/visual.spec.ts-snapshots/*-linux.png.
+      - name: Visual regression
+        run: npm run test:visual
+
+      - name: Upload visual snapshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-snapshots
+          path: tests/browser/visual.spec.ts-snapshots/
+          retention-days: 7
+          if-no-files-found: ignore
+
       - name: Upload Playwright report
         if: failure()
         uses: actions/upload-artifact@v4
@@ -56,5 +109,34 @@ jobs:
           path: |
             playwright-report/
             test-results/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      # Lighthouse needs a server it can keep hitting, so this one is started by hand rather than
+      # through Playwright's webServer.
+      - name: Start the production server
+        run: |
+          npm run start -- -p 3000 &
+          for _ in $(seq 1 60); do
+            curl -sSf http://127.0.0.1:3000/zh > /dev/null && exit 0
+            sleep 2
+          done
+          echo "The production server never came up." && exit 1
+
+      # Fails under 90 on performance, accessibility, best practices and SEO. The demo build marks
+      # every page noindex on purpose, so the script drops `is-crawlable` from the SEO category in
+      # demo mode and says so in its output; a real-content run scores it normally.
+      - name: Lighthouse
+        run: npm run audit:lighthouse
+        env:
+          SITE_URL: http://127.0.0.1:3000
+          LIGHTHOUSE_MIN_SCORE: '90'
+
+      - name: Upload Lighthouse reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-reports
+          path: artifacts/lighthouse/
           retention-days: 7
           if-no-files-found: ignore

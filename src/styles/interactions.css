@@ -73,3 +73,7 @@ nav:has(> .nav-indicator[data-ready="1"]) .nav-link[aria-current="page"] { text-
   .page-wipe[data-active="1"] .page-wipe-facet { animation: page-wipe 0.5s cubic-bezier(0.65, 0, 0.35, 1) both; }
 }
 @keyframes page-wipe { from { transform: translate3d(-145%, 0, 0); } to { transform: translate3d(145%, 0, 0); } }
+
+/* The palette is fixed and full-bleed, so it needs the same safe-area treatment as the
+   mobile menu and the lightbox once the viewport is fit to cover. */
+.command-panel { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }

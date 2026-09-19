@@ -1,49 +1,64 @@
 @import "tailwindcss";
+@import "../styles/tokens.css";
 @import "../styles/layout.css";
 @import "../styles/prose.css";
 @import "../styles/backdrop.css";
 @import "../styles/hero.css";
 @import "../styles/interactions.css";
+@import "../styles/print.css";
+/* Last so its :lang() blocks outrank the :root defaults in tokens.css — equal specificity. */
+@import "../styles/typography.css";
 :root {
   --paper: #0D0E10; --ink: #F5F5F2; --graphite: #A7A9AD;
   --rule: #2B2D31; --ash: #17191D; --indigo: #C8B06A; --surface: #121418;
+  --success: #57B894; --danger: #E06A5F;
   color-scheme: dark;
 }
 .light {
   --paper: #F7F6F1; --ink: #111214; --graphite: #62656B;
   --rule: #D9D6CC; --ash: #ECE9DF; --indigo: #7A6328; --surface: #FFFFFF;
+  --success: #177245; --danger: #B42318;
   color-scheme: light;
 }
 .dark {
   --paper: #0D0E10; --ink: #F5F5F2; --graphite: #A7A9AD;
   --rule: #2B2D31; --ash: #17191D; --indigo: #C8B06A; --surface: #121418;
+  --success: #57B894; --danger: #E06A5F;
   color-scheme: dark;
 }
+/* Every entry points at a token in tokens.css, so a utility and a hand-written rule can never drift.
+   `inline` resolves the var() at use time, which is what lets :lang() swap leading and tracking. */
 @theme inline {
   --color-paper: var(--paper); --color-ink: var(--ink);
   --color-graphite: var(--graphite); --color-rule: var(--rule);
-  --color-ash: var(--ash); --color-indigo: var(--indigo);
-  --font-sans: var(--font-inter), var(--font-noto), sans-serif;
-  --font-mono: var(--font-jetbrains), monospace;
-  --text-display: 2.4rem; --text-display--line-height: 1.05;
-  --text-display--letter-spacing: 0;
-  --text-h1: 1.9rem; --text-h1--line-height: 1.15;
-  --text-h1--letter-spacing: 0;
-  --text-h2: 1.45rem; --text-h2--line-height: 1.25;
-  --text-h2--letter-spacing: 0;
-  --text-h3: 1.2rem; --text-h3--line-height: 1.35;
-  --text-body-lg: 1.05rem; --text-body-lg--line-height: 1.7;
-  --text-body: 1rem; --text-body--line-height: 1.7;
-  --text-meta: 0.875rem; --text-meta--line-height: 1.5;
-  --text-mono: 0.85rem; --text-mono--line-height: 1.6;
-  --radius-sm: 4px; --radius-lg: 8px;
+  --color-ash: var(--ash); --color-indigo: var(--indigo); --color-surface: var(--surface);
+  --color-success: var(--success); --color-danger: var(--danger);
+  --font-sans: var(--font-stack-sans);
+  --font-mono: var(--font-stack-mono);
+  --text-display: var(--fs-display); --text-display--line-height: var(--lh-display);
+  --text-display--letter-spacing: var(--tr-heading);
+  --text-h1: var(--fs-h1); --text-h1--line-height: var(--lh-h1);
+  --text-h1--letter-spacing: var(--tr-heading);
+  --text-h2: var(--fs-h2); --text-h2--line-height: var(--lh-h2);
+  --text-h2--letter-spacing: var(--tr-heading);
+  --text-h3: var(--fs-h3); --text-h3--line-height: var(--lh-h3);
+  --text-body-lg: var(--fs-body-lg); --text-body-lg--line-height: var(--lh-body);
+  --text-body: var(--fs-body); --text-body--line-height: var(--lh-body);
+  --text-meta: var(--fs-meta); --text-meta--line-height: var(--lh-meta);
+  --text-micro: var(--fs-micro); --text-micro--line-height: var(--lh-meta);
+  --text-nano: var(--fs-nano); --text-nano--line-height: 1;
+  --text-mono: var(--fs-mono); --text-mono--line-height: var(--lh-mono);
+  --leading-body: var(--lh-body); --leading-heading: var(--lh-heading);
+  --tracking-body: var(--tr-body); --tracking-caps: var(--tr-caps);
+  --spacing-gutter: var(--space-gutter); --spacing-block: var(--space-block); --spacing-section: var(--space-section);
+  --ease-standard: var(--ez-standard); --ease-emphasized: var(--ez-emphasized); --ease-inout: var(--ez-inout);
+  --shadow-raised: var(--elevation-raised); --shadow-panel: var(--elevation-panel); --shadow-overlay: var(--elevation-overlay);
 }
 @layer base {
   * { border-color: var(--rule); }
-  body { background: var(--paper); color: var(--ink); font-family: var(--font-sans); font-size: 1rem; line-height: 1.7; }
-  h1, h2, h3 { font-weight: 600; text-wrap: balance; }
+  body { background: var(--paper); color: var(--ink); font-family: var(--font-sans); font-size: var(--text-body); line-height: var(--lh-body); letter-spacing: var(--tr-body); }
+  h1, h2, h3 { font-weight: var(--fw-semibold); text-wrap: balance; line-height: var(--lh-heading); letter-spacing: var(--tr-heading); }
   p { text-wrap: pretty; }
-  :lang(zh) p, :lang(zh) .prose { line-height: 1.85; letter-spacing: 0; }
   button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
   button, a { touch-action: manipulation; }
   button { cursor: pointer; }
@@ -51,13 +66,6 @@
   :focus-visible { outline: 2px solid var(--indigo); outline-offset: 2px; }
   ::selection { background: var(--indigo); color: var(--paper); }
   summary { cursor: pointer; }
-}
-@media (min-width: 768px) {
-  :root {
-    --text-display: 4rem; --text-h1: 2.6rem; --text-h2: 1.7rem; --text-h3: 1.3rem;
-    --text-body-lg: 1.15rem; --text-body: 1.0625rem; --text-mono: 0.9rem;
-  }
-  body { font-size: 1.0625rem; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }

@@ -5,6 +5,7 @@ import { useActionState, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import type { Experience } from '@/types/content';
 import { experienceKindLabels, experienceKinds, type ExperienceKind } from '../profile/validation';
+import { DirtyBadge, useUnsavedChanges } from '../unsaved-changes';
 import { deleteExperienceAction, saveExperienceAction, type ExperienceEditorState } from './actions';
 
 type FormValues = {
@@ -56,7 +57,18 @@ function StatusMessage({ state, children }: { state: ExperienceEditorState; chil
 export function ExperienceForm({ experience }: { experience: Experience | null }) {
   const [state, formAction] = useActionState(saveExperienceAction, initialState);
   const [values, setValues] = useState<FormValues>(() => valuesFromExperience(experience));
+  const [baseline, setBaseline] = useState<FormValues>(() => valuesFromExperience(experience));
+  const [handledState, setHandledState] = useState<ExperienceEditorState>(initialState);
   const created = state.ok && !experience;
+
+  // A fresh state object arrives once per submit (state adjustment during render, no effect needed).
+  if (state !== handledState) {
+    setHandledState(state);
+    if (state.ok) setBaseline(values);
+  }
+
+  const dirty = JSON.stringify(values) !== JSON.stringify(baseline);
+  useUnsavedChanges(dirty);
 
   function update<K extends keyof FormValues>(key: K, value: FormValues[K]) {
     setValues(current => ({ ...current, [key]: value }));
@@ -139,7 +151,10 @@ export function ExperienceForm({ experience }: { experience: Experience | null }
 
     <div className="grid gap-3 border-t border-[var(--rule)] pt-6">
       <p className="text-sm text-[var(--graphite)]">至少需要一種語言的單位名稱與開始日期；中文單位留空時會沿用英文。</p>
-      <SubmitButton disabled={created}>{experience ? '儲存經歷' : '建立經歷'}</SubmitButton>
+      <div className="flex flex-wrap items-center gap-4">
+        <SubmitButton disabled={created}>{experience ? '儲存經歷' : '建立經歷'}</SubmitButton>
+        <DirtyBadge dirty={dirty} />
+      </div>
       <StatusMessage state={state}>
         {state.ok ? <>
           <Link className="text-[var(--indigo)] underline" href="/admin/experiences">回到經歷列表</Link>

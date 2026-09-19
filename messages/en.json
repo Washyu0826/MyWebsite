@@ -37,7 +37,13 @@
     "back": "Back to projects", "problem": "Problem", "solution": "Approach", "architecture": "System architecture",
     "body": "Implementation", "outcome": "Outcome", "contribution": "My contribution", "screenshots": "Screenshots",
     "previous": "Previous project", "next": "Next project", "empty": "No public case studies in this category yet. Explore other projects or get in touch.",
-    "clear": "View all projects", "enlarge": "Enlarge image: {alt}", "closeImage": "Close image", "image": "Project image"
+    "clear": "View all projects", "enlarge": "Enlarge image: {alt}", "closeImage": "Close image", "image": "Project image",
+    "previousImage": "Previous image",
+    "nextImage": "Next image",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "resetZoom": "Reset zoom",
+    "hint": "Pinch to zoom, swipe to change image, or use the arrow keys and the buttons below."
   },
   "Articles": {
     "title": "Engineering Notes", "description": "Notes on engineering, data and the things I'm learning along the way.",
@@ -65,8 +71,20 @@
       "errorMessage": "Please write a message between 10 and 4000 characters.",
       "errorInvalid": "Some fields need attention.",
       "errorRate": "Too many messages in a short time. Please try again in an hour or email me directly.",
-      "errorGeneric": "The message couldn't be sent. Please try again or email me directly."
+      "errorGeneric": "The message couldn't be sent. Please try again or email me directly.",
+      "draftRestored": "Your unsent draft has been restored."
     }
+  },
+  "Manifest": {
+    "name": "Kuan-Yu Hsien — Portfolio",
+    "shortName": "Hsien",
+    "description": "Full-stack and data engineering portfolio: project case studies, notes and experience."
+  },
+  "Offline": {
+    "title": "You're offline.",
+    "body": "This page hasn't been saved for offline reading. Reconnect and it will load again.",
+    "hint": "Pages you have already opened stay available without a connection.",
+    "home": "Back to home"
   },
   "Command": {
     "open": "Open the command palette",

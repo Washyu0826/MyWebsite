@@ -3,17 +3,8 @@ import type { Post } from '@/types/content';
 import type { Locale } from '@/i18n/routing';
 import { Link } from '@/i18n/navigation';
 import { pickLocale } from '@/lib/locale';
+import { isoDate, publishedLabel } from '@/lib/format';
 import { CoverPreview } from './cover-preview';
-
-function formatArticleDate(value: string | null, locale: Locale) {
-  if (!value) return '';
-  return new Intl.DateTimeFormat(locale === 'zh' ? 'zh-TW' : 'en', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    timeZone: 'UTC',
-  }).format(new Date(value));
-}
 
 export async function ArticleList({ posts, locale }: { posts: Post[]; locale: Locale }) {
   const t = await getTranslations('Articles');
@@ -23,7 +14,7 @@ export async function ArticleList({ posts, locale }: { posts: Post[]; locale: Lo
       return <Link href={`/articles/${post.slug}`} className="article-row" key={post.id}
         data-cover-src={post.cover_url || undefined} data-cover-alt={p.cover_alt || p.title}>
         <div className="article-row-meta">
-          <span>{formatArticleDate(post.published_at, locale)}</span>
+          <time dateTime={isoDate(post.published_at)}>{publishedLabel(post.published_at, locale)}</time>
           {post.reading_minutes ? <span>{t('readingTime', { minutes: post.reading_minutes })}</span> : null}
         </div>
         <div className="article-row-body">

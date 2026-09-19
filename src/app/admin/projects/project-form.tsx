@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useActionState, useEffect, useState, useTransition } from 'react';
 import type { ContentStatus, Project } from '@/types/content';
 import type { TranslateLang } from '@/lib/ai/translate';
+import { MarkdownField } from '../markdown-preview';
+import { DirtyBadge, useUnsavedChanges } from '../unsaved-changes';
 import { deleteProjectAction, saveProjectAction } from './actions';
 import {
   projectFieldLabels, projectTagLabels, projectTags, projectTextKeys, slugify, statusLabels, statusValues,
@@ -79,10 +81,13 @@ function BilingualColumn({ lang, values, update }: {
     <legend className={legendClass}>{name} 案例研究</legend>
     {caseStudyKeys.map(({ key, rows, hint }) => {
       const field: BilingualKey = `${key}_${lang}`;
-      return <label key={field} className={labelClass}>
+      const label = <label key={field} className={labelClass}>
         <span>{projectFieldLabels[key]}（{name}，Markdown）<span className="block text-xs">{hint}</span></span>
         <textarea className={textareaClass} name={field} rows={rows} value={values[field]} onChange={event => update(field, event.target.value)} spellCheck={false} />
       </label>;
+      // The long-form body is the one that earns a preview; the short sections stay single-column.
+      if (key !== 'body') return label;
+      return <MarkdownField key={field} value={values[field]} label={`${projectFieldLabels[key]}（${name}）`}>{label}</MarkdownField>;
     })}
   </fieldset>;
 }
@@ -90,6 +95,9 @@ function BilingualColumn({ lang, values, update }: {
 export function ProjectForm({ project }: { project: Project | null }) {
   const [state, formAction] = useActionState(saveProjectAction, initialState);
   const [values, setValues] = useState<FormValues>(() => valuesFromProject(project));
+  // Everything the user has not yet sent to the server is measured against this snapshot.
+  const [baseline, setBaseline] = useState<FormValues>(() => valuesFromProject(project));
+  const [handledState, setHandledState] = useState(initialState);
   const [overwrite, setOverwrite] = useState(false);
   const [translateMessage, setTranslateMessage] = useState<{ ok: boolean; text: string }>({ ok: true, text: '' });
   const [translating, setTranslating] = useState<TranslateLang | null>(null);
@@ -97,9 +105,21 @@ export function ProjectForm({ project }: { project: Project | null }) {
   const defaultPublishedAt = project?.published_at || null;
 
   // Local-time conversion depends on the browser's timezone, so it runs after hydration.
+  // The baseline moves with it, otherwise the form would look dirty before the user typed anything.
   useEffect(() => {
-    setValues(current => ({ ...current, publishedAtLocal: toLocalDateTimeInput(defaultPublishedAt) }));
+    const local = toLocalDateTimeInput(defaultPublishedAt);
+    setValues(current => ({ ...current, publishedAtLocal: local }));
+    setBaseline(current => ({ ...current, publishedAtLocal: local }));
   }, [defaultPublishedAt]);
+
+  // A fresh state object arrives once per submit (state adjustment during render, no effect needed).
+  if (state !== handledState) {
+    setHandledState(state);
+    if (state.ok) setBaseline(values);
+  }
+
+  const dirty = JSON.stringify(values) !== JSON.stringify(baseline);
+  useUnsavedChanges(dirty);
 
   const created = state.ok && !project;
   const uploadPrefix = `projects/${slugify(values.slug || values.title_en || values.title_zh) || 'untitled'}`;
@@ -321,7 +341,10 @@ export function ProjectForm({ project }: { project: Project | null }) {
 
     <div className="grid gap-3 border-t border-[var(--rule)] pt-6">
       <p className="text-sm text-[var(--graphite)]">至少需要一種語言的標題；缺少的另一種語言標題會在儲存時沿用已填的那一種。媒體與量化成果請先建立專案後，在編輯頁新增。</p>
-      <SubmitButton disabled={created}>{project ? '儲存專案' : '建立專案'}</SubmitButton>
+      <div className="flex flex-wrap items-center gap-4">
+        <SubmitButton disabled={created}>{project ? '儲存專案' : '建立專案'}</SubmitButton>
+        <DirtyBadge dirty={dirty} />
+      </div>
       <StatusMessage state={state}>
         {state.ok ? <>
           <Link className={linkClass} href="/admin/projects">回到專案列表</Link>

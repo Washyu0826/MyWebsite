@@ -19,6 +19,8 @@
 .text-link:hover { text-decoration: underline; }
 .skip-link { position: fixed; top: 12px; left: 20px; transform: translateY(-200%); z-index: 100; padding: 10px 16px; background: var(--paper); border: 1px solid var(--indigo); }
 .skip-link:focus { transform: translateY(0); }
+/* Keyboard focus must not end up under the sticky header (WCAG 2.2 focus-not-obscured). */
+:focus-visible { scroll-margin-top: 96px; scroll-margin-bottom: 24px; }
 .page { padding-block: 64px 80px; min-height: 65vh; }
 .page-heading { margin-bottom: 48px; }
 .page-heading h1 { font-size: var(--text-h1); line-height: 1.15; letter-spacing: 0; }
@@ -206,8 +208,12 @@
 .admin-article-item summary span:last-child { border: 1px solid var(--rule); border-radius: 999px; padding: 4px 10px; color: var(--graphite); font-size: 0.75rem; white-space: nowrap; }
 .admin-article-item .admin-list, .admin-article-item .admin-form, .admin-delete-zone { padding: 0 16px 18px; }
 .admin-delete-zone { border-top: 1px solid var(--rule); padding-top: 18px; }
-.admin-success { color: #177245; }
-.admin-error { color: #B42318; }
+/* The admin has no theme switch, so :root (dark) always applies; these are picked for that
+   background. On paper the same hues need to go darker to keep 4.5:1. */
+.admin-success { color: #5ED39A; }
+.admin-error { color: #FF8A80; }
+.light .admin-success { color: #0F5132; }
+.light .admin-error { color: #8A1C13; }
 @media (min-width: 640px) {
   .container { padding-inline: 32px; }
   .status-line { grid-template-columns: max-content minmax(0, 1fr); column-gap: 14px; }

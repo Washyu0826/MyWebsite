@@ -4,22 +4,18 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import type { Locale } from '@/i18n/routing';
 import { getPostBySlug, listPostSlugs } from '@/lib/db/posts';
+import { getProfile } from '@/lib/db/profile';
 import { pickLocale } from '@/lib/locale';
+import { isoDate, longDayLabel } from '@/lib/format';
 import { pageMetadata } from '@/lib/metadata';
+import { blogPostingSchema, breadcrumbSchema } from '@/lib/structured-data';
 import { Container } from '@/components/container';
 import { Markdown } from '@/components/markdown';
+import { JsonLd } from '@/components/json-ld';
+import { ReadingProgress } from '@/components/reading-progress';
+import { PwaRegister } from '@/app/offline/pwa-register';
 
 type Props = { params: Promise<{ locale: Locale; slug: string }> };
-
-function formatArticleDate(value: string | null, locale: Locale) {
-  if (!value) return '';
-  return new Intl.DateTimeFormat(locale === 'zh' ? 'zh-TW' : 'en', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    timeZone: 'UTC',
-  }).format(new Date(value));
-}
 
 export async function generateStaticParams() {
   return listPostSlugs();
@@ -36,15 +32,29 @@ export async function generateMetadata({ params }: Props) {
 export default async function ArticleDetail({ params }: Props) {
   const { locale, slug } = await params;
   setRequestLocale(locale);
-  const [post, t] = await Promise.all([getPostBySlug(slug), getTranslations('Articles')]);
+  const [post, profile, t, site] = await Promise.all([getPostBySlug(slug), getProfile(), getTranslations('Articles'), getTranslations('Site')]);
   if (!post) notFound();
   const p = pickLocale(post, locale);
+  const path = `/${locale}/articles/${slug}`;
+  const article = blogPostingSchema({
+    path, headline: p.title, locale, description: p.excerpt, image: post.cover_url,
+    datePublished: isoDate(post.published_at), dateModified: isoDate(post.updated_at),
+    keywords: post.tags, readingMinutes: post.reading_minutes, authorName: pickLocale(profile, locale).name,
+  });
+  const crumbs = breadcrumbSchema([
+    { name: site('brand'), path: `/${locale}` },
+    { name: t('title'), path: `/${locale}/articles` },
+    { name: p.title, path },
+  ]);
 
   return <Container className="page article-page">
-    <Link href="/articles" className="text-link mb-8 text-meta">{t('back')}</Link>
+    <JsonLd nodes={[article, crumbs]} />
+    <PwaRegister />
+    <ReadingProgress target=".article-body" />
+    <Link href="/articles" className="text-link mb-8 text-meta" data-print="hide">{t('back')}</Link>
     <header className="article-heading">
       <div className="article-meta-line">
-        {post.published_at ? <span>{formatArticleDate(post.published_at, locale)}</span> : null}
+        {post.published_at ? <time dateTime={isoDate(post.published_at)}>{longDayLabel(post.published_at, locale)}</time> : null}
         {post.reading_minutes ? <span>{t('readingTime', { minutes: post.reading_minutes })}</span> : null}
       </div>
       <h1>{p.title}</h1>

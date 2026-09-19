@@ -4,12 +4,19 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import type { Locale } from '@/i18n/routing';
 import { getProjectBySlug, listProjects } from '@/lib/db/projects';
+import { getProfile } from '@/lib/db/profile';
 import { pickLocale } from '@/lib/locale';
+import { isoDate } from '@/lib/format';
+import { safeUrl } from '@/lib/urls';
 import { pageMetadata } from '@/lib/metadata';
+import { breadcrumbSchema, creativeWorkSchema } from '@/lib/structured-data';
 import { Container } from '@/components/container';
 import { Markdown } from '@/components/markdown';
 import { ProjectMeta } from '@/components/project-meta';
 import { ImageLightbox } from '@/components/image-lightbox';
+import { JsonLd } from '@/components/json-ld';
+import { ReadingProgress } from '@/components/reading-progress';
+import { PwaRegister } from '@/app/offline/pwa-register';
 type Props = { params: Promise<{ locale: Locale; slug: string }> };
 export async function generateStaticParams() { return (await listProjects()).map(({ slug }) => ({ slug })); }
 export async function generateMetadata({ params }: Props) {
@@ -22,12 +29,29 @@ export async function generateMetadata({ params }: Props) {
 export default async function ProjectDetail({ params }: Props) {
   const { locale, slug } = await params;
   setRequestLocale(locale);
-  const [project, t] = await Promise.all([getProjectBySlug(slug), getTranslations('Projects')]);
+  const [project, profile, t, site] = await Promise.all([getProjectBySlug(slug), getProfile(), getTranslations('Projects'), getTranslations('Site')]);
   if (!project) notFound();
   const p = pickLocale(project, locale);
   const images = project.media.filter(m => m.media_type === 'image');
+  const path = `/${locale}/projects/${slug}`;
+  const work = creativeWorkSchema({
+    path, name: p.title, locale, description: p.summary, image: project.cover_url,
+    datePublished: isoDate(project.published_at), dateModified: isoDate(project.updated_at),
+    startDate: project.period_start, endDate: project.period_end,
+    keywords: [...project.tags, ...project.tech_stack],
+    sameAs: [safeUrl(project.demo_url), safeUrl(project.repo_url)],
+    authorName: pickLocale(profile, locale).name,
+  });
+  const crumbs = breadcrumbSchema([
+    { name: site('brand'), path: `/${locale}` },
+    { name: t('title'), path: `/${locale}/projects` },
+    { name: p.title, path },
+  ]);
   return <Container className="page">
-    <Link href="/projects" className="text-link mb-8 text-meta">{t('back')}</Link>
+    <JsonLd nodes={[work, crumbs]} />
+    <PwaRegister />
+    <ReadingProgress target=".case-body" />
+    <Link href="/projects" className="text-link mb-8 text-meta" data-print="hide">{t('back')}</Link>
     <header className="page-heading"><h1>{p.title}</h1><p>{p.summary}</p></header>
     {project.cover_url && <Image src={project.cover_url} alt={p.cover_alt || p.title} width={1200} height={675}
       priority sizes="(max-width: 767px) calc(100vw - 40px), 984px" className="h-auto w-full rounded-lg border border-rule bg-ash" />}

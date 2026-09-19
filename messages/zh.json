@@ -84,7 +84,13 @@
     "clear": "查看全部作品",
     "enlarge": "放大圖片：{alt}",
     "closeImage": "關閉圖片",
-    "image": "專案圖片"
+    "image": "專案圖片",
+    "previousImage": "上一張圖片",
+    "nextImage": "下一張圖片",
+    "zoomIn": "放大",
+    "zoomOut": "縮小",
+    "resetZoom": "還原縮放",
+    "hint": "可用雙指縮放、左右滑動切換，或用方向鍵與下方按鈕。"
   },
   "Articles": {
     "title": "文章",
@@ -128,7 +134,8 @@
       "errorMessage": "訊息內容需介於 10 到 4000 字之間。",
       "errorInvalid": "有些欄位需要修正。",
       "errorRate": "短時間內送出的訊息過多，請一小時後再試，或直接寄信給我。",
-      "errorGeneric": "訊息無法送出，請稍後再試，或直接寄信給我。"
+      "errorGeneric": "訊息無法送出，請稍後再試，或直接寄信給我。",
+      "draftRestored": "已為你保留上次未送出的草稿。"
     },
     "copyValue": "複製",
     "copyEmail": "複製 Email",
@@ -136,6 +143,17 @@
     "copyLink": "複製連結",
     "region": "所在地",
     "phone": "電話"
+  },
+  "Manifest": {
+    "name": "冼冠宇 · 個人作品集",
+    "shortName": "冼冠宇",
+    "description": "冼冠宇的全端與資料工程作品集：專案案例、文章與學習經歷。"
+  },
+  "Offline": {
+    "title": "目前沒有網路連線。",
+    "body": "這個頁面還沒有離線版本，連上網路後就能繼續閱讀。",
+    "hint": "已經開啟過的頁面，沒有連線時仍然看得到。",
+    "home": "回到首頁"
   },
   "Command": {
     "open": "開啟命令面板",

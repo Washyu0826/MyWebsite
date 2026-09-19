@@ -5,6 +5,8 @@ import { useActionState, useEffect, useState, useTransition } from 'react';
 import { useFormStatus } from 'react-dom';
 import type { ContentStatus, Post } from '@/types/content';
 import { AssetPicker } from '@/components/admin/asset-picker';
+import { MarkdownField } from '../markdown-preview';
+import { DirtyBadge, useUnsavedChanges } from '../unsaved-changes';
 import { deleteArticleAction, saveArticleAction, type ArticleEditorState } from './actions';
 import { translateArticleAction, type TranslateArticleInput } from './translate-action';
 
@@ -85,6 +87,9 @@ function StatusMessage({ state, children }: { state: ArticleEditorState; childre
 export function ArticleForm({ post }: { post: Post | null }) {
   const [state, formAction] = useActionState(saveArticleAction, initialState);
   const [values, setValues] = useState<FormValues>(() => valuesFromPost(post));
+  // Everything the user has not yet sent to the server is measured against this snapshot.
+  const [baseline, setBaseline] = useState<FormValues>(() => valuesFromPost(post));
+  const [handledState, setHandledState] = useState<ArticleEditorState>(initialState);
   const [overwrite, setOverwrite] = useState(false);
   const [translateMessage, setTranslateMessage] = useState<{ ok: boolean; text: string }>({ ok: true, text: '' });
   const [translating, setTranslating] = useState<Lang | null>(null);
@@ -92,9 +97,21 @@ export function ArticleForm({ post }: { post: Post | null }) {
   const defaultPublishedAt = post?.published_at || null;
 
   // Local-time conversion depends on the browser's timezone, so it runs after hydration.
+  // The baseline moves with it, otherwise the form would look dirty before the user typed anything.
   useEffect(() => {
-    setValues(current => ({ ...current, publishedAtLocal: toLocalDateTimeInput(defaultPublishedAt) }));
+    const local = toLocalDateTimeInput(defaultPublishedAt);
+    setValues(current => ({ ...current, publishedAtLocal: local }));
+    setBaseline(current => ({ ...current, publishedAtLocal: local }));
   }, [defaultPublishedAt]);
+
+  // A fresh state object arrives once per submit (state adjustment during render, no effect needed).
+  if (state !== handledState) {
+    setHandledState(state);
+    if (state.ok) setBaseline(values);
+  }
+
+  const dirty = JSON.stringify(values) !== JSON.stringify(baseline);
+  useUnsavedChanges(dirty);
 
   const created = state.ok && !post;
 
@@ -220,10 +237,12 @@ export function ArticleForm({ post }: { post: Post | null }) {
           <span>摘要（中文）</span>
           <textarea className={textareaClass} name="excerpt_zh" rows={3} value={values.excerpt_zh} onChange={event => update('excerpt_zh', event.target.value)} maxLength={1000} />
         </label>
-        <label className={labelClass}>
-          <span>內文（中文，Markdown）</span>
-          <textarea className={textareaClass} name="body_zh" rows={20} value={values.body_zh} onChange={event => update('body_zh', event.target.value)} spellCheck={false} />
-        </label>
+        <MarkdownField value={values.body_zh} label="內文（中文）">
+          <label className={labelClass}>
+            <span>內文（中文，Markdown）</span>
+            <textarea className={textareaClass} name="body_zh" rows={20} value={values.body_zh} onChange={event => update('body_zh', event.target.value)} spellCheck={false} />
+          </label>
+        </MarkdownField>
       </fieldset>
 
       <fieldset className="grid gap-5">
@@ -236,16 +255,21 @@ export function ArticleForm({ post }: { post: Post | null }) {
           <span>摘要（English）</span>
           <textarea className={textareaClass} name="excerpt_en" rows={3} value={values.excerpt_en} onChange={event => update('excerpt_en', event.target.value)} maxLength={1000} />
         </label>
-        <label className={labelClass}>
-          <span>內文（English，Markdown）</span>
-          <textarea className={textareaClass} name="body_en" rows={20} value={values.body_en} onChange={event => update('body_en', event.target.value)} spellCheck={false} />
-        </label>
+        <MarkdownField value={values.body_en} label="內文（English）">
+          <label className={labelClass}>
+            <span>內文（English，Markdown）</span>
+            <textarea className={textareaClass} name="body_en" rows={20} value={values.body_en} onChange={event => update('body_en', event.target.value)} spellCheck={false} />
+          </label>
+        </MarkdownField>
       </fieldset>
     </div>
 
     <div className="grid gap-3 border-t border-[var(--rule)] pt-6">
       <p className="text-sm text-[var(--graphite)]">至少需要一種語言的標題與內文；缺少的另一種語言會在儲存時沿用已填的那一種。</p>
-      <SubmitButton disabled={created}>{post ? '儲存文章' : '建立文章'}</SubmitButton>
+      <div className="flex flex-wrap items-center gap-4">
+        <SubmitButton disabled={created}>{post ? '儲存文章' : '建立文章'}</SubmitButton>
+        <DirtyBadge dirty={dirty} />
+      </div>
       <StatusMessage state={state}>
         {state.ok ? <>
           <Link className="text-[var(--indigo)] underline" href="/admin/articles">回到文章列表</Link>

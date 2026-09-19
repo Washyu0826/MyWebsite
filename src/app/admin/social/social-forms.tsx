@@ -1,8 +1,10 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useActionState, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import type { SocialLink } from '@/types/content';
+import { ReorderList, type ReorderResult } from '../reorder-list';
 import {
   createSocialLinkAction, deleteSocialLinkAction, updateSocialLinkAction, type SocialLinkState,
 } from './actions';
@@ -72,6 +74,38 @@ export function PlatformSuggestions() {
   return <datalist id={platformListId}>
     {platformSuggestions.map(platform => <option key={platform} value={platform} />)}
   </datalist>;
+}
+
+/** Writes the new positions through the unchanged updateSocialLinkAction, one row per call. */
+export function ReorderSocialLinks({ links }: { links: SocialLink[] }) {
+  const router = useRouter();
+
+  async function save(ids: string[]): Promise<ReorderResult> {
+    const byId = new Map(links.map(link => [link.id, link]));
+    for (const [index, id] of ids.entries()) {
+      const link = byId.get(id);
+      if (!link || link.sort_order === index) continue;
+      const data = new FormData();
+      data.set('id', link.id);
+      data.set('platform', link.platform);
+      data.set('label', link.label || '');
+      data.set('url', link.url);
+      data.set('sort_order', String(index));
+      // Checkboxes only reach a Server Action when they are checked.
+      if (link.is_visible) data.set('is_visible', 'on');
+      const result = await updateSocialLinkAction(initialState, data);
+      if (!result.ok) return { ok: false, message: `第 ${index + 1} 筆儲存失敗：${result.message}` };
+    }
+    router.refresh();
+    return { ok: true, message: '連結排序已儲存。' };
+  }
+
+  return <ReorderList itemNoun="連結" onSave={save} hint="首頁與聯絡頁會依這個順序顯示。"
+    rows={links.map(link => ({
+      id: link.id,
+      label: link.label || link.platform,
+      meta: `${link.platform} · ${link.is_visible ? '公開' : '隱藏'}`,
+    }))} />;
 }
 
 export function AddSocialLinkForm() {

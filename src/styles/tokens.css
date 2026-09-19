@@ -1,0 +1,70 @@
+/* Design tokens — the single source for every number the UI is allowed to use.
+   They live on :root rather than only inside @theme because Turbopack's dev pipeline does not emit
+   @theme variables into :root, so plain CSS reading var(--text-h2) or var(--font-sans) resolved to
+   nothing in `next dev`. globals.css maps these into @theme inline so Tailwind utilities and hand
+   written CSS read the same values. */
+:root {
+  /* Spacing — 4px ladder; the named steps are the ones the layout actually repeats. */
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px;
+  --space-6: 24px; --space-7: 28px; --space-8: 32px; --space-10: 40px; --space-12: 48px;
+  --space-16: 64px; --space-20: 80px; --space-24: 96px;
+  --space-gutter: var(--space-5); --space-block: var(--space-12); --space-section: var(--space-16);
+
+  /* Radii — Tailwind's rounded-* utilities read these names directly, so no @theme entry is needed. */
+  --radius-sm: 4px; --radius-md: 6px; --radius-lg: 8px; --radius-panel: 10px; --radius-full: 999px;
+
+  /* Type scale. clamp() replaces the old 768px step: identical at <=390px and >=768px, interpolated
+     between, so a heading no longer jumps a whole size at one pixel of viewport width. */
+  --fs-display: clamp(2.4rem, 0.469rem + 7.356vw, 4rem);
+  --fs-h1: clamp(1.9rem, 1.055rem + 3.218vw, 2.6rem);
+  --fs-h2: clamp(1.45rem, 1.148rem + 1.149vw, 1.7rem);
+  --fs-h3: clamp(1.2rem, 1.079rem + 0.46vw, 1.3rem);
+  --fs-body-lg: clamp(1.05rem, 0.929rem + 0.46vw, 1.15rem);
+  --fs-body: clamp(1rem, 0.925rem + 0.287vw, 1.0625rem);
+  --fs-meta: 0.875rem;
+  --fs-micro: 0.75rem;
+  --fs-nano: 0.6875rem;
+  --fs-mono: clamp(0.85rem, 0.79rem + 0.23vw, 0.9rem);
+
+  /* Leading. --lh-body / --lh-heading / --lh-meta are re-declared per language in typography.css. */
+  --lh-tight: 1.05; --lh-snug: 1.15; --lh-normal: 1.25; --lh-relaxed: 1.5; --lh-loose: 1.85;
+  --lh-display: var(--lh-tight); --lh-h1: var(--lh-snug); --lh-h2: var(--lh-normal); --lh-h3: 1.35;
+  --lh-body: 1.7; --lh-heading: 1.25; --lh-meta: var(--lh-relaxed); --lh-mono: 1.6;
+
+  /* Tracking. Also re-declared per language; Latin wants a hair of negative, Han wants positive. */
+  --tr-body: 0; --tr-heading: 0; --tr-caps: 0.08em;
+
+  --fw-regular: 400; --fw-medium: 500; --fw-semibold: 600; --fw-brand: 650; --fw-bold: 700; --fw-display: 760;
+
+  /* Motion. Every existing transition rounds to one of these five. */
+  --dur-fast: 150ms; --dur-base: 180ms; --dur-slow: 240ms; --dur-slower: 340ms; --dur-slowest: 420ms;
+  --dur-reveal: 620ms;
+  --ez-standard: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ez-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
+  --ez-inout: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* Elevation. Tuned for the dark paper; .light softens them below. */
+  --elevation-raised: 0 18px 50px color-mix(in srgb, #000 42%, transparent);
+  --elevation-panel: 0 24px 80px color-mix(in srgb, #000 45%, transparent);
+  --elevation-overlay: 0 30px 90px color-mix(in srgb, #000 55%, transparent);
+
+  /* Stacking order, lowest to highest. */
+  --z-backdrop: 0; --z-raised: 10; --z-header: 20; --z-hover-card: 30;
+  --z-overlay: 60; --z-modal: 70; --z-skip: 100;
+
+  /* Font stacks. 'Han Fallback' is the metric-matched local CJK face declared in typography.css;
+     Inter carries every Latin glyph, so the browser only reaches the Han faces for Han ranges. */
+  --font-stack-sans: var(--font-inter), 'Han Fallback', 'PingFang TC', 'Microsoft JhengHei', 'Noto Sans TC', 'Hiragino Sans GB', sans-serif;
+  --font-stack-mono: var(--font-jetbrains), ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  /* Aliases for the names layout.css / prose.css / hero.css already read. */
+  --font-sans: var(--font-stack-sans); --font-mono: var(--font-stack-mono);
+  --text-display: var(--fs-display); --text-h1: var(--fs-h1); --text-h2: var(--fs-h2);
+  --text-h3: var(--fs-h3); --text-body-lg: var(--fs-body-lg); --text-body: var(--fs-body);
+  --text-meta: var(--fs-meta); --text-mono: var(--fs-mono);
+}
+.light {
+  --elevation-raised: 0 14px 40px color-mix(in srgb, #000 12%, transparent);
+  --elevation-panel: 0 18px 56px color-mix(in srgb, #000 14%, transparent);
+  --elevation-overlay: 0 24px 72px color-mix(in srgb, #000 20%, transparent);
+}

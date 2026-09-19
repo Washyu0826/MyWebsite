@@ -3,7 +3,7 @@ import { Container } from '@/components/container';
 import { requireAdminPage } from '@/lib/auth/admin';
 import { adminDb } from '@/lib/db/admin';
 import type { SocialLink } from '@/types/content';
-import { AddSocialLinkForm, PlatformSuggestions, SocialLinkItem } from './social-forms';
+import { AddSocialLinkForm, PlatformSuggestions, ReorderSocialLinks, SocialLinkItem } from './social-forms';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,7 +50,10 @@ export default async function SocialAdminPage() {
       {loadError
         ? <p className="admin-error" role="status">{loadError}</p>
         : links.length
-          ? <div className="grid gap-6">{links.map(link => <SocialLinkItem key={link.id} link={link} />)}</div>
+          ? <div className="grid gap-6">
+            {links.length > 1 ? <ReorderSocialLinks links={links} /> : null}
+            {links.map(link => <SocialLinkItem key={link.id} link={link} />)}
+          </div>
           : <p className="text-sm text-[var(--graphite)]">還沒有任何社群連結，請在下方新增。</p>}
     </section>
 
