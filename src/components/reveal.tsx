@@ -8,7 +8,8 @@ export function Reveal({ children, order = 0 }: { children: React.ReactNode; ord
   useEffect(() => {
     const element = scope.current;
     if (!element) return;
-    const done = () => { element.dataset.reveal = 'done'; };
+    // Clearing the inline clip lets decoration that overhangs the box (e.g. the hero photo's offset frame) show.
+    const done = () => { element.dataset.reveal = 'done'; element.style.clipPath = ''; };
     const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
     let seen = false;
     try { seen = Boolean(sessionStorage.getItem('hsien-intro')); } catch { /* Storage may be disabled. */ }

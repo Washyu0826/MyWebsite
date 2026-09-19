@@ -6,39 +6,41 @@ import { Link } from '@/i18n/navigation';
 import { getProfile } from '@/lib/db/profile';
 import { listProjects } from '@/lib/db/projects';
 import { pickLocale } from '@/lib/locale';
-import { emailUrl, safeUrl } from '@/lib/urls';
+import { emailUrl, gmailComposeUrl, safeUrl } from '@/lib/urls';
 import { pageMetadata } from '@/lib/metadata';
 import { Container } from '@/components/container';
 import { Reveal } from '@/components/reveal';
 import { Markdown } from '@/components/markdown';
 import { ProjectList } from '@/components/project-list';
 import { HomeSections } from '@/components/home-sections';
+import { CubistBackdrop } from '@/components/cubist-backdrop';
 import { ResumeLink } from '@/components/resume-link';
 import { buttonVariants } from '@/components/ui/button';
 type Props = { params: Promise<{ locale: Locale }> };
 const focusAreas = ['Software Engineer', 'Data', 'AI', 'Full Stack', 'Cloud'];
+const heroTagline = 'Curiosity driven, clarity obsessed.';
 const designPrinciples = [
   {
     code: '01',
-    title: 'Clarity over decoration',
-    body: 'Interfaces should make intent visible before they ask for attention.',
+    title: 'Why before How',
+    body: 'Intent matters most. I need to understand the fundamental reason behind a problem before jumping into execution.',
   },
   {
     code: '02',
-    title: 'Systems before surfaces',
-    body: 'Every screen should reveal how the work is structured underneath.',
+    title: 'Radically Candid',
+    body: 'Honest feedback over polite silence. I value direct communication that helps everyone grow and keeps things moving.',
   },
   {
     code: '03',
-    title: 'Useful motion only',
-    body: 'Interaction should guide the eye, not compete with the content.',
+    title: 'Embrace the Iteration',
+    body: 'Nothing is perfect on the first try. I prefer acting fast, gathering feedback, and constantly refining the approach.',
   },
 ];
 
 function HeroSocialLinks({ profile, label }: { profile: Awaited<ReturnType<typeof getProfile>>; label: string }) {
   const links = profile.social_links.filter(s => safeUrl(s.url));
   const emailSocial = links.find(s => ['email', 'gmail'].includes(s.platform.toLowerCase()));
-  const email = emailUrl(profile.email) || emailSocial?.url;
+  const email = gmailComposeUrl(profile.email) || emailSocial?.url;
   const github = links.find(s => s.platform.toLowerCase() === 'github');
   const linkedin = links.find(s => s.platform.toLowerCase() === 'linkedin');
   const items = [
@@ -69,13 +71,13 @@ export default async function Home({ params }: Props) {
   const p = pickLocale(profile, locale);
   const email = emailUrl(profile.email);
   const nowParts = p.now.split(' · ');
-  return <Container>
+  return <div className="home-stage"><CubistBackdrop /><Container className="home-container">
     <section className="hero" aria-labelledby="intro-heading">
       <div className="hero-grid">
         <div>
           <Reveal><p className="mb-5 text-meta text-graphite">{p.name}</p></Reveal>
           <Reveal order={1}><h1 id="intro-heading">{p.headline}</h1></Reveal>
-          <Reveal order={2}><div className="positioning"><Markdown>{p.bio}</Markdown></div></Reveal>
+          <Reveal order={2}><div className="positioning"><Markdown>{heroTagline}</Markdown></div></Reveal>
           <div className="status-line"><span>{t('now')}</span><span>{nowParts.length > 1 ? <>
             {nowParts[0]} <span aria-hidden="true">·</span> <strong>{nowParts.slice(1).join(' · ')}</strong>
           </> : p.now}</span></div>
@@ -94,7 +96,7 @@ export default async function Home({ params }: Props) {
         </div>
         {profile.avatar_url ? <Reveal order={3}>
           <div className="hero-photo">
-            <Image src={profile.avatar_url} alt={p.name} width={420} height={520} priority sizes="(min-width: 768px) 34vw, 100vw" />
+            <div className="hero-photo-inner"><Image src={profile.avatar_url} alt={p.name} width={420} height={520} priority sizes="(min-width: 768px) 34vw, 100vw" /></div>
           </div>
         </Reveal> : null}
       </div>
@@ -112,5 +114,5 @@ export default async function Home({ params }: Props) {
     <section className="contact-invitation"><h2>{t('invitation')}</h2><p className="mt-3 text-graphite">{t('invitationBody')}</p>
       <div className="actions">{email && <a className={buttonVariants()} href={email}>{site('write')}</a>}<ResumeLink profile={profile} locale={locale} /></div>
     </section>
-  </Container>;
+  </Container></div>;
 }

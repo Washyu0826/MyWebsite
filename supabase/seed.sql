@@ -4,7 +4,7 @@
 
 begin;
 
-update public.profile set name_zh = 'Hsien', name_en = 'Hsien', headline_zh = 'Software Engineer', headline_en = 'Software Engineer', bio_zh = '我做能被量測的系統。', bio_en = 'I build systems whose impact can be measured.', now_zh = 'CS undergrad · Looking for 2027 new-grad roles', now_en = 'CS undergrad · Looking for 2027 new-grad roles', location_zh = '台灣', location_en = 'Taiwan', email = 'hi@example.com', avatar_url = null, resume_zh_url = null, resume_en_url = null, resume_updated_at = null, seo_description_zh = '', seo_description_en = '', updated_at = '2026-09-01T00:00:00Z'
+update public.profile set name_zh = 'Hsien', name_en = 'Hsien', headline_zh = 'Software Engineer', headline_en = 'Software Engineer', bio_zh = 'Curiosity driven, clarity obsessed.', bio_en = 'Curiosity driven, clarity obsessed.', now_zh = 'CS undergrad · Looking for 2027 new-grad roles', now_en = 'CS undergrad · Looking for 2027 new-grad roles', location_zh = '台灣', location_en = 'Taiwan', email = 'hi@example.com', avatar_url = null, resume_zh_url = null, resume_en_url = null, resume_updated_at = null, seo_description_zh = '', seo_description_en = '', updated_at = '2026-09-01T00:00:00Z'
 where id = 1 and name_zh in ('', '你的中文名');
 
 insert into public.social_links (platform, label, url, sort_order)

@@ -11,6 +11,9 @@ export function documentUrl(value: string | null | undefined): string | null {
 export function emailUrl(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? `mailto:${encodeURIComponent(value)}` : null;
 }
+export function gmailComposeUrl(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(value)}` : null;
+}
 export function resumeUrl(profile: { resume_zh_url: string | null; resume_en_url: string | null }, locale: string) {
   return documentUrl(locale === 'en' ? profile.resume_en_url : profile.resume_zh_url);
 }

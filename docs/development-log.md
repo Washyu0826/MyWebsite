@@ -297,3 +297,86 @@ Verification:
 - `npm run typecheck`: passed.
 - `npm run lint`: passed.
 - Local page check confirmed the new Contact fields render at `/en/contact`.
+
+## 2026-09-19
+
+### Homepage Wide Layout
+
+- Preserved a rollback snapshot in `artifacts/version-backups/2026-09-19-before-home-wide-layout/`.
+- Added a homepage-only `home-container` class so the landing page can use more horizontal space on large screens.
+- Kept the default `.container` width unchanged for content-heavy pages like Contact, Notes, Projects, and admin screens.
+- Increased the homepage desktop hero column gap fluidly and allowed the profile photo to scale up to `480px` on wider screens.
+
+Verification:
+
+- `npm run typecheck`: passed.
+- `npm run lint`: passed.
+
+### Homepage Email Compose Link
+
+- Preserved a rollback snapshot in `artifacts/version-backups/2026-09-19-before-home-email-compose/`.
+- Added `gmailComposeUrl()` so homepage Email/Gmail icon can open Gmail compose with the recipient prefilled.
+- Updated the homepage social Email icon to use Gmail compose instead of relying only on the browser's `mailto:` handler.
+- Kept other email links on the site as `mailto:` for now.
+
+Verification:
+
+- `npm run typecheck`: passed.
+- `npm run lint`: passed.
+- Local HTML check could not run because `127.0.0.1:3000` was not responding.
+
+## 2026-09-20
+
+### Homepage Full-Width Layout
+
+- Preserved a rollback snapshot in `artifacts/version-backups/2026-09-20-before-home-full-width/`.
+- Removed the homepage-only `1560px` max-width so the landing page now uses the full viewport width.
+- Kept responsive side padding through viewport-based clamps instead of centering the entire page in a fixed-width block.
+- Expanded the desktop hero grid and portrait sizing at `1280px+` and `1680px+` breakpoints so large screens feel intentionally filled.
+
+Verification:
+
+- `npm run typecheck`: passed.
+- `npm run lint`: passed.
+
+### Edge-Aligned Header And Footer
+
+- Preserved a rollback snapshot in `artifacts/version-backups/2026-09-20-before-edge-aligned-shell/`.
+- Removed the fixed content max-width from `header-inner` and `footer-inner` so shell navigation uses the full viewport width.
+- Kept the main `.container` behavior unchanged for readable page content.
+- Right-aligned the footer note/copyright group while keeping social/contact links on the left.
+
+Verification:
+
+- `npm run typecheck`: passed.
+- `npm run lint`: passed.
+
+### Homepage Positioning Copy
+
+- Preserved a rollback snapshot in `artifacts/version-backups/2026-09-20-before-home-positioning-copy/`.
+- Changed the homepage tagline to `Curiosity driven, clarity obsessed.`.
+- Reframed the three homepage principles as a personal user manual:
+  - `Why before How`
+  - `Radically Candid`
+  - `Embrace the Iteration`
+- Synced the development Supabase seed profile bio with the new tagline.
+
+Verification:
+
+- `npm run typecheck`: passed.
+- `npm run lint`: passed.
+
+### Homepage Cubist Backdrop
+
+- Preserved a rollback snapshot in `artifacts/version-backups/2026-09-19-before-cubist-backdrop/`.
+- Added `CubistBackdrop`, a client canvas behind the homepage hero in the spirit of analytic cubism: the canvas is fractured into interlocking facets by seeded line cuts, painted in earth pigments (ochre, umber, prussian, oxblood, olive, gold) with hatching, guide lines and arcs.
+- The composition breathes slowly (per-facet scale, rotation, light sweep) and shifts with the pointer by depth; it is static under `prefers-reduced-motion`, pauses off-screen and when the tab is hidden, and re-renders on theme change.
+- The seed is fixed so every visit shows the same composition; pigment is weighted toward the portrait side and faded toward the copy column and the sections below so text stays readable.
+- Added a paper-grain overlay and a gold offset frame plus skewed back facet behind the hero portrait so it reads as one plane of the composition.
+- `Reveal` now clears its inline `clip-path` once the intro finishes so decoration that overhangs a revealed box is not clipped.
+
+Verification:
+
+- `npm run typecheck`: passed.
+- `npm run lint`: passed.
+- Playwright screenshots (Edge channel) of `/en` at 1600px light and dark and 390px dark confirmed the backdrop renders, the portrait frame shows, and hero copy stays readable.
