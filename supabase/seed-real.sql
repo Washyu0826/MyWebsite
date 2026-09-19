@@ -27,7 +27,7 @@ update public.profile set
   headline_zh = 'Software / AI Engineer',
   headline_en = 'Software / AI Engineer',
   now_zh = '政大資科碩士生 · 國泰金控、H2U 永悅健康實習中',
-  now_en = 'MSCS student at NCCU · Intern at Cathay Financial Holdings and H2U',
+  now_en = 'CS undergrad · Looking for 2027 new-grad roles',
   bio_zh = '對人工智慧與機器學習充滿熱忱，碩士研究聚焦於深度學習應用，具備模型訓練、資料管線建置與雲端部署經驗。
 
 擅長將 AI 技術落地為實際解決方案，並有醫療健康產業資料分析實務背景，期望持續深耕 AI 工程領域。',
