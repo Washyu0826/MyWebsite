@@ -4,7 +4,7 @@
 -- 需先套用 migrations（supabase db push）。
 --
 -- 規則：
---   profile        直接覆寫 id=1（真實資料）。
+--   profile        覆寫 id=1；姓名與 Email 只在空白或示範值時才寫入。
 --   experiences    固定 UUID，on conflict do nothing → 重跑不會蓋掉後台的修改。
 --   projects       全部為 draft，固定 UUID，on conflict do nothing。請在 /admin/projects
 --                  補上細節與圖片後再改成 published。
@@ -21,8 +21,9 @@ begin;
 insert into public.profile (id) values (1) on conflict (id) do nothing;
 
 update public.profile set
-  name_zh = '冼冠宇',
-  name_en = 'Kuan-Yu Hsien',
+  -- 姓名只在尚未設定或仍是示範值時覆寫，保留後台的手動調整。
+  name_zh = case when name_zh in ('', 'Hsien', '你的中文名') then '冼冠宇' else name_zh end,
+  name_en = case when name_en in ('', 'Hsien') then 'Kuan-Yu Hsien' else name_en end,
   headline_zh = 'Software / AI Engineer',
   headline_en = 'Software / AI Engineer',
   now_zh = '政大資科碩士生 · 國泰金控、H2U 永悅健康實習中',
@@ -35,7 +36,7 @@ update public.profile set
 My graduate research focuses on applied deep learning, with hands-on experience in model training, data pipelines and cloud deployment. I also bring practical data-analysis experience from the healthcare industry, and strong communication and leadership experience across several organisations.',
   location_zh = '台灣 台北市 大安區',
   location_en = 'Da''an Dist., Taipei, Taiwan',
-  email = 'xianguanyu925@gmail.com',
+  email = case when email in ('', 'hi@example.com') then 'xianguanyu925@gmail.com' else email end,
   seo_description_zh = '冼冠宇（Kuan-Yu Hsien）：政大資訊科學碩士生，專注於深度學習應用、LLM／RAG 系統與雲端部署的軟體／AI 工程師。',
   seo_description_en = 'Kuan-Yu Hsien: MSCS student at National Chengchi University and software / AI engineer focused on applied deep learning, LLM / RAG systems and cloud deployment.',
   updated_at = now()

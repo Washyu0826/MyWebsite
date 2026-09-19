@@ -12,8 +12,8 @@
     "test:e2e": "playwright test",
     "audit:site": "node scripts/audit-site.mjs",
     "db:types": "node scripts/generate-db-types.mjs",
-    "db:push": "supabase db push",
-    "db:seed:real": "supabase db query --linked -f supabase/seed-real.sql"
+    "db:push": "npx supabase db push",
+    "db:seed:real": "npx supabase db query --linked -f supabase/seed-real.sql"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.126.0",
