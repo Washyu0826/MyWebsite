@@ -111,7 +111,7 @@ try {
                 : [],
           events: history,
           references:
-            completedPublication && completedPublication.asset_id === asset.id
+            completedPublication && completedPublication.asset_id === asset.id && completedPublication.status === 'complete' && asset.name.includes('portrait')
               ? [{ publication_id: completedPublication.id, url: completedPublication.public_url, kind: 'profile', id: null, slug: null, title: 'avatar', field: 'avatar' }]
               : [],
         });
@@ -140,7 +140,7 @@ try {
     }
     const body = request.postDataJSON();
     requests.push(body);
-    const asset = assets.find(a => a.id === body.id || a.current.id === body.versionId);
+    const asset = assets.find(a => a.id === body.id || a.current.id === body.versionId || (body.publicationId && completedPublication && a.id === completedPublication.asset_id));
     if (body.action === 'rename') asset.name = body.value;
     if (body.action === 'trash') asset.deleted_at = now;
     if (body.action === 'restore') asset.deleted_at = null;
@@ -157,6 +157,11 @@ try {
       return respond(asset);
     }
     if (body.action === 'preview') return respond({ url: `${origin}/preview.jpg` });
+    if (body.action === 'revoke') {
+      completedPublication = { ...completedPublication, status: 'revoked', revoked_at: now, purged_at: now };
+      asset.published = false;
+      return respond(completedPublication);
+    }
     if (body.action === 'upload') {
       const previous = assets.find(a => a.current.request_id === body.requestId);
       if (previous) return respond({ version: previous.current, token: 'test-only', endpoint: `${origin}/storage/v1/upload/resumable` });
@@ -292,9 +297,21 @@ try {
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
   await page.setViewportSize({ width: 1440, height: 1000 });
+  // Revoking: the referenced portrait copy is protected; an unreferenced copy can be revoked, after
+  // which the asset can be recycled.
+  await page.getByRole('button', { name: '私人素材', exact: true }).click();
+  await page.getByRole('button', { name: '檢視 Renamed-portrait.jpg', exact: true }).click();
+  await expect(page.getByRole('button', { name: '仍有頁面使用，無法撤銷公開' })).toBeDisabled();
+  await page.getByRole('button', { name: '檢視 Architecture-2.jpg', exact: true }).click();
+  await page.getByRole('button', { name: '發布', exact: true }).click();
+  await expect(page.getByRole('button', { name: '複製公開連結' })).toBeVisible();
+  page.once('dialog', dialog => dialog.accept());
+  await page.getByRole('button', { name: '撤銷公開 公開連結' }).click();
+  await expect(page.getByText(/已撤銷/)).toBeVisible();
+  await expect(page.getByRole('button', { name: '移至垃圾桶', exact: true })).toBeEnabled();
   assert.deepEqual(errors, []);
   console.log(
-    'PASS: real components, responsive widths 320-1920, preview pixels, axe, pagination, rename, trash/restore, references, publication retry, audit, legacy, 7 MiB TUS upload, asset picker',
+    'PASS: real components, responsive widths 320-1920, preview pixels, axe, pagination, rename, trash/restore, references, publication retry, audit, legacy, 7 MiB TUS upload, asset picker, revoke',
   );
 } finally {
   await browser?.close();

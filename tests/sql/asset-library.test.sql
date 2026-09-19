@@ -100,11 +100,29 @@ begin
   assert (select deleted_at is not null from public.assets where id = (v->>'asset_id')::uuid), 'published but unreferenced assets can be recycled';
   assert exists(select 1 from storage.objects where bucket_id = 'assets-private' and name = v->>'object_path'), 'trash never touches objects';
   perform public.asset_change(actor,(v->>'asset_id')::uuid,'restore');
+  -- Revoking a public copy: blocked while referenced, owner scoped, idempotent, then purged.
+  update public.profile set avatar_url = url where id = 1;
+  perform pg_temp.expect_error(format('select public.asset_revoke_publication(%L,%L)',actor,p->>'id'),'ASSET_REFERENCED');
+  update public.profile set avatar_url = 'https://example.com/replaced.jpg' where id = 1;
+  perform pg_temp.expect_error(format('select public.asset_revoke_publication(%L,%L)',other,p->>'id'),'ASSET_NOT_FOUND');
+  perform pg_temp.expect_error(format('select public.asset_publication_purged(%L,%L)',actor,p->>'id'),'INVALID_ACTION');
+  p := public.asset_revoke_publication(actor,(p->>'id')::uuid);
+  assert p->>'status' = 'revoked' and p->>'revoked_at' is not null and p->>'purged_at' is null;
+  select count(*) into n from public.asset_events;
+  assert public.asset_revoke_publication(actor,(p->>'id')::uuid)->>'status' = 'revoked';
+  assert (select count(*) from public.asset_events) = n, 'revoke retries are idempotent';
+  p := public.asset_publication_purged(actor,(p->>'id')::uuid);
+  assert p->>'purged_at' is not null;
+  assert public.asset_publication_purged(actor,(p->>'id')::uuid)->>'purged_at' = p->>'purged_at';
+  assert exists(select 1 from public.asset_events where action = 'publish.revoked') and exists(select 1 from public.asset_events where action = 'publish.purged');
+  assert public.asset_revoke_publication(actor,(p2->>'id')::uuid)->>'status' = 'revoked', 'conflicting copies can be revoked too';
+  p := public.asset_prepare_publish(actor,(v->>'id')::uuid,'public',gen_random_uuid());
+  perform pg_temp.expect_error(format('select public.asset_revoke_publication(%L,%L)',actor,p->>'id'),'PUBLICATION_PENDING');
   perform pg_temp.expect_error(format('select public.asset_prepare_publish(%L,%L,%L,%L)',actor,v->>'id','resume_en',gen_random_uuid()),'INVALID_TYPE');
 
   insert into storage.objects values('legacy','large','{"size":800000000}');
   perform pg_temp.expect_error(format('select public.asset_begin_upload(%L,%L,%L,%L,100)',actor,gen_random_uuid(),'over.jpg','image/jpeg'),'QUOTA_EXCEEDED');
-  raise notice 'PASS: permissions, private bucket, quota, upload idempotency, owner isolation, immutable versions, trash/restore, cancel, publication payload, profile CAS, event retention, references, lapsing reservations';
+  raise notice 'PASS: permissions, private bucket, quota, upload idempotency, owner isolation, immutable versions, trash/restore, cancel, publication payload, profile CAS, event retention, references, lapsing reservations, revoke and purge';
 end $$;
 rollback;
 

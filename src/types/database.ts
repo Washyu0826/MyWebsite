@@ -33,6 +33,8 @@ export type Database = {
       asset_finish_publish: { Args: { p_actor: string; p_operation: string; p_url: string }; Returns: Json };
       asset_publication_payload: { Args: { p_actor: string; p_operation: string; p_hash: string; p_mime: string; p_size: number }; Returns: Json };
       asset_references: { Args: { p_actor: string; p_asset: string }; Returns: Json };
+      asset_revoke_publication: { Args: { p_actor: string; p_publication: string }; Returns: Json };
+      asset_publication_purged: { Args: { p_actor: string; p_publication: string }; Returns: Json };
       publish_due_content: { Args: Record<string, never>; Returns: { kind: string; slug: string }[] };
       contact_rate_limit_hit: { Args: { p_ip_hash: string; p_limit: number; p_window: string }; Returns: boolean };
     };

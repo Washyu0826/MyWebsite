@@ -16,7 +16,8 @@ export type AssetVersion = {
 export type AssetPublication = {
   id: string; owner_id: string; asset_id: string; version_id: string; request_id: string;
   slot: PublishSlot; bucket: 'media' | 'resume'; object_path: string; expected_url: string | null;
-  public_url: string | null; status: 'pending' | 'complete' | 'conflict'; last_error: string | null;
+  public_url: string | null; status: 'pending' | 'complete' | 'conflict' | 'revoked'; last_error: string | null;
+  revoked_at: string | null; purged_at: string | null;
   content_sha256: string | null; content_type: string | null; content_size: number | null;
   created_at: string; completed_at: string | null;
 };
@@ -43,6 +44,7 @@ export const eventLabels: Record<string, string> = {
   'upload.retry_needed': '等待重試', 'asset.rename': '重新命名', 'asset.trash': '移至垃圾桶',
   'asset.restore': '從垃圾桶還原', 'asset.version': '切換目前版本', 'asset.cancel': '取消待上傳版本',
   'publish.started': '開始發布', 'publish.complete': '發布完成', 'publish.conflict': '發布衝突',
+  'publish.revoked': '撤銷公開副本', 'publish.purged': '公開檔案已移除',
 };
 export const slotLabels: Record<PublishSlot, string> = { public: '公開連結', avatar: '個人照', resume_zh: '中文履歷', resume_en: '英文履歷' };
 

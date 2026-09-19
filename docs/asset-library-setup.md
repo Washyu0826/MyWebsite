@@ -18,6 +18,7 @@
 - 原本 `media` / `resume` 檔案保留，從「既有公開檔案」唯讀瀏覽；不批次搬動或改寫文章網址。
 - **使用位置**：檔案詳情列出每個公開副本被哪裡引用（個人照／履歷欄位、作品封面／架構圖／畫廊／內文、文章封面／內文），可直接連到對應後台頁面。
 - **素材選擇器**：作品編輯器的網址欄位與文章封面欄位可「從素材庫選擇」已發布的檔案；圖片可一鍵複製 Markdown 語法貼進內文。
+- **撤銷公開副本**：詳情的「公開紀錄」可撤銷未被引用的公開副本。先把紀錄標為已撤銷（列表、選擇器、引用掃描立即忽略），再從公開儲存區移除檔案；移除失敗可重按撤銷完成。私人原始檔與版本不受影響。
 - 上傳與發布的容量預留在 24 小時後自動失效（Supabase 簽名上傳網址只有 2 小時有效），取消或中斷的上傳不再永久占用預算。
 
 ## 正式 Supabase 必做
@@ -29,7 +30,7 @@
    `supabase/migrations/20260920000100_asset_library.sql`。
    這是增量 migration，不是 `seed.sql`。已有網站資料時不需要重跑示範 seed 或初始化 schema。
 3. 新 migration 建立 `assets`、`asset_versions`、`asset_publications`、`asset_events`、專用 RPC，以及 **非公開**的 `assets-private` bucket。
-   接著執行 `supabase/migrations/20260920000300_asset_references.sql`：它新增 `asset_references()`，並以「仍被引用才擋回收」與「預留 24 小時後失效」取代原本的垃圾桶與容量規則。沒有套用時，檔案詳情會回報素材庫資料庫尚未更新。
+   接著執行 `supabase/migrations/20260920000300_asset_references.sql`：它新增 `asset_references()`，並以「仍被引用才擋回收」與「預留 24 小時後失效」取代原本的垃圾桶與容量規則。再執行 `20260920000400_asset_revoke.sql`：新增撤銷／移除公開副本的 RPC 與欄位。沒有套用時，檔案詳情會回報素材庫資料庫尚未更新。
 4. 檢查原有 `media` 與 `resume` buckets 仍存在、仍是網站原本使用的公開 buckets，且其上限至少為 8 MiB。這兩個 buckets 是既有初始化 migration 建立的，新 migration 不更改它們。
 5. 若要保存最佳化圖片的尺寸與模糊預覽資料，也套用專案另外新增的 `20260920000200_media_dimensions.sql`。此表缺少時圖片發布仍可完成，但 metadata 僅為 best effort。
 6. 檢查 Storage policies 不存在套用「所有 buckets」的廣泛匿名／authenticated 讀寫權限。新 bucket 不需要新增瀏覽器直接讀寫 policies；伺服器提供短期簽名授權。
@@ -65,7 +66,7 @@ ADMIN_EMAIL=YOUR_ADMIN_EMAIL
 
 - 800 MB 是本功能的軟體預算，不是供應商帳單的硬上限。會計入所有 buckets 的已存檔案與未完成操作的保守預留；不能阻止 Dashboard、其他程式或外部 API 繞過本流程寫入，也不能限制讀取流量。
 - 每個待上傳版本／待發布操作預留最多 8 MiB，24 小時內持續計入（簽名上傳網址最長 2 小時有效，留足餘裕），之後只計算實際存在 Storage 的物件。取消或驗證失敗的版本紀錄仍保留，但不再永久占用預算；已上傳但未驗證的物件仍算容量。
-- 仍被個人資料、作品或文章引用的素材不能進垃圾桶，詳情會列出引用位置；已發布但沒有任何引用的素材可以回收，公開副本不會被刪除，知道網址的人仍可讀取。引用掃描比對的是本站資料庫裡的公開網址（含 Markdown 內文），不包含站外貼出去的連結。撤銷公開副本留待下一階段。
+- 仍被個人資料、作品或文章引用的素材不能進垃圾桶，詳情會列出引用位置；已發布但沒有任何引用的素材可以回收，公開副本不會被刪除，知道網址的人仍可讀取。引用掃描比對的是本站資料庫裡的公開網址（含 Markdown 內文），不包含站外貼出去的連結。撤銷公開副本會真的刪掉公開儲存區的檔案，舊網址從此失效；不會刪私人原始檔。
 - 垃圾桶不刪實體檔案，也不自動清空；不會回收容量。
 - 已發出的私人預覽網址在最多 60 秒有效期內仍可使用。公開副本即使未被網站引用，知道網址的人仍可讀取。
 - SHA-256 用來驗證完整性，不等於自動去重、病毒掃描或 PDF 內容安全掃描。
@@ -107,11 +108,11 @@ node tests/assets-browser.mjs
 node scripts/test-assets-sql.mjs
 ```
 
-每次執行會先清空這個測試資料庫再重建。fixture 模擬 Supabase 管理的 `auth` / `storage` schemas 與最小的 `posts` / `projects` / `project_media`，測試三個 asset migration 重複執行、權限、容量與預留失效、版本、還原、引用規則、衝突與兩條真實連線的並行請求。**不是完整的 Supabase Storage / Auth 整合測試**。正式啟用後，還需用你的管理員帳號做小檔端到端驗收。
+每次執行會先清空這個測試資料庫再重建。fixture 模擬 Supabase 管理的 `auth` / `storage` schemas 與最小的 `posts` / `projects` / `project_media`，測試四個 asset migration 重複執行、權限、容量與預留失效、版本、還原、引用規則、撤銷與移除、衝突與兩條真實連線的並行請求。**不是完整的 Supabase Storage / Auth 整合測試**。正式啟用後，還需用你的管理員帳號做小檔端到端驗收。
 
 ## 回復與後續
 
 - 修改前的本機快照：`artifacts/version-backups/2026-09-20-before-asset-library/`，未包含環境金鑰。這是當時的素材相關程式快照，不含後續其他工作，不能直接覆蓋整個專案。
 - migration 為增量變更。若回退程式，保留新資料表與 buckets，不要用 DROP 或刪 Storage 來回退；否則會失去版本與紀錄。
 - 原先會直接刪除照片／履歷的流程已停用。回退到舊程式也會回復這些舊行為，需先檢查。
-- 尚未實作：全文／語意搜尋、durable worker queue、去重、撤銷公開副本、私人分享連結、全站 release snapshot、一鍵異地備份及災難復原。細節保留在 `file-management-extension-research.md`，本階段沒有把研究提案當成已交付功能。
+- 尚未實作：全文／語意搜尋、durable worker queue、去重、私人分享連結、全站 release snapshot、一鍵異地備份及災難復原。細節保留在 `file-management-extension-research.md`，本階段沒有把研究提案當成已交付功能。

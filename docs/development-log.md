@@ -444,3 +444,18 @@ Verification:
 - `node scripts/test-assets-sql.mjs` (local PostgreSQL 18 on 127.0.0.1:55432): passed, including the new reference and reservation assertions.
 - `node tests/assets-browser.mjs` (Chrome): passed, including the reference list and picker scenarios; screenshots in `artifacts/asset-library/`.
 - `npx prettier --check` on the touched test files: passed.
+
+### Asset Library: Revoke Public Copies (2026-09-20)
+
+- `supabase/migrations/20260920000400_asset_revoke.sql`: publications gain a `revoked` status plus `revoked_at` / `purged_at`. `asset_revoke_publication()` refuses while the copy is still referenced (`ASSET_REFERENCED`), refuses pending publications (`PUBLICATION_PENDING`), is owner scoped and idempotent, and writes a `publish.revoked` event; `asset_publication_purged()` records the confirmed object removal.
+- Server `revokePublication()` works in two steps on purpose: the row flips to `revoked` first (listings, the picker and the reference scan ignore it immediately), then the public object is removed from Storage and its `image_metadata` row dropped; if removal fails the row keeps `PURGE_RETRY_NEEDED` and the same action retries the purge. Private originals and versions are untouched. The asset list's 有公開副本 flag now counts only completed copies.
+- UI: each row under 公開紀錄 has a 撤銷公開 action (disabled with an explanation while referenced, confirm dialog, retry state when the object removal is still pending).
+- Committed as its own commit; the Vitest component tests for the library (`tests/components/asset-*.test.tsx`) stay uncommitted until the Vitest tooling from the frontend session lands, because the root tsconfig compiles them.
+
+Verification:
+
+- `npx tsc --noEmit`: passed. ESLint on the touched files: no errors.
+- `node scripts/test-assets-sql.mjs`: passed (four migrations applied twice; revoke blocked while referenced, idempotent revoke, purge, pending refusal).
+- `npx vitest run tests/components/asset-http.test.tsx tests/components/asset-server.test.tsx`: 11 passed, including Storage removal failure followed by a successful retry.
+- `node tests/assets-browser.mjs`: passed, including the revoke flow on an unreferenced copy and the protected state on a referenced one.
+- The previous commit (`fac8958`) was also verified on its own in a detached worktree: typecheck, 58 unit tests, SQL and browser suites all passed.

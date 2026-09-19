@@ -3,7 +3,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { adminDb } from '@/lib/db/admin';
 import { sniffMimeType } from '@/lib/uploads';
-import { processUploadImage, saveImageMeta, getImageMeta, getImageMetaMap } from '@/lib/images';
+import { processUploadImage, saveImageMeta, deleteImageMeta, getImageMeta, getImageMetaMap } from '@/lib/images';
 import { assetMaxBytes, privateBucket, type AssetVersion, type AssetPublication, type AssetList, type AssetDetail, type AssetReference, type PublishedList, type PublishSlot, validateAssetInput, isPublishSlot } from './model';
 
 function checked<T>(result: { data: T; error: { message: string; code?: string } | null }): NonNullable<T> {
@@ -24,7 +24,7 @@ export async function listAssets(actor: string, params: URLSearchParams): Promis
   const currentIds = rows.flatMap(row => row.current_version_id ? [row.current_version_id] : []);
   const [versions, published, usage] = await Promise.all([
     currentIds.length ? db.from('asset_versions').select('*').eq('owner_id', actor).in('id', currentIds) : Promise.resolve({ data: [], error: null }),
-    rows.length ? db.from('asset_publications').select('asset_id').eq('owner_id', actor).in('asset_id', rows.map(row => row.id)) : Promise.resolve({ data: [], error: null }),
+    rows.length ? db.from('asset_publications').select('asset_id').eq('owner_id', actor).eq('status', 'complete').in('asset_id', rows.map(row => row.id)) : Promise.resolve({ data: [], error: null }),
     db.rpc('asset_library_usage'),
   ]);
   const current = checked(versions);
@@ -195,6 +195,24 @@ export async function publishAsset(actor: string, versionId: string, slot: Publi
     await db.from('asset_publications').update({ last_error: error instanceof Error && error.message === 'PROFILE_CHANGED' ? 'PROFILE_CHANGED' : 'PUBLISH_RETRY_NEEDED' }).eq('id', operation.id).eq('status', 'pending');
     throw error;
   }
+}
+
+// Two steps on purpose: the row flips to 'revoked' first, so listings, the picker and the reference
+// scan drop it even if the object removal below fails; a retry of the same action finishes the purge.
+export async function revokePublication(actor: string, id: string) {
+  const db = adminDb();
+  let publication = checked(await db.rpc('asset_revoke_publication', { p_actor: actor, p_publication: id })) as unknown as AssetPublication;
+  if (!publication.purged_at) {
+    const removed = await db.storage.from(publication.bucket).remove([publication.object_path]);
+    if (removed.error) {
+      await db.from('asset_publications').update({ last_error: 'PURGE_RETRY_NEEDED' }).eq('id', id).eq('status', 'revoked');
+      throw new Error('OBJECT_REMOVE_FAILED');
+    }
+    await deleteImageMeta(publication.public_url);
+    publication = checked(await db.rpc('asset_publication_purged', { p_actor: actor, p_publication: id })) as unknown as AssetPublication;
+  }
+  invalidateProfile();
+  return publication;
 }
 
 export async function uploadServerAsset(actor: string, file: File, slot?: PublishSlot) {

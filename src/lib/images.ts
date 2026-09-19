@@ -245,6 +245,19 @@ export async function saveImageMeta(record: ImageMetaRecord): Promise<boolean> {
   }
 }
 
+/** Best effort removal when a public copy is revoked; a missing row or table is not an error. */
+export async function deleteImageMeta(publicUrl: string | null | undefined): Promise<boolean> {
+  if (!publicUrl) return true;
+  try {
+    const { adminDb } = await import('@/lib/db/admin');
+    const db = adminDb() as unknown as UntypedDb;
+    const { error } = await db.from('image_metadata').delete().eq('public_url', publicUrl);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
 /** Metadata for the given public URLs. Unknown or legacy URLs are simply absent from the map. */
 export async function getImageMetaMap(urls: (string | null | undefined)[]): Promise<Record<string, ImageMeta>> {
   const wanted = [...new Set(urls.filter((url): url is string => typeof url === 'string' && url.startsWith('http')))];

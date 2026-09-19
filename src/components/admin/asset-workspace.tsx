@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Archive, ArrowLeft, ArrowRight, Check, Copy, ExternalLink, File, Folder, History, ImageIcon, LoaderCircle, MoreHorizontal, RefreshCw, RotateCcw, Search, Trash2, Upload, X } from 'lucide-react';
+import { Archive, ArrowLeft, ArrowRight, Ban, Check, Copy, ExternalLink, File, Folder, History, ImageIcon, LoaderCircle, MoreHorizontal, RefreshCw, RotateCcw, Search, Trash2, Upload, X } from 'lucide-react';
 import { assetRequest } from '@/lib/assets/client';
 import { assetQuotaBytes, eventLabels, formatAssetBytes, referenceHref, referenceLabel, slotLabels, type AssetDetail, type AssetEvent, type AssetList, type AssetPublication, type PublishSlot } from '@/lib/assets/model';
 import { AssetUpload } from './asset-upload';
@@ -127,22 +127,24 @@ function AssetInspector({ id, revision, onClose, onChange }: { id: string; revis
           <section className="asset-version-upload"><h3>新增版本</h3><AssetUpload assetId={id} onComplete={version => { setVersionId(version.id); onChange(); }} /></section>
         </>}
         {references.length > 0 && <section className="asset-references"><h3>使用位置</h3><p className="asset-muted">這些頁面還在用它的公開副本；更換那裡的引用後才能回收。</p><ul>{references.map((reference, index) => <li key={`${reference.publication_id}-${index}`}><a href={referenceHref(reference)} target="_blank" rel="noreferrer">{referenceLabel(reference)}</a></li>)}</ul></section>}
-        {detail.publications.length > 0 && <section className="asset-publications"><h3>公開紀錄</h3>{detail.publications.map(publication => <PublicationRow key={publication.id} publication={publication} disabled={working} retry={() => void act({ action: 'publish', versionId: publication.version_id, slot: publication.slot, requestId: publication.request_id }, '發布完成。')} />)}</section>}
+        {detail.publications.length > 0 && <section className="asset-publications"><h3>公開紀錄</h3>{detail.publications.map(publication => <PublicationRow key={publication.id} publication={publication} disabled={working} referenced={references.some(reference => reference.publication_id === publication.id)} retry={() => void act({ action: 'publish', versionId: publication.version_id, slot: publication.slot, requestId: publication.request_id }, '發布完成。')} revoke={() => { if (window.confirm('撤銷後公開網址會失效，而且這個公開副本無法還原（私人原始檔仍保留）。要繼續嗎？')) void act({ action: 'revoke', publicationId: publication.id }, '公開副本已撤銷。'); }} />)}</section>}
       </>}
       <div className="asset-inspector-footer">{detail.asset.deleted_at ? <button className="asset-secondary" disabled={working} onClick={() => void act({ action: 'restore', id }, '檔案已還原。')}><RotateCcw size={16} />還原檔案</button> : <button className="asset-secondary" disabled={working || references.length > 0} title={references.length ? '仍有頁面使用此素材，請先更換引用。' : undefined} onClick={() => void act({ action: 'trash', id }, '已移至垃圾桶。公開副本仍保留。')}><Trash2 size={16} />移至垃圾桶</button>}</div>
     </>}
   </aside>;
 }
 
-function PublicationRow({ publication, retry, disabled }: { publication: AssetPublication; retry: () => void; disabled: boolean }) {
+function PublicationRow({ publication, retry, revoke, referenced, disabled }: { publication: AssetPublication; retry: () => void; revoke: () => void; referenced: boolean; disabled: boolean }) {
   const [copied, setCopied] = useState(false); const [error, setError] = useState('');
   async function copy() {
     try { await navigator.clipboard.writeText(publication.public_url!); setCopied(true); setError(''); }
     catch { setError('無法複製，請開啟檔案後複製網址。'); }
   }
-  return <div className="asset-publication"><span>{slotLabels[publication.slot]}<small>{publication.status === 'complete' ? date(publication.completed_at!) : publication.status === 'conflict' ? '資料已變更，需重新發布' : '等待完成'}</small></span>
+  return <div className="asset-publication"><span>{slotLabels[publication.slot]}<small>{publication.status === 'complete' ? date(publication.completed_at!) : publication.status === 'conflict' ? '資料已變更，需重新發布' : publication.status === 'revoked' ? (publication.purged_at ? `已撤銷 · ${date(publication.revoked_at!)}` : '已撤銷，檔案移除待重試') : '等待完成'}</small></span>
     {publication.public_url && publication.status === 'complete' && <><a className="asset-icon" title="開啟公開檔案" aria-label="開啟公開檔案" href={publication.public_url} target="_blank" rel="noreferrer"><ExternalLink size={16} /></a><Tool label={copied ? '已複製' : '複製公開連結'} onClick={() => void copy()}>{copied ? <Check size={16} /> : <Copy size={16} />}</Tool></>}
-    {publication.status === 'pending' && <Tool label="重試發布" onClick={retry} disabled={disabled}><RefreshCw size={16} /></Tool>}{error && <p className="asset-error" role="alert">{error}</p>}
+    {publication.status === 'pending' && <Tool label="重試發布" onClick={retry} disabled={disabled}><RefreshCw size={16} /></Tool>}
+    {(publication.status === 'complete' || publication.status === 'conflict') && <Tool label={referenced ? '仍有頁面使用，無法撤銷公開' : `撤銷公開 ${slotLabels[publication.slot]}`} onClick={revoke} disabled={disabled || referenced}><Ban size={16} /></Tool>}
+    {publication.status === 'revoked' && !publication.purged_at && <Tool label="重試移除公開檔案" onClick={revoke} disabled={disabled}><RefreshCw size={16} /></Tool>}{error && <p className="asset-error" role="alert">{error}</p>}
   </div>;
 }
 

@@ -25,6 +25,7 @@ await execute(
       'supabase/migrations/20260920000100_asset_library.sql',
       'supabase/migrations/20260920000200_media_dimensions.sql',
       'supabase/migrations/20260920000300_asset_references.sql',
+      'supabase/migrations/20260920000400_asset_revoke.sql',
     ].flatMap(file => ['-f', file, '-f', file]),
     '-f',
     'tests/sql/asset-library.test.sql',
