@@ -212,7 +212,8 @@ export async function deleteProjectAction(_: ProjectEditorState, formData: FormD
 // project_media
 // ---------------------------------------------------------------------------
 
-type MediaPayload = Pick<ProjectMedia, 'url' | 'media_type' | 'alt_zh' | 'alt_en' | 'caption_zh' | 'caption_en' | 'sort_order'>;
+type MediaPayload = Pick<ProjectMedia, 'url' | 'media_type' | 'alt_zh' | 'alt_en' | 'caption_zh' | 'caption_en' | 'sort_order'>
+  & Partial<Pick<ProjectMedia, 'width' | 'height'>>;
 
 function readMediaPayload(formData: FormData): { payload: MediaPayload } | { error: string } {
   const url = parseUrl(cleanText(formData.get('url')));
@@ -221,8 +222,14 @@ function readMediaPayload(formData: FormData): { payload: MediaPayload } | { err
   if (!mediaTypes.includes(mediaType)) return { error: '媒體類型只能是 image 或 video。' };
   const sortOrder = parseInteger(cleanText(formData.get('sort_order')), { min: -100_000, max: 100_000 });
   if (!sortOrder.ok) return { error: '排序必須是整數。' };
+  // Optional: sent only by the upload pipeline. Absent means "leave the stored size untouched".
+  const width = parseInteger(cleanText(formData.get('width')), { min: 1, max: 65_535 });
+  const height = parseInteger(cleanText(formData.get('height')), { min: 1, max: 65_535 });
+  if (!width.ok || !height.ok) return { error: '圖片尺寸必須是正整數。' };
+  const size = width.value && height.value ? { width: width.value, height: height.value } : {};
   return {
     payload: {
+      ...size,
       url: url.value,
       media_type: mediaType,
       alt_zh: cleanText(formData.get('alt_zh'), limits.mediaAlt),

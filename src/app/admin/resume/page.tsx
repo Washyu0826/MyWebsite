@@ -25,7 +25,7 @@ export default async function ResumeAdminPage() {
     <header className="admin-heading">
       <p className="text-meta text-graphite">Admin</p>
       <h1>履歷管理</h1>
-      <p>上傳新的中英文 PDF 後，網站的履歷按鈕會指向最新檔案，舊檔會自動從 Storage 刪除。</p>
+      <p>目前發布的中／英文履歷</p>
     </header>
 
     <section className="admin-panel" aria-labelledby="current-resume">

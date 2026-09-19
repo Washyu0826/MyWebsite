@@ -1,10 +1,15 @@
 // Schema-aligned bootstrap types. Replace with `npm run db:types` after connecting Supabase.
 import type { ContactMessage, ContactRateLimit, Experience, Post, Profile, Project, ProjectMedia, ProjectMetric, Skill, SocialLink } from './content';
+import type { Asset, AssetVersion, AssetPublication, AssetEvent } from '@/lib/assets/model';
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 type Table<Row> = { Row: Row; Insert: Partial<Row>; Update: Partial<Row>; Relationships: [] };
 export type Database = {
   public: {
     Tables: {
+      assets: Table<Asset>;
+      asset_versions: Table<AssetVersion>;
+      asset_publications: Table<AssetPublication>;
+      asset_events: Table<AssetEvent>;
       profile: Table<Profile>;
       social_links: Table<SocialLink>;
       skills: Table<Skill>;
@@ -19,6 +24,15 @@ export type Database = {
     };
     Views: { [_ in never]: never };
     Functions: {
+      asset_library_usage: { Args: Record<string, never>; Returns: number };
+      asset_begin_upload: { Args: { p_actor: string; p_request: string; p_name: string; p_mime: string; p_size: number; p_asset?: string }; Returns: Json };
+      asset_finish_upload: { Args: { p_actor: string; p_version: string; p_size: number; p_mime: string; p_hash: string }; Returns: Json };
+      asset_upload_error: { Args: { p_actor: string; p_version: string; p_error: string; p_reject?: boolean }; Returns: undefined };
+      asset_change: { Args: { p_actor: string; p_asset: string; p_action: string; p_value?: string }; Returns: Json };
+      asset_prepare_publish: { Args: { p_actor: string; p_version: string; p_slot: string; p_request: string }; Returns: Json };
+      asset_finish_publish: { Args: { p_actor: string; p_operation: string; p_url: string }; Returns: Json };
+      asset_publication_payload: { Args: { p_actor: string; p_operation: string; p_hash: string; p_mime: string; p_size: number }; Returns: Json };
+      asset_references: { Args: { p_actor: string; p_asset: string }; Returns: Json };
       publish_due_content: { Args: Record<string, never>; Returns: { kind: string; slug: string }[] };
       contact_rate_limit_hit: { Args: { p_ip_hash: string; p_limit: number; p_window: string }; Returns: boolean };
     };

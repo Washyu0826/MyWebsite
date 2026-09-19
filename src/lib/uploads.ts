@@ -10,6 +10,13 @@ export const allowedStorageMimeTypes: Record<StorageBucket, string[]> = {
 
 export const maxUploadBytes = 8 * 1024 * 1024;
 
+/** MIME types the image pipeline (src/lib/images.ts) can measure, convert and blur. */
+export const imageMimeTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'] as const;
+
+export function isImageMime(mime: string): boolean {
+  return (imageMimeTypes as readonly string[]).includes(mime);
+}
+
 const extensionByMime: Record<string, string> = {
   'image/png': 'png',
   'image/jpeg': 'jpg',

@@ -3,7 +3,9 @@
 import Link from 'next/link';
 import { useId, useRef, useState, useTransition, type ReactNode } from 'react';
 import { useFormStatus } from 'react-dom';
-import { uploadFileAction, type FileManagerState } from '../files/actions';
+import { newUploadAttempt, uploadAndPublish, type UploadAttempt } from '@/lib/assets/client';
+import { AssetPicker } from '@/components/admin/asset-picker';
+import type { FileManagerState } from '../files/actions';
 import type { ProjectEditorState } from './actions';
 
 export const initialState: ProjectEditorState = { ok: false, message: '' };
@@ -55,14 +57,16 @@ export function StatusMessage({ state, children }: { state: ProjectEditorState; 
 
 /**
  * URL input with an optional "upload and fill" helper. The file input has no `name`, so it never
- * travels with the surrounding form; the upload goes through the shared file-manager action instead.
+ * travels with the surrounding form; Storage receives the file directly through the asset library.
  */
-export function UrlField({ label, name, value, onChange, prefix, upload = true, placeholder = 'https://...', hint }: {
+export function UrlField({ label, name, value, onChange, onMeta, upload = true, placeholder = 'https://...', hint }: {
   label: string;
   name: string;
   value: string;
   onChange: (value: string) => void;
-  /** Storage folder inside the `media` bucket, e.g. `projects/my-slug`. */
+  /** Intrinsic size reported by the upload pipeline, so the row can store it alongside the URL. */
+  onMeta?: (meta: { width: number; height: number } | null) => void;
+  /** Legacy callers still supply a folder; the library now allocates opaque, immutable keys. */
   prefix: string;
   /** Set to false for URLs that cannot be uploaded here (videos, external links). */
   upload?: boolean;
@@ -71,6 +75,7 @@ export function UrlField({ label, name, value, onChange, prefix, upload = true, 
 }) {
   const fileId = useId();
   const fileRef = useRef<HTMLInputElement>(null);
+  const attempt = useRef<{ file: File; value: UploadAttempt } | null>(null);
   const [message, setMessage] = useState<FileManagerState>({ ok: true, message: '' });
   const [pending, startUpload] = useTransition();
 
@@ -80,23 +85,23 @@ export function UrlField({ label, name, value, onChange, prefix, upload = true, 
       setMessage({ ok: false, message: '請先選擇要上傳的圖片。' });
       return;
     }
-    const formData = new FormData();
-    formData.set('bucket', 'media');
-    formData.set('prefix', prefix);
-    formData.set('file', file);
+    if (attempt.current?.file !== file) attempt.current = { file, value: newUploadAttempt() };
+    const request = attempt.current.value;
     setMessage({ ok: true, message: '' });
     startUpload(async () => {
       try {
-        const result = await uploadFileAction({ ok: false, message: '' }, formData);
-        if (result.ok && result.publicUrl) {
-          onChange(result.publicUrl);
+        const result = await uploadAndPublish(file, 'public', request, (percent, phase) => setMessage({ ok: true, message: `${phase} ${percent}%` }));
+        if (result.public_url) {
+          onChange(result.public_url);
+          onMeta?.(result.imageMeta ?? null);
           if (fileRef.current) fileRef.current.value = '';
-          setMessage({ ok: true, message: '已上傳並填入網址，記得儲存專案。' });
+          setMessage({ ok: true, message: '已發布並填入網址，原始檔與版本已保留。' });
+          attempt.current = null;
         } else {
-          setMessage({ ok: false, message: result.message || '上傳失敗。' });
+          setMessage({ ok: false, message: '發布尚未完成，可重試。' });
         }
-      } catch {
-        setMessage({ ok: false, message: '上傳連線失敗，請確認 dev server 仍在執行，且檔案小於 8 MB。' });
+      } catch (error) {
+        setMessage({ ok: false, message: error instanceof Error ? error.message : '上傳失敗，可重試。' });
       }
     });
   }
@@ -112,8 +117,13 @@ export function UrlField({ label, name, value, onChange, prefix, upload = true, 
         <label className="sr-only" htmlFor={fileId}>{label} 上傳檔案</label>
         <input id={fileId} ref={fileRef} className="min-h-9 max-w-full border border-[var(--rule)] bg-[var(--paper)] px-2 py-1 text-xs text-[var(--ink)]" type="file" accept={imageAccept} />
         <button className="admin-button min-h-9! py-1! text-xs" type="button" onClick={uploadSelected} disabled={pending}>
-          {pending ? '上傳中...' : '上傳並填入網址'}
+          {pending ? '處理中...' : '上傳並建立公開網址'}
         </button>
+        <AssetPicker onSelect={item => {
+          onChange(item.public_url);
+          onMeta?.(item.width && item.height ? { width: item.width, height: item.height } : null);
+          setMessage({ ok: true, message: `已填入素材庫的「${item.name}」，記得儲存。` });
+        }} />
         <Link className={linkClass} href="/admin/files" target="_blank">開啟檔案管理</Link>
       </div>
       <p className={message.ok ? 'admin-success' : 'admin-error'} role="status" aria-live="polite">{message.message}</p>

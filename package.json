@@ -9,6 +9,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
+    "test:assets:browser": "node tests/assets-browser.mjs",
+    "test:assets:sql": "node scripts/test-assets-sql.mjs",
     "test:e2e": "playwright test",
     "audit:site": "node scripts/audit-site.mjs",
     "db:types": "node scripts/generate-db-types.mjs",
@@ -36,7 +38,8 @@
     "remark-gfm": "^4.0.1",
     "resend": "^6.28.1",
     "server-only": "^0.0.1",
-    "tailwind-merge": "^3.3.1"
+    "tailwind-merge": "^3.3.1",
+    "tus-js-client": "^4.3.1"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.2",

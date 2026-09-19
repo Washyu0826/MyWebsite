@@ -47,16 +47,24 @@ function DeleteRowForm({ action, projectId, rowId, label }: {
 // media
 // ---------------------------------------------------------------------------
 
-function MediaFields({ projectId, prefix, media, url, setUrl, mediaType, setMediaType }: {
+function MediaFields({ projectId, prefix, media, url, setUrl, size, setSize, mediaType, setMediaType }: {
   projectId: string; prefix: string; media: ProjectMedia | null;
   url: string; setUrl: (value: string) => void;
+  size: { width: number; height: number } | null;
+  setSize: (value: { width: number; height: number } | null) => void;
   mediaType: MediaType; setMediaType: (value: MediaType) => void;
 }) {
   return <>
     <input type="hidden" name="project_id" value={projectId} />
     {media ? <input type="hidden" name="id" value={media.id} /> : null}
+    {/* Measured by the upload pipeline; lets the public gallery reserve the right box. */}
+    {size ? <>
+      <input type="hidden" name="width" value={size.width} />
+      <input type="hidden" name="height" value={size.height} />
+    </> : null}
     <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-start">
-      <UrlField label="媒體網址" name="url" value={url} onChange={setUrl} prefix={prefix} upload={mediaType === 'image'} />
+      <UrlField label="媒體網址" name="url" value={url} onChange={setUrl} onMeta={setSize} prefix={prefix} upload={mediaType === 'image'}
+        hint={size ? `已記錄尺寸 ${size.width}×${size.height}。` : undefined} />
       <label className={labelClass}>
         <span>類型</span>
         <select className={inputClass} name="media_type" value={mediaType} onChange={event => setMediaType(event.target.value as MediaType)}>
@@ -92,6 +100,7 @@ function MediaFields({ projectId, prefix, media, url, setUrl, mediaType, setMedi
 function MediaRow({ projectId, prefix, media }: { projectId: string; prefix: string; media: ProjectMedia }) {
   const [state, formAction] = useActionState(updateMediaAction, initialState);
   const [url, setUrl] = useState(media.url);
+  const [size, setSize] = useState(media.width && media.height ? { width: media.width, height: media.height } : null);
   const [mediaType, setMediaType] = useState<MediaType>(media.media_type === 'video' ? 'video' : 'image');
   const headingId = `media-${media.id}`;
 
@@ -101,7 +110,7 @@ function MediaRow({ projectId, prefix, media }: { projectId: string; prefix: str
       <a className="text-[var(--indigo)] underline break-all" href={media.url} target="_blank" rel="noreferrer">{media.url}</a>
     </h3>
     <form className="grid gap-4" action={formAction}>
-      <MediaFields projectId={projectId} prefix={prefix} media={media} url={url} setUrl={setUrl} mediaType={mediaType} setMediaType={setMediaType} />
+      <MediaFields projectId={projectId} prefix={prefix} media={media} url={url} setUrl={setUrl} size={size} setSize={setSize} mediaType={mediaType} setMediaType={setMediaType} />
       <SubmitButton small>儲存媒體</SubmitButton>
       <StatusMessage state={state} />
     </form>
@@ -112,12 +121,13 @@ function MediaRow({ projectId, prefix, media }: { projectId: string; prefix: str
 function AddMediaForm({ projectId, prefix }: { projectId: string; prefix: string }) {
   const [state, formAction] = useActionState(addMediaAction, initialState);
   const [url, setUrl] = useState('');
+  const [size, setSize] = useState<{ width: number; height: number } | null>(null);
   const [mediaType, setMediaType] = useState<MediaType>('image');
-  const formRef = useResetOnSuccess(state, () => { setUrl(''); setMediaType('image'); });
+  const formRef = useResetOnSuccess(state, () => { setUrl(''); setSize(null); setMediaType('image'); });
 
   return <form ref={formRef} className="grid gap-4 border border-dashed border-[var(--rule)] p-4" action={formAction} aria-labelledby="add-media-heading">
     <h3 id="add-media-heading" className="text-sm font-semibold text-[var(--ink)]">新增媒體</h3>
-    <MediaFields projectId={projectId} prefix={prefix} media={null} url={url} setUrl={setUrl} mediaType={mediaType} setMediaType={setMediaType} />
+    <MediaFields projectId={projectId} prefix={prefix} media={null} url={url} setUrl={setUrl} size={size} setSize={setSize} mediaType={mediaType} setMediaType={setMediaType} />
     <SubmitButton>新增媒體</SubmitButton>
     <StatusMessage state={state} />
   </form>;

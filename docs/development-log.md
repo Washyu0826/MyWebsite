@@ -415,3 +415,32 @@ Verification:
 - Clarified queue delivery versus idempotent effects, worker scheduling and resource limits, private search filtering, and database versus CDN publication consistency.
 - Cross-checked Supabase Queues/Cron, Postgres search and transaction documentation, and Next.js 15 OpenTelemetry guidance.
 - This continuation only updates research documentation; no feature implementation, infrastructure changes, or deployment. Application tests were not run.
+
+### Asset Library Phase 1 Verified And Continued (2026-09-20)
+
+Picked up the asset library where the previous session (Codex) stopped after its rate limit. What was already on disk: `src/lib/assets/*`, `/api/admin/assets`, the `AssetWorkspace` / `AssetUpload` components, migrations `20260920000100_asset_library.sql` and `20260920000200_media_dimensions.sql`, SQL / component / browser tests and `docs/asset-library-setup.md`.
+
+State found and fixed:
+
+- `tests/components/asset-server.test.tsx` did not typecheck (`ReturnType<typeof vi.fn>` mocks are not callable under Vitest 5); typed the `rpc` / `upload` / `download` mocks explicitly.
+- `scripts/test-assets-sql.mjs` only passed on a fresh database: leftover rows from a previous run broke the usage assertions. The runner now drops and recreates the `public` / `auth` / `storage` schemas of `asset_library_test` before every run.
+- Another Claude Code session was working in the same tree at the time (accessibility / typography verification, `zz-*` probes, `.typo-check/`). Those files were left alone.
+
+New in this session (snapshot in `artifacts/version-backups/2026-09-20-before-asset-references/`):
+
+- `supabase/migrations/20260920000300_asset_references.sql`: `asset_references(actor, asset)` reports where each completed public copy is used (profile avatar / resume slots, project cover / architecture / Markdown bodies, gallery rows, article cover / bodies). `asset_change('trash')` now raises `ASSET_REFERENCED` only while such a reference exists; published-but-unreferenced assets can be recycled (public objects are never deleted). `asset_library_usage()` stops counting a pending upload / publication reservation 24 hours after it was signed, so cancelled or abandoned uploads no longer occupy the budget forever.
+- Server: asset detail includes `references`; new `view=published` listing for the editors; `ASSET_REFERENCED` error copy; setup-required message now points at all `20260920*` asset migrations.
+- UI: the inspector shows a 使用位置 section with links to the admin page that uses the file, and the trash button follows the reference rule. New `AssetPicker` dialog (`src/components/admin/asset-picker.tsx`) lets the project URL fields and the article cover field pick an already published file; images offer one-click Markdown copy for bodies.
+- Tests: SQL fixture gains minimal `posts` / `projects` / `project_media`; the SQL test covers references, owner scoping, the relaxed trash rule and lapsing reservations; all three asset migrations are applied twice for repeatability. The browser test asserts the reference list after publishing and exercises the picker (open, axe, search, select, 390px, Escape). `docs/asset-library-setup.md` updated accordingly.
+
+Not done here: the production Supabase migrations are still not applied (needs the owner's decision and a backup first), no end-to-end run against real Storage, and no commit was made because the working tree also holds other sessions' unfinished work.
+
+Verification:
+
+- `npm run typecheck`: passed.
+- `npm run lint`: 0 errors, 16 pre-existing warnings (documented in `docs/testing.md`).
+- `npm test`: 73 passed.
+- `npx vitest run tests/components/asset-http.test.tsx tests/components/asset-server.test.tsx`: 10 passed.
+- `node scripts/test-assets-sql.mjs` (local PostgreSQL 18 on 127.0.0.1:55432): passed, including the new reference and reservation assertions.
+- `node tests/assets-browser.mjs` (Chrome): passed, including the reference list and picker scenarios; screenshots in `artifacts/asset-library/`.
+- `npx prettier --check` on the touched test files: passed.

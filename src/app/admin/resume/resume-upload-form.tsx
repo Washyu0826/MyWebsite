@@ -1,33 +1,16 @@
 'use client';
 
-import { useActionState } from 'react';
-import { useFormStatus } from 'react-dom';
-import { uploadResumeAction, type ResumeUploadState } from './actions';
-
-const initialState: ResumeUploadState = { ok: false, message: '' };
-
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  return <button className="admin-button" type="submit" disabled={pending}>
-    {pending ? '上傳中...' : '更新履歷'}
-  </button>;
-}
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { AssetUpload } from '@/components/admin/asset-upload';
 
 export function ResumeUploadForm() {
-  const [state, formAction] = useActionState(uploadResumeAction, initialState);
-  return <form className="admin-form" action={formAction}>
-    <label>
-      <span>履歷語言</span>
-      <select name="locale" defaultValue="zh" required>
-        <option value="zh">中文履歷</option>
-        <option value="en">English resume</option>
-      </select>
-    </label>
-    <label>
-      <span>PDF 檔案</span>
-      <input name="file" type="file" accept="application/pdf" required />
-    </label>
-    <SubmitButton />
-    {state.message && <p className={state.ok ? 'admin-success' : 'admin-error'} role="status">{state.message}</p>}
-  </form>;
+  const [locale, setLocale] = useState<'zh' | 'en'>('zh');
+  const router = useRouter();
+  return <div className="admin-form">
+    <label><span>履歷語言</span><select value={locale} onChange={event => setLocale(event.target.value as 'zh' | 'en')}>
+      <option value="zh">中文履歷</option><option value="en">English resume</option>
+    </select></label>
+    <AssetUpload key={locale} slot={locale === 'zh' ? 'resume_zh' : 'resume_en'} onComplete={() => router.refresh()} />
+  </div>;
 }

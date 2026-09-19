@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useActionState, useEffect, useState, useTransition } from 'react';
 import { useFormStatus } from 'react-dom';
 import type { ContentStatus, Post } from '@/types/content';
+import { AssetPicker } from '@/components/admin/asset-picker';
 import { deleteArticleAction, saveArticleAction, type ArticleEditorState } from './actions';
 import { translateArticleAction, type TranslateArticleInput } from './translate-action';
 
@@ -172,6 +173,10 @@ export function ArticleForm({ post }: { post: Post | null }) {
         <span>封面圖片 URL</span>
         <input className={inputClass} name="cover_url" type="url" value={values.cover_url} onChange={event => update('cover_url', event.target.value)} placeholder="https://..." autoComplete="off" />
       </label>
+      <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--graphite)]">
+        <AssetPicker onSelect={item => update('cover_url', item.public_url)} />
+        <span>內文圖片也可在素材庫選「Markdown」複製後貼進內文。</span>
+      </div>
       <label className={labelClass}>
         <span>封面替代文字（中文）</span>
         <input className={inputClass} name="cover_alt_zh" value={values.cover_alt_zh} onChange={event => update('cover_alt_zh', event.target.value)} />

@@ -5,6 +5,7 @@ import { getAdminUser } from '@/lib/auth/admin';
 import { signOutAction } from './actions';
 import { adminNavLinks } from './nav';
 import '../globals.css';
+import '../../styles/assets.css';
 
 export const metadata: Metadata = {
   title: 'Resume Admin',
