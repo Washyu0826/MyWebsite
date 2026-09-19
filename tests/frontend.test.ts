@@ -3,6 +3,7 @@ import test from 'node:test';
 import { classifyHref } from '../src/lib/urls';
 import { CONTACT_LIMITS, validateContact } from '../src/lib/contact/validate';
 import { contactHref, describeSocialLink } from '../src/lib/contact-links';
+import { matchScore, rankItems } from '../src/lib/search-match';
 
 test('markdown links: absolute http(s) open externally, site paths lose their locale prefix, anchors stay', () => {
   assert.deepEqual(classifyHref('https://example.com/a?b=1'), { kind: 'external', href: 'https://example.com/a?b=1' });
@@ -60,4 +61,29 @@ test('contact links: tel, mailto, LINE and Instagram rows resolve to href, displ
   const github = describeSocialLink({ id: '4', platform: 'github', label: 'GitHub', url: 'https://github.com/someone' });
   assert.equal(github?.display, 'github.com/someone'); assert.equal(github?.copyValue, 'https://github.com/someone');
   assert.equal(describeSocialLink({ id: '5', platform: 'x', label: '', url: 'ftp://nope' }), null);
+});
+
+test('command palette ranking: exact beats prefix beats word-start beats substring beats subsequence', () => {
+  assert.equal(matchScore('', 'anything'), 1);
+  assert.equal(matchScore('rag', 'RAG'), 1000);
+  assert.ok(matchScore('rag', 'RAG health assistant') > matchScore('rag', 'health RAG assistant'));
+  assert.ok(matchScore('rag', 'health RAG assistant') > matchScore('rag', 'storage handler'));
+  assert.ok(matchScore('rag', 'storage handler') > matchScore('rga', 'storage handler'));
+  assert.equal(matchScore('zzz', 'storage handler'), 0);
+  // CJK has no word boundaries, so substring matching has to carry it.
+  assert.ok(matchScore('專案', '專案管理') > 0);
+  assert.equal(matchScore('錯誤', '專案管理'), 0);
+});
+
+test('command palette ranking: rankItems drops misses, sorts by best field and keeps input order for ties', () => {
+  const items = [
+    { id: 'a', label: 'Contact', keywords: ['email'] },
+    { id: 'b', label: 'Projects', keywords: ['work'] },
+    { id: 'c', label: 'Copy email address', keywords: ['clipboard'] },
+  ];
+  const fields = (item: (typeof items)[number]) => [item.label, ...item.keywords];
+  // 'a' wins: its keyword equals the query exactly, which outranks a substring inside c's label.
+  assert.deepEqual(rankItems('email', items, fields).map(i => i.id), ['a', 'c']);
+  assert.deepEqual(rankItems('', items, fields).map(i => i.id), ['a', 'b', 'c']);
+  assert.deepEqual(rankItems('zzzz', items, fields), []);
 });

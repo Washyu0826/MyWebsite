@@ -366,6 +366,18 @@ Verification:
 - `npm run typecheck`: passed.
 - `npm run lint`: passed.
 
+### Move Portrait To Contact
+
+- Preserved a rollback snapshot in `artifacts/version-backups/2026-09-20-before-moving-photo-to-contact/`.
+- Removed the profile portrait from the homepage hero.
+- Added the portrait to the Contact page intro, paired with the contact opening copy.
+- Added responsive styling so the portrait stacks below the intro on mobile and aligns right on wider screens.
+
+Verification:
+
+- `npm run typecheck`: passed.
+- `npm run lint`: passed.
+
 ### Homepage Cubist Backdrop
 
 - Preserved a rollback snapshot in `artifacts/version-backups/2026-09-19-before-cubist-backdrop/`.

@@ -61,5 +61,27 @@
       "errorRate": "Too many messages in a short time. Please try again in an hour or email me directly.",
       "errorGeneric": "The message couldn't be sent. Please try again or email me directly."
     }
+  },
+  "Command": {
+    "open": "Open the command palette",
+    "search": "Search",
+    "title": "Command palette",
+    "placeholder": "Search pages, projects, articles or actions…",
+    "empty": "No matches. Try a different word.",
+    "resultCount": "{count, plural, one {# result} other {# results}}",
+    "pages": "Pages",
+    "projects": "Projects",
+    "articles": "Articles",
+    "actions": "Actions",
+    "language": "Switch to 繁體中文",
+    "themeLight": "Light theme",
+    "themeDark": "Dark theme",
+    "themeSystem": "Match system theme",
+    "resume": "Download résumé PDF",
+    "copyEmail": "Copy email address",
+    "copied": "Copied to clipboard",
+    "hintMove": "to move",
+    "hintSelect": "to open",
+    "hintClose": "to close"
   }
 }

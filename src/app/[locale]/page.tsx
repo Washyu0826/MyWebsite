@@ -1,5 +1,4 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import Image from 'next/image';
 import { Github, Linkedin, Mail } from 'lucide-react';
 import type { Locale } from '@/i18n/routing';
 import { Link } from '@/i18n/navigation';
@@ -73,7 +72,7 @@ export default async function Home({ params }: Props) {
   const nowParts = p.now.split(' · ');
   return <div className="home-stage"><CubistBackdrop /><Container className="home-container">
     <section className="hero" aria-labelledby="intro-heading">
-      <div className="hero-grid">
+      <div className="hero-grid hero-grid-text-only">
         <div>
           <Reveal><p className="mb-5 text-meta text-graphite">{p.name}</p></Reveal>
           <Reveal order={1}><h1 id="intro-heading">{p.headline}</h1></Reveal>
@@ -94,11 +93,6 @@ export default async function Home({ params }: Props) {
           </div>
           <div className="mt-6 md:hidden"><ResumeLink profile={profile} locale={locale} /></div>
         </div>
-        {profile.avatar_url ? <Reveal order={3}>
-          <div className="hero-photo">
-            <div className="hero-photo-inner"><Image src={profile.avatar_url} alt={p.name} width={420} height={520} priority sizes="(min-width: 768px) 34vw, 100vw" /></div>
-          </div>
-        </Reveal> : null}
       </div>
     </section>
     <HomeSections locale={locale} />

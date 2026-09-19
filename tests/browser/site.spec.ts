@@ -95,3 +95,20 @@ test('contact page exposes a form with a submit button', async ({ page }) => {
   await expect(form).toBeVisible();
   await expect(form.getByRole('button', { name: /送出|傳送|Send|Submit/ })).toBeVisible();
 });
+
+test('command palette opens with the keyboard, filters and navigates', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('/zh');
+  await page.keyboard.press('Control+k');
+  const panel = page.locator('.command-panel');
+  await expect(panel).toBeVisible();
+  await panel.locator('.command-input').fill('data');
+  await expect(panel.locator('.command-item')).not.toHaveCount(0);
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/\/zh\/projects\//);
+  await page.keyboard.press('Control+k');
+  await expect(panel).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(panel).toHaveCount(0);
+});

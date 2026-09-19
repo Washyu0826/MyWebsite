@@ -1,7 +1,9 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import Image from 'next/image';
 import { Github, Instagram, Link as LinkIcon, Linkedin, Mail, MapPin, MessageCircle, Phone } from 'lucide-react';
 import type { Locale } from '@/i18n/routing';
 import { getProfile } from '@/lib/db/profile';
+import { pickLocale } from '@/lib/locale';
 import { emailUrl } from '@/lib/urls';
 import { describeSocialLink, isExternalHref, type ContactLinkKind } from '@/lib/contact-links';
 import { pageMetadata } from '@/lib/metadata';
@@ -27,6 +29,7 @@ export default async function Contact({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
   const [profile, t, site] = await Promise.all([getProfile(), getTranslations('Contact'), getTranslations('Site')]);
+  const p = pickLocale(profile, locale);
   const email = emailUrl(profile.email);
   const region = (locale === 'en' ? profile.location_en : profile.location_zh)?.trim();
   const copyLabels: Partial<Record<ContactLinkKind, string>> = {
@@ -49,7 +52,12 @@ export default async function Contact({ params }: Props) {
   }
 
   return <Container className="page"><header className="page-heading"><h1>{t('title')}</h1><p>{t('description')}</p></header>
-    <section className="mb-12 max-w-[68ch]"><h2 className="text-h2">{t('intro')}</h2><p className="mt-4 text-graphite">{t('body')}</p></section>
+    <section className="contact-intro">
+      <div><h2 className="text-h2">{t('intro')}</h2><p className="mt-4 text-graphite">{t('body')}</p></div>
+      {profile.avatar_url ? <div className="contact-portrait">
+        <Image src={profile.avatar_url} alt={p.name} width={360} height={450} sizes="(min-width: 768px) 320px, 100vw" />
+      </div> : null}
+    </section>
     {items.length === 0 ? <p className="text-graphite">{site('contactUnavailable')}</p> : <dl className="contact-list">
       {items.map(item => {
         const { Icon } = item;

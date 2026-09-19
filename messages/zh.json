@@ -130,5 +130,27 @@
     "copyLink": "複製連結",
     "region": "所在地",
     "phone": "電話"
+  },
+  "Command": {
+    "open": "開啟命令面板",
+    "search": "搜尋",
+    "title": "命令面板",
+    "placeholder": "搜尋頁面、專案、文章或動作…",
+    "empty": "找不到符合的項目，試試別的關鍵字。",
+    "resultCount": "{count, plural, other {# 項結果}}",
+    "pages": "頁面",
+    "projects": "作品",
+    "articles": "文章",
+    "actions": "動作",
+    "language": "Switch to English",
+    "themeLight": "切換成淺色主題",
+    "themeDark": "切換成深色主題",
+    "themeSystem": "跟隨系統主題",
+    "resume": "下載履歷 PDF",
+    "copyEmail": "複製 Email",
+    "copied": "已複製到剪貼簿",
+    "hintMove": "選擇",
+    "hintSelect": "開啟",
+    "hintClose": "關閉"
   }
 }
