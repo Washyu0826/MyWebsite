@@ -13,7 +13,7 @@
   body * { box-shadow: none !important; text-shadow: none !important; filter: none !important; animation: none !important; transition: none !important; }
 
   /* Chrome, navigation and anything you cannot click on paper. */
-  .cubist-backdrop, .page-wipe, .site-header, .site-footer, .skip-link, .demo-notice,
+  .cubist-backdrop, .site-header, .site-footer, .skip-link, .demo-notice,
   .command-trigger, .command-overlay, .command-panel, .nav-indicator, .cover-preview-layer,
   .project-pager, .pagination, .filter-list, .hero-socials, .actions, .contact-form,
   .copy-field, .copy-confirm, .contact-invitation, [data-print='hide'],

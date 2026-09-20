@@ -62,65 +62,6 @@ nav:has(> .nav-indicator[data-ready="1"]) .nav-link[aria-current="page"] { text-
 }
 @keyframes copy-check-draw { from { stroke-dashoffset: 26; } to { stroke-dashoffset: 0; } }
 
-/* Page transition: one angled facet sweeps across and off. Decorative only: it never
-   takes pointer events, and the new page is already painted underneath it. */
-.page-wipe {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  overflow: hidden;
-  pointer-events: none;
-  visibility: hidden;
-  contain: strict;
-}
-.page-wipe[data-active='1'] {
-  visibility: visible;
-}
-/* A slanted facet edge sweeping past, not a full-viewport wipe. The wide opaque panel it replaced
-   was nearly the page colour, so it contributed almost nothing visually while costing a full-screen
-   composited fill on every navigation; a narrow band with a lit leading edge reads the same and
-   drops the work. The slant is a skew rather than a clip-path (a clip is re-rasterised every frame)
-   and the fill is flat rather than a gradient (a solid layer needs no texture). */
-.page-wipe-facet {
-  position: absolute;
-  top: -20%;
-  bottom: -20%;
-  left: 0;
-  width: 34%;
-  transform: translate3d(-140%, 0, 0) skewX(-12deg);
-  will-change: transform;
-  backface-visibility: hidden;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    color-mix(in srgb, var(--indigo) 16%, var(--surface)) 55%,
-    color-mix(in srgb, var(--indigo) 30%, var(--surface))
-  );
-}
-/* The lit edge is what the eye actually follows across the screen. */
-.page-wipe-facet::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 2px;
-  background: var(--indigo);
-}
-@media (prefers-reduced-motion: no-preference) {
-  .page-wipe[data-active='1'] .page-wipe-facet {
-    animation: page-wipe 0.42s cubic-bezier(0.4, 0, 0.2, 1) both;
-  }
-}
-@keyframes page-wipe {
-  from {
-    transform: translate3d(-140%, 0, 0) skewX(-12deg);
-  }
-  to {
-    transform: translate3d(440%, 0, 0) skewX(-12deg);
-  }
-}
-
 /* The palette is fixed and full-bleed, so it needs the same safe-area treatment as the
    mobile menu and the lightbox once the viewport is fit to cover. */
 .command-panel { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
