@@ -3,6 +3,11 @@ import { unstable_cache } from 'next/cache';
 import type { Post } from '@/types/content';
 import { publicDb } from './server';
 import { isDemoMode } from './config';
+
+function warnPostsUnavailable(message: string, error: unknown) {
+  console.warn(message, error);
+}
+
 export const listPosts = unstable_cache(async ({ tag, page = 1, limit = 20 }: { tag?: string; page?: number; limit?: number } = {}): Promise<Post[]> => {
   if (isDemoMode()) return [];
   const pageSize = Math.max(1, Math.min(50, Math.floor(limit)));
@@ -12,7 +17,10 @@ export const listPosts = unstable_cache(async ({ tag, page = 1, limit = 20 }: { 
     .range(offset, offset + pageSize - 1);
   if (tag) query = query.contains('tags', [tag]);
   const { data, error } = await query;
-  if (error) throw new Error('Unable to load posts.');
+  if (error) {
+    warnPostsUnavailable('Unable to load posts; returning an empty article list.', error);
+    return [];
+  }
   return data;
 }, ['posts'], { tags: ['posts'], revalidate: 300 });
 
@@ -22,7 +30,10 @@ export const countPosts = unstable_cache(async ({ tag }: { tag?: string } = {}):
     .lte('published_at', new Date().toISOString());
   if (tag) query = query.contains('tags', [tag]);
   const { count, error } = await query;
-  if (error) throw new Error('Unable to count posts.');
+  if (error) {
+    warnPostsUnavailable('Unable to count posts; returning zero articles.', error);
+    return 0;
+  }
   return count ?? 0;
 }, ['post-count'], { tags: ['posts'], revalidate: 300 });
 
@@ -30,7 +41,10 @@ export const listPostTags = unstable_cache(async (): Promise<{ tag: string; coun
   if (isDemoMode()) return [];
   const { data, error } = await publicDb().from('posts').select('tags').eq('status', 'published')
     .lte('published_at', new Date().toISOString());
-  if (error) throw new Error('Unable to load article tags.');
+  if (error) {
+    warnPostsUnavailable('Unable to load article tags; returning no tags.', error);
+    return [];
+  }
   const counts = new Map<string, number>();
   for (const tag of data.flatMap(post => post.tags)) counts.set(tag, (counts.get(tag) ?? 0) + 1);
   return Array.from(counts, ([tag, count]) => ({ tag, count }))
@@ -42,7 +56,10 @@ export function getPostBySlug(slug: string) {
     if (isDemoMode()) return null;
     const { data, error } = await publicDb().from('posts').select('*').eq('slug', slug)
       .eq('status', 'published').lte('published_at', new Date().toISOString()).maybeSingle();
-    if (error) throw new Error('Unable to load post.');
+    if (error) {
+      warnPostsUnavailable(`Unable to load post "${slug}"; returning not found.`, error);
+      return null;
+    }
     return data;
   }, ['post', slug], { tags: ['posts', `post:${slug}`], revalidate: 300 })();
 }
@@ -51,6 +68,9 @@ export const listPostSlugs = unstable_cache(async () => {
   if (isDemoMode()) return [];
   const { data, error } = await publicDb().from('posts').select('slug').eq('status', 'published')
     .lte('published_at', new Date().toISOString()).order('published_at', { ascending: false });
-  if (error) throw new Error('Unable to load article slugs.');
+  if (error) {
+    warnPostsUnavailable('Unable to load article slugs; returning no static article params.', error);
+    return [];
+  }
   return data.map(post => ({ slug: post.slug }));
 }, ['post-slugs'], { tags: ['posts'], revalidate: 300 });

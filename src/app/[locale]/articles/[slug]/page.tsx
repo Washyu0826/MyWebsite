@@ -18,7 +18,12 @@ import { PwaRegister } from '@/app/offline/pwa-register';
 type Props = { params: Promise<{ locale: Locale; slug: string }> };
 
 export async function generateStaticParams() {
-  return listPostSlugs();
+  try {
+    return await listPostSlugs();
+  } catch (error) {
+    console.warn('Skipping article static params during build:', error);
+    return [];
+  }
 }
 
 export async function generateMetadata({ params }: Props) {

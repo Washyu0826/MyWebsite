@@ -18,7 +18,14 @@ import { JsonLd } from '@/components/json-ld';
 import { ReadingProgress } from '@/components/reading-progress';
 import { PwaRegister } from '@/app/offline/pwa-register';
 type Props = { params: Promise<{ locale: Locale; slug: string }> };
-export async function generateStaticParams() { return (await listProjects()).map(({ slug }) => ({ slug })); }
+export async function generateStaticParams() {
+  try {
+    return (await listProjects()).map(({ slug }) => ({ slug }));
+  } catch (error) {
+    console.warn('Skipping project static params during build:', error);
+    return [];
+  }
+}
 export async function generateMetadata({ params }: Props) {
   const { locale, slug } = await params;
   const project = await getProjectBySlug(slug);
