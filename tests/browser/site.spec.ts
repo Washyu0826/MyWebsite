@@ -19,7 +19,13 @@ async function expectPaper(page: Page, scheme: 'light' | 'dark') {
 async function chooseTheme(page: Page, locale: 'zh' | 'en', theme: 'light' | 'dark') {
   const select = page.getByRole('combobox', { name: themeLabel[locale] });
   await expect(select).not.toHaveValue('system');
-  await select.selectOption(theme);
+  // The select is in the HTML before React attaches its handler, so a selection made during
+  // hydration is swallowed and the class never lands. On a loaded CI runner that window is wide
+  // enough to fail the run. Keep choosing until it takes.
+  await expect(async () => {
+    await select.selectOption(theme);
+    await expect(page.locator('html')).toHaveClass(theme === 'dark' ? /dark/ : /light/, { timeout: 2000 });
+  }).toPass({ timeout: 20000 });
 }
 for (const locale of ['zh', 'en'] as const) {
   for (const colorScheme of ['light', 'dark'] as const) {
