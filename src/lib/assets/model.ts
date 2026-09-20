@@ -24,18 +24,23 @@ export type AssetPublication = {
 export type AssetEvent = { id: number; actor_id: string; asset_id: string; version_id: string | null; action: string; detail: Record<string, unknown>; created_at: string };
 export type AssetSummary = Asset & { current: AssetVersion | null; published: boolean };
 export type AssetList = { items: AssetSummary[]; count: number; page: number; usedBytes: number };
-export type AssetReference = { publication_id: string; url: string; kind: 'profile' | 'project' | 'project_media' | 'post'; id: string | null; slug: string | null; title: string | null; field: string };
+export type AssetReference = {
+  publication_id: string; url: string; kind: 'profile' | 'project' | 'project_media' | 'post' | 'post_revision';
+  id: string | null; slug: string | null; title: string | null; field: string;
+  /** A retained article revision: it keeps no live page working, so it warns instead of blocking. */
+  soft: boolean;
+};
 export type AssetDetail = { asset: Asset; versions: AssetVersion[]; publications: AssetPublication[]; events: AssetEvent[]; references: AssetReference[] };
 export type PublishedAsset = { id: string; asset_id: string; name: string; slot: PublishSlot; public_url: string; mime_type: string | null; size: number | null; completed_at: string; width: number | null; height: number | null };
 export type PublishedList = { items: PublishedAsset[]; count: number; page: number };
-const referenceKinds: Record<AssetReference['kind'], string> = { profile: '個人資料', project: '作品', project_media: '作品畫廊', post: '文章' };
-const referenceFields: Record<string, string> = { cover_url: '封面', architecture_url: '架構圖', body: '內文', media: '媒體', avatar: '個人照', resume_zh: '中文履歷', resume_en: '英文履歷' };
+const referenceKinds: Record<AssetReference['kind'], string> = { profile: '個人資料', project: '作品', project_media: '作品畫廊', post: '文章', post_revision: '文章舊版本' };
+const referenceFields: Record<string, string> = { cover_url: '封面', architecture_url: '架構圖', body: '內文', media: '媒體', avatar: '個人照', resume_zh: '中文履歷', resume_en: '英文履歷', revision: '修訂紀錄' };
 export function referenceLabel(reference: AssetReference) {
   const where = reference.kind === 'profile' ? '' : `：${reference.title || reference.slug || reference.id || ''}`;
   return `${referenceKinds[reference.kind]}${where}（${referenceFields[reference.field] || reference.field}）`;
 }
 export function referenceHref(reference: AssetReference) {
-  if (reference.kind === 'post') return `/admin/articles/${reference.id}`;
+  if (reference.kind === 'post' || reference.kind === 'post_revision') return `/admin/articles/${reference.id}`;
   if (reference.kind === 'profile') return reference.field.startsWith('resume') ? '/admin/resume' : '/admin/profile';
   return `/admin/projects/${reference.id}`;
 }

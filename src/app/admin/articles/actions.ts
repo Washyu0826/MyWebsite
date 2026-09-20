@@ -3,19 +3,25 @@
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { isUnauthorizedError, requireAdmin } from '@/lib/auth/admin';
 import { adminDb } from '@/lib/db/admin';
-import type { ContentStatus } from '@/types/content';
+import { diffAgainstCurrent, revisionSnapshot, saveRevision, snapshotToColumn } from '@/lib/revisions';
+import type { FieldDiff } from '@/lib/diff';
+import { revisionFields } from '@/lib/diff';
+import type { ContentStatus, Post } from '@/types/content';
 
 export type ArticleEditorState = { ok: boolean; message: string };
+export type RevisionDiffState = { ok: boolean; message: string; fields?: FieldDiff[]; createdAt?: string };
 
 const statusValues: ContentStatus[] = ['draft', 'scheduled', 'published', 'archived'];
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-async function ensureAdmin(): Promise<ArticleEditorState | null> {
+/** Either the refusal to return to the browser, or the id of the signed-in admin. */
+type Authorized = { denied: ArticleEditorState } | { actor: string };
+
+async function ensureAdmin(): Promise<Authorized> {
   try {
-    await requireAdmin();
-    return null;
+    return { actor: (await requireAdmin()).id };
   } catch (error) {
-    if (isUnauthorizedError(error)) return { ok: false, message: 'Please sign in as an admin first.' };
+    if (isUnauthorizedError(error)) return { denied: { ok: false, message: 'Please sign in as an admin first.' } };
     throw error;
   }
 }
@@ -75,8 +81,8 @@ function revalidateArticles(slug?: string) {
 }
 
 export async function saveArticleAction(_: ArticleEditorState, formData: FormData): Promise<ArticleEditorState> {
-  const denied = await ensureAdmin();
-  if (denied) return denied;
+  const auth = await ensureAdmin();
+  if ('denied' in auth) return auth.denied;
 
   const id = cleanText(formData.get('id'));
   if (id && !uuidPattern.test(id)) return { ok: false, message: 'Invalid article id.' };
@@ -129,12 +135,19 @@ export async function saveArticleAction(_: ArticleEditorState, formData: FormDat
   if (existing.data) return { ok: false, message: 'This slug is already used by another article.' };
 
   if (id) {
-    const updated = await db.from('posts').update(payload).eq('id', id).select('id').maybeSingle();
+    // The content as it stands is the thing worth keeping; read it before the update overwrites it.
+    const before = await db.from('posts').select('*').eq('id', id).maybeSingle();
+    const updated = await db.from('posts').update(payload).eq('id', id).select('*').maybeSingle();
     if (updated.error) return { ok: false, message: `Update failed: ${updated.error.message}` };
     if (!updated.data) return { ok: false, message: 'Article not found.' };
+    // An article that predates the revision table has no history, so the pre-edit state is stored
+    // first; post_save_revision() drops it when it is identical to what is already the latest.
+    if (before.data) await saveRevision(auth.actor, id, revisionSnapshot(before.data as Post));
+    await saveRevision(auth.actor, id, revisionSnapshot(updated.data as Post));
   } else {
-    const inserted = await db.from('posts').insert(payload);
+    const inserted = await db.from('posts').insert(payload).select('*').maybeSingle();
     if (inserted.error) return { ok: false, message: `Create failed: ${inserted.error.message}` };
+    if (inserted.data) await saveRevision(auth.actor, (inserted.data as Post).id, revisionSnapshot(inserted.data as Post));
   }
 
   revalidateArticles(slug);
@@ -142,8 +155,8 @@ export async function saveArticleAction(_: ArticleEditorState, formData: FormDat
 }
 
 export async function deleteArticleAction(_: ArticleEditorState, formData: FormData): Promise<ArticleEditorState> {
-  const denied = await ensureAdmin();
-  if (denied) return denied;
+  const auth = await ensureAdmin();
+  if ('denied' in auth) return auth.denied;
 
   const id = cleanText(formData.get('id'));
   const slug = cleanText(formData.get('slug'));
@@ -161,4 +174,87 @@ export async function deleteArticleAction(_: ArticleEditorState, formData: FormD
 
   revalidateArticles(slug);
   return { ok: true, message: 'Article deleted.' };
+}
+
+/** The diff a reader needs before restoring: this revision against the article as it stands now. */
+export async function diffRevisionAction(_: RevisionDiffState, formData: FormData): Promise<RevisionDiffState> {
+  const auth = await ensureAdmin();
+  if ('denied' in auth) return auth.denied;
+
+  const id = cleanText(formData.get('id'));
+  const revision = Number(cleanText(formData.get('revision')));
+  if (!uuidPattern.test(id) || !Number.isInteger(revision) || revision < 1) return { ok: false, message: '無效的修訂編號。' };
+
+  const { db, error } = getDb();
+  if (!db) return { ok: false, message: error };
+
+  try {
+    const result = await diffAgainstCurrent(id, revision);
+    if (!result) return { ok: false, message: '找不到這個修訂版本。' };
+    return result.fields.length
+      ? { ok: true, message: '', fields: result.fields, createdAt: result.createdAt }
+      : { ok: true, message: '這個版本與目前內容相同。', fields: [], createdAt: result.createdAt };
+  } catch {
+    return { ok: false, message: '無法讀取修訂版本，請確認已套用 20260920000500_post_revisions.sql。' };
+  }
+}
+
+/**
+ * Writes a stored revision back over the article and forces it to draft, so nothing reaches the
+ * public site until it has been read through and published again. The restore is itself recorded,
+ * which means restoring the wrong revision can be undone the same way.
+ */
+export async function restoreRevisionAction(_: ArticleEditorState, formData: FormData): Promise<ArticleEditorState> {
+  const auth = await ensureAdmin();
+  if ('denied' in auth) return auth.denied;
+
+  const id = cleanText(formData.get('id'));
+  const revision = Number(cleanText(formData.get('revision')));
+  if (!uuidPattern.test(id) || !Number.isInteger(revision) || revision < 1) return { ok: false, message: '無效的修訂編號。' };
+
+  const { db, error } = getDb();
+  if (!db) return { ok: false, message: error };
+
+  const { getRevision } = await import('@/lib/revisions');
+  const stored = await getRevision(id, revision);
+  if (!stored) return { ok: false, message: '找不到這個修訂版本，或修訂資料表尚未建立。' };
+
+  const current = await db.from('posts').select('*').eq('id', id).maybeSingle();
+  if (current.error) return { ok: false, message: `無法讀取文章：${current.error.message}` };
+  if (!current.data) return { ok: false, message: '找不到這篇文章。' };
+  const post = current.data as Post;
+
+  const payload: Record<string, unknown> = {};
+  for (const { field } of revisionFields) payload[field] = snapshotToColumn(field, stored.snapshot[field]);
+
+  // A slug the old version used may belong to another article by now; keeping the live one is the
+  // safe choice, and the message says which slug is in effect.
+  let slugNote = '';
+  const restoredSlug = String(payload.slug || '');
+  if (restoredSlug && restoredSlug !== post.slug) {
+    const taken = await db.from('posts').select('id').eq('slug', restoredSlug).neq('id', id).limit(1).maybeSingle();
+    if (taken.error) return { ok: false, message: `無法檢查網址代稱：${taken.error.message}` };
+    if (taken.data) {
+      payload.slug = post.slug;
+      slugNote = `舊網址代稱 ${restoredSlug} 已被其他文章使用，維持 ${post.slug}。`;
+    } else {
+      slugNote = `網址代稱回復為 ${restoredSlug}。`;
+    }
+  }
+  // Restoring never republishes by itself.
+  payload.status = 'draft';
+  payload.updated_at = new Date().toISOString();
+
+  // The state being replaced is kept first, so the restore itself can be undone.
+  await saveRevision(auth.actor, id, revisionSnapshot(post));
+  // Every value came through snapshotToColumn(), which coerces each field to its column type.
+  const updated = await db.from('posts').update(payload as Partial<Post>).eq('id', id).select('*').maybeSingle();
+  if (updated.error) return { ok: false, message: `還原失敗：${updated.error.message}` };
+  if (!updated.data) return { ok: false, message: '找不到這篇文章。' };
+  await saveRevision(auth.actor, id, revisionSnapshot(updated.data as Post), 'restore');
+
+  revalidateArticles(post.slug);
+  if (payload.slug !== post.slug) revalidateArticles(String(payload.slug));
+  revalidatePath(`/admin/articles/${id}`);
+  return { ok: true, message: `已還原第 ${revision} 版，文章已轉為草稿，確認後再發布。${slugNote}` };
 }

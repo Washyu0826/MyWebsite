@@ -9,6 +9,8 @@ Five layers, each with a job the others cannot do:
 | End-to-end | Playwright | `npm run test:e2e` | The built site in a real browser, including accessibility (axe) |
 | Visual | Playwright screenshots | `npm run test:visual` | Layout regressions across themes and viewports |
 | Component gallery | Storybook | `npm run storybook` | Every component state, in isolation, without a database |
+| Database | `psql` against a local PostgreSQL | `npm run test:assets:sql` | Migrations, RPC contracts, permissions, concurrency |
+| Admin workspace | Playwright against mocked transport | `npm run test:assets:browser` | The asset library UI, TUS uploads, responsive widths, axe |
 
 Plus `npm run typecheck`, `npm run lint`, `npm run format:check` and `npm run audit:lighthouse`.
 
@@ -44,6 +46,13 @@ What is covered:
 - **ContactForm** — blur validation clearing on correction, the server rejection summary taking
   focus, the rate-limit and generic branches, the anti-spam time floor, localStorage drafts, and
   tab order.
+- **ArticleRevisions** — the empty state, what each revision changed, the line diff against the
+  current article (including the screen-reader wording that carries what the colours show),
+  collapsing a comparison, the identical-revision and failure branches, and the confirm dialog
+  standing between a click and a restore.
+- **Asset library** (`asset-http`, `asset-server`) — the HTTP boundary (auth, cross-origin writes,
+  bounded JSON, redacted internals) and the publication recovery paths (hash verification, a frozen
+  public payload, reusing an uploaded object after a failed commit, revoke then purge).
 
 Two seams are mocked and nothing else: `@/i18n/navigation` (no App Router in jsdom) and the contact
 server action (it would reach Supabase and Resend). The action mock still runs the real
@@ -96,6 +105,30 @@ through React 19's `use()` inside a Suspense boundary.
 
 Stories: Button (7), ThemeSwitch (3), CopyValue (3), CommandPalette (4), ProjectList (5),
 ArticleList (4), ContactForm (7) — 33 in total.
+
+## Database — `npm run test:assets:sql`
+
+`scripts/test-assets-sql.mjs` applies every `supabase/migrations/20260920*` file **twice** to a
+throwaway local database, then runs `tests/sql/asset-library.test.sql` and
+`tests/sql/post-revisions.test.sql` inside a transaction that is rolled back. It asserts what only a
+real Postgres can: that the migrations are repeatable, that `anon` and `authenticated` hold no
+privileges on the tables or the `security definer` functions, that quota accounting and reservation
+expiry add up, that retries are idempotent, that the profile compare-and-set refuses a stale publish,
+and — over two genuinely concurrent connections — that simultaneous writers produce one version.
+
+It never touches Supabase. The database name is fixed to `asset_library_test` on `127.0.0.1:55432`
+and the script refuses to run anywhere else; it drops and recreates the schemas on every run, so the
+assertions start from an empty database. `PSQL_BINARY` and `ASSET_TEST_PG_PORT` override the defaults.
+
+## Admin workspace — `npm run test:assets:browser`
+
+`tests/assets-browser.mjs` bundles the real `AssetWorkspace` and `AssetPicker` components with the
+app's own CSS and drives them in Chrome against a local mock of the admin API and of Supabase's
+resumable upload endpoint. It covers 320–1920px without horizontal overflow, axe on both the
+workspace and the picker dialog, a decoded preview image, pagination, rename, trash and restore,
+where a published file is used, a publish retry reusing its operation id, revoking an unreferenced
+copy, and a 7 MiB file arriving in two TUS chunks rather than through the admin API. No login, no
+Supabase credentials, no writes to production. Screenshots land in `artifacts/asset-library/`.
 
 ## Lighthouse — `npm run audit:lighthouse`
 

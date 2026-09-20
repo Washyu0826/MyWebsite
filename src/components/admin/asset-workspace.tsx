@@ -110,6 +110,9 @@ function AssetInspector({ id, revision, onClose, onChange }: { id: string; revis
   }
   const availableSlots: PublishSlot[] = current?.mime_type === 'application/pdf' ? ['public', 'resume_zh', 'resume_en'] : ['public', 'avatar'];
   const references = detail?.references ?? [];
+  // Only a live page blocks recycling; a retained article revision is shown as a warning.
+  const blocking = references.filter(reference => !reference.soft);
+  const warnings = references.filter(reference => reference.soft);
   return <aside className="asset-inspector" aria-label="檔案詳情">
     <div className="asset-section-heading"><h2 ref={heading} tabIndex={-1}>檔案詳情</h2><Tool label="關閉詳情" onClick={onClose}><X size={18} /></Tool></div>
     {error && <p className="asset-error" role="alert">{error}</p>}{message && <p className="asset-success" role="status">{message}</p>}
@@ -126,10 +129,13 @@ function AssetInspector({ id, revision, onClose, onChange }: { id: string; revis
           {current?.status === 'ready' && <section className="asset-publish"><h3>發布此版本</h3><label className="asset-field">用途<select value={slot} onChange={event => setSlot(event.target.value as PublishSlot)}>{availableSlots.map(value => <option key={value} value={value}>{slotLabels[value]}</option>)}</select></label><button className="asset-primary" disabled={working} onClick={() => void publish()}><ExternalLink size={16} />{working ? '處理中' : '發布'}</button></section>}
           <section className="asset-version-upload"><h3>新增版本</h3><AssetUpload assetId={id} onComplete={version => { setVersionId(version.id); onChange(); }} /></section>
         </>}
-        {references.length > 0 && <section className="asset-references"><h3>使用位置</h3><p className="asset-muted">這些頁面還在用它的公開副本；更換那裡的引用後才能回收。</p><ul>{references.map((reference, index) => <li key={`${reference.publication_id}-${index}`}><a href={referenceHref(reference)} target="_blank" rel="noreferrer">{referenceLabel(reference)}</a></li>)}</ul></section>}
-        {detail.publications.length > 0 && <section className="asset-publications"><h3>公開紀錄</h3>{detail.publications.map(publication => <PublicationRow key={publication.id} publication={publication} disabled={working} referenced={references.some(reference => reference.publication_id === publication.id)} retry={() => void act({ action: 'publish', versionId: publication.version_id, slot: publication.slot, requestId: publication.request_id }, '發布完成。')} revoke={() => { if (window.confirm('撤銷後公開網址會失效，而且這個公開副本無法還原（私人原始檔仍保留）。要繼續嗎？')) void act({ action: 'revoke', publicationId: publication.id }, '公開副本已撤銷。'); }} />)}</section>}
+        {references.length > 0 && <section className="asset-references"><h3>使用位置</h3>
+          {blocking.length > 0 && <><p className="asset-muted">這些頁面還在用它的公開副本；更換那裡的引用後才能回收。</p><ul>{blocking.map((reference, index) => <li key={`${reference.publication_id}-block-${index}`}><a href={referenceHref(reference)} target="_blank" rel="noreferrer">{referenceLabel(reference)}</a></li>)}</ul></>}
+          {warnings.length > 0 && <><p className="asset-muted">下列文章的舊版本仍引用它。回收或撤銷不會被擋，但還原那些版本後圖片會失效。</p><ul>{warnings.map((reference, index) => <li key={`${reference.publication_id}-soft-${index}`}><a href={referenceHref(reference)} target="_blank" rel="noreferrer">{referenceLabel(reference)}</a></li>)}</ul></>}
+        </section>}
+        {detail.publications.length > 0 && <section className="asset-publications"><h3>公開紀錄</h3>{detail.publications.map(publication => <PublicationRow key={publication.id} publication={publication} disabled={working} referenced={blocking.some(reference => reference.publication_id === publication.id)} retry={() => void act({ action: 'publish', versionId: publication.version_id, slot: publication.slot, requestId: publication.request_id }, '發布完成。')} revoke={() => { if (window.confirm('撤銷後公開網址會失效，而且這個公開副本無法還原（私人原始檔仍保留）。要繼續嗎？')) void act({ action: 'revoke', publicationId: publication.id }, '公開副本已撤銷。'); }} />)}</section>}
       </>}
-      <div className="asset-inspector-footer">{detail.asset.deleted_at ? <button className="asset-secondary" disabled={working} onClick={() => void act({ action: 'restore', id }, '檔案已還原。')}><RotateCcw size={16} />還原檔案</button> : <button className="asset-secondary" disabled={working || references.length > 0} title={references.length ? '仍有頁面使用此素材，請先更換引用。' : undefined} onClick={() => void act({ action: 'trash', id }, '已移至垃圾桶。公開副本仍保留。')}><Trash2 size={16} />移至垃圾桶</button>}</div>
+      <div className="asset-inspector-footer">{detail.asset.deleted_at ? <button className="asset-secondary" disabled={working} onClick={() => void act({ action: 'restore', id }, '檔案已還原。')}><RotateCcw size={16} />還原檔案</button> : <button className="asset-secondary" disabled={working || blocking.length > 0} title={blocking.length ? '仍有頁面使用此素材，請先更換引用。' : undefined} onClick={() => void act({ action: 'trash', id }, '已移至垃圾桶。公開副本仍保留。')}><Trash2 size={16} />移至垃圾桶</button>}</div>
     </>}
   </aside>;
 }

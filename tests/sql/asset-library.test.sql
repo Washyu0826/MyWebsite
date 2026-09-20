@@ -94,7 +94,15 @@ begin
   assert jsonb_array_length(public.asset_references(actor,(v->>'asset_id')::uuid)) = 4, 'profile, post body, project cover and gallery row';
   assert public.asset_references(other,(v->>'asset_id')::uuid) = '[]'::jsonb, 'references are owner scoped';
   update public.profile set avatar_url = 'https://example.com/replaced.jpg' where id = 1;
-  delete from public.project_media; delete from public.projects; delete from public.posts;
+  -- An older revision still points at the file although the live article no longer does.
+  perform public.post_save_revision(actor,(select id from public.posts where slug = 'notes'),
+    jsonb_build_object('body_zh','![](' || url || ')'));
+  update public.posts set body_zh = 'no image any more' where slug = 'notes';
+  delete from public.project_media; delete from public.projects;
+  assert jsonb_array_length(public.asset_references(actor,(v->>'asset_id')::uuid)) = 1, 'the retained revision is still reported';
+  assert (public.asset_references(actor,(v->>'asset_id')::uuid)->0->>'kind') = 'post_revision';
+  assert (public.asset_references(actor,(v->>'asset_id')::uuid)->0->>'soft')::boolean, 'a revision reference is a warning, not a block';
+  delete from public.posts;
   assert public.asset_references(actor,(v->>'asset_id')::uuid) = '[]'::jsonb;
   perform public.asset_change(actor,(v->>'asset_id')::uuid,'trash');
   assert (select deleted_at is not null from public.assets where id = (v->>'asset_id')::uuid), 'published but unreferenced assets can be recycled';

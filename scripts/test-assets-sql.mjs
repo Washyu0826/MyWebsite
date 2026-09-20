@@ -26,9 +26,12 @@ await execute(
       'supabase/migrations/20260920000200_media_dimensions.sql',
       'supabase/migrations/20260920000300_asset_references.sql',
       'supabase/migrations/20260920000400_asset_revoke.sql',
+      'supabase/migrations/20260920000500_post_revisions.sql',
     ].flatMap(file => ['-f', file, '-f', file]),
     '-f',
     'tests/sql/asset-library.test.sql',
+    '-f',
+    'tests/sql/post-revisions.test.sql',
   ],
   { windowsHide: true },
 );
@@ -50,4 +53,4 @@ const outcomes = await Promise.allSettled(
 assert.equal(outcomes.filter(result => result.status === 'fulfilled').length, 1, 'one pending writer per asset');
 assert.match(outcomes.find(result => result.status === 'rejected').reason.stderr, /UPLOAD_PENDING/);
 assert.equal(await sql(`select count(*) from public.asset_versions where asset_id='${version.asset_id}'`), '2');
-console.log('PASS: SQL regression, repeatable migration, real concurrent idempotency and per-asset writer serialization');
+console.log('PASS: SQL regression, repeatable migrations, article revisions, real concurrent idempotency and per-asset writer serialization');

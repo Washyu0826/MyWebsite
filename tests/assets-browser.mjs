@@ -112,7 +112,7 @@ try {
           events: history,
           references:
             completedPublication && completedPublication.asset_id === asset.id && completedPublication.status === 'complete' && asset.name.includes('portrait')
-              ? [{ publication_id: completedPublication.id, url: completedPublication.public_url, kind: 'profile', id: null, slug: null, title: 'avatar', field: 'avatar' }]
+              ? [{ publication_id: completedPublication.id, url: completedPublication.public_url, kind: 'profile', id: null, slug: null, title: 'avatar', field: 'avatar', soft: false }]
               : [],
         });
       }
@@ -227,7 +227,11 @@ try {
   await page.getByRole('button', { name: '檢視 個人照-原始檔.jpg', exact: true }).click();
   await page.getByRole('button', { name: '預覽', exact: true }).click();
   await expect(page.getByRole('img', { name: '個人照-原始檔.jpg' })).toBeVisible();
-  assert.ok(await page.getByRole('img', { name: '個人照-原始檔.jpg' }).evaluate(image => image.complete && image.naturalWidth > 0));
+  // Real pixels, not just an <img> in the DOM. Decoding a 760 KB PNG can lag behind visibility on a
+  // loaded machine, so this polls instead of reading naturalWidth once.
+  await expect
+    .poll(() => page.getByRole('img', { name: '個人照-原始檔.jpg' }).evaluate(image => image.complete && image.naturalWidth > 0), { timeout: 15000 })
+    .toBe(true);
   await page.screenshot({ path: `${output}/desktop.png`, fullPage: true });
   for (const width of [320, 390, 768, 1024, 1280, 1440, 1920]) {
     await page.setViewportSize({ width, height: 900 });

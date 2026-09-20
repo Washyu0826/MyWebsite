@@ -459,3 +459,25 @@ Verification:
 - `npx vitest run tests/components/asset-http.test.tsx tests/components/asset-server.test.tsx`: 11 passed, including Storage removal failure followed by a successful retry.
 - `node tests/assets-browser.mjs`: passed, including the revoke flow on an unreferenced copy and the protected state on a referenced one.
 - The previous commit (`fac8958`) was also verified on its own in a detached worktree: typecheck, 58 unit tests, SQL and browser suites all passed.
+
+### Article Revisions And Restore (2026-09-20)
+
+Every successful article save now keeps the content that was stored, so a bad edit can be compared and undone.
+
+- `supabase/migrations/20260920000500_post_revisions.sql`: `post_revisions` (post, revision number, jsonb snapshot, actor, reason, created_at) with RLS and service-role-only access, plus `post_save_revision()` which takes the next revision under a row lock and returns the existing latest row when the snapshot is identical, so pressing save twice does not fill the history with copies.
+- `src/lib/diff.ts`: a dependency-free line diff (LCS over lines) with per-side line numbers, a fallback for very large texts, unchanged-run collapsing, and a snapshot comparison that reports only the editable fields that differ. Pure, so it runs in `tsx --test` and in the browser.
+- `saveArticleAction` stores the pre-edit content first for articles that predate the table, then the newly stored content. `restoreRevisionAction` writes a revision back, forces the article to draft, keeps the live slug when the old one is taken by another article, and records the restore, so a restore can itself be undone. A history write never fails a save the database already accepted.
+- The edit page gains a 修訂紀錄 panel: what each revision changed, a line diff against the current article, and a restore behind a confirm dialog. The editor remounts on `updated_at` so it shows the restored content.
+- `asset_references()` now also reports retained article revisions, as a **soft** reference: it does not block recycling or revoking, because no live page depends on it, but the asset inspector lists it as a warning, since restoring that revision afterwards would point at a removed file. Trash and revoke were updated to ignore soft references explicitly.
+- Fixed while here: `tests/assets-browser.mjs` read the preview image's `naturalWidth` once, which is a race on a loaded machine; it now polls.
+
+Documentation: `docs/article-revisions.md`; `docs/testing.md` gained the database and admin-workspace layers it was missing.
+
+Verification:
+
+- `npx tsc --noEmit`: passed. ESLint on the touched files: 0 errors, 2 pre-existing warnings.
+- `npm test`: passed, including 14 new diff tests.
+- `npx vitest run`: 9 files, 65 tests passed, including 8 new `ArticleRevisions` tests.
+- `node scripts/test-assets-sql.mjs`: passed, with five migrations applied twice and a new revisions suite (numbering, deduplicated snapshots, key-order independence, input validation, permissions, cascade, soft references not blocking recycling).
+- `node tests/assets-browser.mjs`: passed.
+- Not applied to production Supabase; not deployed.

@@ -1,6 +1,7 @@
 // Schema-aligned bootstrap types. Replace with `npm run db:types` after connecting Supabase.
 import type { ContactMessage, ContactRateLimit, Experience, Post, Profile, Project, ProjectMedia, ProjectMetric, Skill, SocialLink } from './content';
 import type { Asset, AssetVersion, AssetPublication, AssetEvent } from '@/lib/assets/model';
+import type { PostRevision } from '@/lib/revisions';
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 type Table<Row> = { Row: Row; Insert: Partial<Row>; Update: Partial<Row>; Relationships: [] };
 export type Database = {
@@ -18,6 +19,7 @@ export type Database = {
       project_media: Table<ProjectMedia>;
       project_metrics: Table<ProjectMetric>;
       posts: Table<Post>;
+      post_revisions: Table<PostRevision>;
       site_settings: Table<{ key: string; value: Json; updated_at: string }>;
       messages: Table<ContactMessage>;
       contact_rate_limit: Table<ContactRateLimit>;
@@ -33,6 +35,7 @@ export type Database = {
       asset_finish_publish: { Args: { p_actor: string; p_operation: string; p_url: string }; Returns: Json };
       asset_publication_payload: { Args: { p_actor: string; p_operation: string; p_hash: string; p_mime: string; p_size: number }; Returns: Json };
       asset_references: { Args: { p_actor: string; p_asset: string }; Returns: Json };
+      post_save_revision: { Args: { p_actor: string | null; p_post: string; p_snapshot: Record<string, unknown>; p_reason?: string }; Returns: Json };
       asset_revoke_publication: { Args: { p_actor: string; p_publication: string }; Returns: Json };
       asset_publication_purged: { Args: { p_actor: string; p_publication: string }; Returns: Json };
       publish_due_content: { Args: Record<string, never>; Returns: { kind: string; slug: string }[] };

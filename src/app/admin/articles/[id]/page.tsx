@@ -5,7 +5,9 @@ import { Container } from '@/components/container';
 import { requireAdminPage } from '@/lib/auth/admin';
 import { adminDb } from '@/lib/db/admin';
 import type { Post } from '@/types/content';
+import { listRevisions } from '@/lib/revisions';
 import { ArticleForm, DeleteArticleForm } from '../article-form';
+import { ArticleRevisions } from '../article-revisions';
 
 export const dynamic = 'force-dynamic';
 
@@ -55,6 +57,9 @@ export default async function EditArticlePage({ params }: PageProps) {
 
   if (!post) notFound();
 
+  // A missing revisions table (migration not applied yet) reads as "no history", not as an error.
+  const revisions = await listRevisions(post.id);
+
   const isPublic = post.status === 'published' && !!post.published_at && new Date(post.published_at).getTime() <= Date.now();
 
   return <Container className="admin-page">
@@ -73,7 +78,13 @@ export default async function EditArticlePage({ params }: PageProps) {
 
     <section className="admin-panel" aria-labelledby="article-editor">
       <h2 id="article-editor">文章內容</h2>
-      <ArticleForm post={post} />
+      {/* Remounts after a restore so the editor shows the content that is now stored. */}
+      <ArticleForm key={post.updated_at} post={post} />
+    </section>
+
+    <section className="admin-panel" aria-labelledby="article-revisions">
+      <h2 id="article-revisions">修訂紀錄</h2>
+      <ArticleRevisions postId={post.id} revisions={revisions} />
     </section>
 
     <section className="admin-panel" aria-labelledby="article-delete">
