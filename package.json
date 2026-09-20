@@ -26,7 +26,8 @@
     "db:types": "node scripts/generate-db-types.mjs",
     "db:push": "npx supabase db push",
     "db:seed:real": "npx supabase db query --linked -f supabase/seed-real.sql",
-    "prepare": "husky"
+    "prepare": "husky",
+    "db:seed:projects": "npx supabase db query --linked -f supabase/seed-projects.sql"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.126.0",
