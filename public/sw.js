@@ -1,6 +1,10 @@
-/* Portfolio service worker. Bump VERSION on every deploy: activate deletes every cache that is
-   not on the current list, so nobody is left holding a stale shell. */
-const VERSION = 'v1';
+/* Portfolio service worker.
+
+   The version arrives in the registration URL (see src/app/offline/pwa-register.tsx), which
+   next.config.ts fills from the commit on Vercel or the build time locally. That means a deploy
+   changes this script's URL, the browser fetches it again, and `activate` deletes every cache not
+   on the current list. Nothing here has to be edited by hand before shipping. */
+const VERSION = new URL(self.location.href).searchParams.get('v') || 'v1';
 const SHELL = `hsien-shell-${VERSION}`;
 const PAGES = `hsien-pages-${VERSION}`;
 const ASSETS = `hsien-assets-${VERSION}`;

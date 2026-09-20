@@ -10,7 +10,14 @@ function storageHostname(value: string) {
     throw new Error(`NEXT_PUBLIC_SUPABASE_URL must be an absolute URL such as https://<ref>.supabase.co (received "${value}").`);
   }
 }
+// The service worker's cache names are keyed on this, and its registration URL carries it, so a new
+// deploy is a new worker and `activate` drops the previous caches. On Vercel it is the commit; a
+// local production build gets the build time. Forgetting to bump a version by hand is how visitors
+// end up stuck on last week's bundle with no way to clear it themselves.
+const swVersion = (process.env.VERCEL_GIT_COMMIT_SHA || '').slice(0, 8) || `local-${Date.now().toString(36)}`;
+
 const nextConfig: NextConfig = {
+  env: { NEXT_PUBLIC_SW_VERSION: swVersion },
   experimental: {
     serverActions: {
       bodySizeLimit: '12mb',

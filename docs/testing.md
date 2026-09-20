@@ -278,3 +278,18 @@ and commit the result. `npm ci` then works under both majors. To check before pu
 ```bash
 rm -rf node_modules && npx npm@10.9.4 ci
 ```
+
+## The service worker version is automatic
+
+`public/sw.js` names its caches after a version that arrives in its own registration URL, which
+`next.config.ts` fills from `VERCEL_GIT_COMMIT_SHA` on Vercel and from the build time locally. A
+deploy therefore changes the script URL, the browser fetches the worker again, and `activate`
+deletes every cache that is not on the current list.
+
+Nothing has to be edited before shipping. Verified by building twice under different commit SHAs in
+one browser profile: the second build's worker took over and the first build's three caches were
+gone.
+
+The consequence of getting this wrong is worse than it sounds: a returning visitor holds the old
+shell, and reloading does not help them, because the worker answers before the network. Only
+clearing site data would, and nobody does that.
