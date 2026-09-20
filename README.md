@@ -96,6 +96,8 @@ Schema 由 Supabase CLI migration 管理，位於 `supabase/migrations/`，可�
 | `CRON_SECRET` | `/api/cron/publish` 驗證；同時作為聯絡表單 IP 雜湊的預設 salt |
 | `CONTACT_HASH_SALT` | 選填，聯絡表單 IP 雜湊專用 salt |
 | `DEMO_MODE` | 本機示範填 `true`；使用真實內容填 `false`；正式部署會忽略 `true` |
+| `NEXT_PUBLIC_SENTRY_DSN` | 錯誤監控總開關（選填）；未設定時整套 Sentry 不會進入 bundle |
+| `SENTRY_ORG` / `SENTRY_PROJECT` / `SENTRY_AUTH_TOKEN` | 搭配 DSN 使用，供建置時上傳 source map；token 僅限建置環境 |
 | `SUPABASE_PROJECT_ID` | 只供 `npm run db:types` 使用 |
 
 `ADMIN_TOKEN`、`GOOGLE_TRANSLATE_API_KEY`、`NEXT_PUBLIC_GA_ID` 已移除：後台改用 Supabase Auth，翻譯改用 Claude API，分析改用 Vercel Analytics（不需環境變數）。
@@ -111,7 +113,7 @@ Schema 由 Supabase CLI migration 管理，位於 `supabase/migrations/`，可�
 ## Vercel 部署
 
 1. 將專案推送到 GitHub，在 Vercel 匯入，Framework 選 Next.js，Node.js 22。
-2. Production 環境變數：`NEXT_PUBLIC_SITE_URL`、Supabase 三把金鑰、`ADMIN_EMAIL`、`RESEND_*`／`CONTACT_*`、`CRON_SECRET`、`ANTHROPIC_API_KEY`（選填），並設 `DEMO_MODE=false`。Preview 環境可設 `DEMO_MODE=true`。
+2. Production 環境變數：`NEXT_PUBLIC_SITE_URL`、Supabase 三把金鑰、`ADMIN_EMAIL`、`RESEND_*`／`CONTACT_*`、`CRON_SECRET`、`ANTHROPIC_API_KEY`（選填）、`NEXT_PUBLIC_SENTRY_DSN` 與 `SENTRY_*`（選填），並設 `DEMO_MODE=false`。Preview 環境可設 `DEMO_MODE=true`。
 3. `vercel.json` 已宣告每日一次的 Cron（Hobby 方案上限）；Pro 方案可改為每小時。
 4. 部署後測試兩語言、兩主題、後台登入、真實履歷與圖片、聯絡表單寄信與排程發布。`next/image` 只允許設定的 Supabase 主機與公開 Storage 路徑，若使用其他圖片主機需調整 `next.config.ts`。
 5. 到 Vercel 的 Domains 加入網域，依顯示的 DNS 記錄設定，完成 HTTPS 驗證。
