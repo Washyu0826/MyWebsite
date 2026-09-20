@@ -11,10 +11,7 @@ import { emailUrl, gmailComposeUrl, safeUrl } from '@/lib/urls';
 import { pageMetadata } from '@/lib/metadata';
 import { personSchema } from '@/lib/structured-data';
 import { Container } from '@/components/container';
-import { Reveal } from '@/components/reveal';
-import { LetterReveal } from '@/components/letter-reveal';
 import { SectionReveal } from '@/components/section-reveal';
-import { Markdown } from '@/components/markdown';
 import { ProjectList } from '@/components/project-list';
 import { HomeSections } from '@/components/home-sections';
 import { CubistBackdrop } from '@/components/cubist-backdrop';
@@ -23,9 +20,35 @@ import { buttonVariants } from '@/components/ui/button';
 import { JsonLd } from '@/components/json-ld';
 import { PwaRegister } from '@/app/offline/pwa-register';
 type Props = { params: Promise<{ locale: Locale }> };
-const focusAreas = ['Software Engineer', 'Data', 'AI', 'Full Stack', 'Cloud'];
+const heroAlias = 'Zenobia';
+const focusAreas = ['Multimodal AI', 'AI Agent / MCP', 'GraphRAG', 'Full Stack', 'DevOps'];
 const heroTagline = 'Curiosity driven, clarity obsessed.';
 const designPrinciples = ['why', 'candid', 'iteration'];
+
+function TypewriterLine({ as: Tag = 'p', text, className, id, start = 0 }: {
+  as?: 'p' | 'h1';
+  text: string;
+  className?: string;
+  id?: string;
+  start?: number;
+}) {
+  const parts = text.split(' ');
+  const words = parts.map((word, wordIndex) => ({
+    word,
+    wordStart: parts.slice(0, wordIndex).reduce((sum, part) => sum + part.length + 1, 0),
+  }));
+  return <Tag id={id} className={['typewriter-line', className].filter(Boolean).join(' ')} style={{ '--type-start': start } as React.CSSProperties}>
+    <span className="sr-only">{text}</span>
+    <span className="typewriter-text" aria-hidden="true">
+      {words.map(({ word, wordStart }, wordIndex) => <span key={`${wordIndex}-${word}`}>
+        {wordIndex ? ' ' : null}
+        <span className="typewriter-word">
+          {[...word].map((char, index) => <span key={`${index}-${char}`} className="typewriter-char" style={{ '--type-index': wordStart + index } as React.CSSProperties}>{char}</span>)}
+        </span>
+      </span>)}
+    </span>
+  </Tag>;
+}
 
 function HeroSocialLinks({ profile, label }: { profile: Awaited<ReturnType<typeof getProfile>>; label: string }) {
   const links = profile.social_links.filter(s => safeUrl(s.url));
@@ -72,9 +95,11 @@ export default async function Home({ params }: Props) {
     <section className="hero" aria-labelledby="intro-heading">
       <div className={profile.avatar_url ? 'hero-grid' : 'hero-grid hero-grid-text-only'}>
         <div>
-          <Reveal><p className="mb-5 text-meta text-graphite">{p.name}</p></Reveal>
-          <Reveal order={1}><h1 id="intro-heading"><LetterReveal text={p.headline} /></h1></Reveal>
-          <Reveal order={2}><div className="positioning"><Markdown>{heroTagline}</Markdown></div></Reveal>
+          <div className="hero-typewriter" aria-label={`${heroAlias}. ${p.headline}. ${heroTagline}`}>
+            <TypewriterLine text={heroAlias} className="mb-5 text-meta text-graphite" />
+            <TypewriterLine as="h1" id="intro-heading" text={p.headline} start={8} />
+            <div className="positioning"><TypewriterLine text={heroTagline} start={24} /></div>
+          </div>
           <div className="status-line"><span>{t('now')}</span><span>{nowParts.length > 1 ? <>
             {nowParts[0]} <span aria-hidden="true">·</span> <strong>{nowParts.slice(1).join(' · ')}</strong>
           </> : p.now}</span></div>
@@ -82,7 +107,7 @@ export default async function Home({ params }: Props) {
           <ul className="hero-focus-list" aria-label={t('hashtags')}>
             {focusAreas.map(area => <li key={area}>{area}</li>)}
           </ul>
-          <SectionReveal as="div" className="signature-block">
+          <SectionReveal as="div" className="signature-block" deferInitial>
             <div className="enter-rule" aria-hidden="true" />
             <div className="signature-principles" aria-label={t('principles.label')}>
               {designPrinciples.map((key, index) => <div key={key} className="signature-principle" style={{ '--enter-index': index } as React.CSSProperties}>
