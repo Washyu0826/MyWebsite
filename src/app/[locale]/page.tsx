@@ -120,12 +120,12 @@ export default async function Home({ params }: Props) {
     </section>
     <HomeSections locale={locale} />
     <SectionReveal className="section project-section" aria-labelledby="projects-heading">
-      <div className="section-heading"><h2 id="projects-heading" className="enter-item">{t('featured')}</h2>
-        <Link className="text-link text-meta enter-item" href="/projects">{t('allProjects', { count: projects.length })}</Link></div>
+      <div className="section-heading"><h2 id="projects-heading">{t('featured')}</h2>
+        <Link className="text-link text-meta" href="/projects">{t('allProjects', { count: projects.length })}</Link></div>
       {featured.length ? <ProjectList projects={featured} locale={locale} headingLevel={3} /> : <p className="enter-item">{t('noProjects')}</p>}
     </SectionReveal>
     <SectionReveal className="section research-section" aria-labelledby="research-heading">
-      <div className="section-heading"><h2 id="research-heading" className="enter-item">{t('research')}</h2></div>
+      <div className="section-heading"><h2 id="research-heading">{t('research')}</h2></div>
       <p className="enter-item">{t('noResearch')}</p>
     </SectionReveal>
     <section className="contact-invitation"><h2>{t('invitation')}</h2><p className="mt-3 text-graphite">{t('invitationBody')}</p>

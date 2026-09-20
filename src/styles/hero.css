@@ -165,13 +165,15 @@ span.typewriter-line { display: inline-block; }
 [data-enter] .section-heading::after { transform-origin: left center; }
 [data-enter="out"] .enter-rule, [data-enter="out"] .section-heading::after { transform: scaleX(0); }
 [data-enter="in"] .enter-rule, [data-enter="in"] .section-heading::after { transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1); }
-[data-enter="out"] .section-heading::before, [data-enter="out"] .enter-item,
-[data-enter="out"] .experience-row, [data-enter="out"] .project-row { opacity: 0; transform: translateY(10px); }
+[data-enter="out"] .enter-item,
+[data-enter="out"] .experience-row,
+[data-enter="out"] .project-row { opacity: 0; transform: translateY(10px); }
 [data-enter="out"] .signature-principle > span,
 [data-enter="out"] .signature-principle p { opacity: 0; transform: translateY(8px); }
-[data-enter="in"] .section-heading::before, [data-enter="in"] .enter-item,
 .signature-block[data-enter="out"] .signature-principle .typewriter-text { clip-path: inset(0 100% 0 0); }
-[data-enter="in"] .experience-row, [data-enter="in"] .project-row { transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(300ms + var(--enter-index, 0) * 60ms); }
+[data-enter="in"] .enter-item,
+[data-enter="in"] .experience-row,
+[data-enter="in"] .project-row { transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(300ms + var(--enter-index, 0) * 60ms); }
 .signature-block[data-enter="in"] .signature-principle > span,
 .signature-block[data-enter="in"] .signature-principle p {
   transition: opacity 0.86s ease, transform 0.86s cubic-bezier(0.16, 1, 0.3, 1);

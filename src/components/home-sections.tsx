@@ -10,7 +10,7 @@ export async function HomeSections({ locale }: { locale: Locale }) {
   const [experiences, t] = await Promise.all([listExperiences(), getTranslations('Home')]);
 
   return <SectionReveal className="section experience-section" aria-labelledby="experience-heading">
-    <div className="section-heading"><h2 id="experience-heading" className="enter-item">{t('experience')}</h2></div>
+    <div className="section-heading"><h2 id="experience-heading">{t('experience')}</h2></div>
     {!experiences.length && <p className="enter-item text-graphite">{t('noExperience')}</p>}
     {experiences.map((experience, index) => {
       const e = pickLocale(experience, locale);
