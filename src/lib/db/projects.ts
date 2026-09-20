@@ -4,6 +4,10 @@ import { publicDb } from './server';
 import { isDemoMode } from './config';
 import { demoProjects, demoMedia, demoMetrics } from '@/lib/demo/projects';
 
+function warnProjectsUnavailable(message: string, error: unknown) {
+  console.warn(message, error);
+}
+
 export const listProjects = unstable_cache(async (options: { tag?: string; limit?: number } = {}) => {
   if (isDemoMode()) {
     const filtered = demoProjects.filter(p => !options.tag || p.tags.includes(options.tag));
@@ -14,7 +18,11 @@ export const listProjects = unstable_cache(async (options: { tag?: string; limit
   if (options.tag) query = query.contains('tags', [options.tag]);
   if (options.limit !== undefined) query = query.limit(Math.max(0, options.limit));
   const { data, error } = await query;
-  if (error) throw new Error('Unable to load projects.');
+  if (error) {
+    warnProjectsUnavailable('Unable to load projects; using fallback project data.', error);
+    const filtered = demoProjects.filter(p => !options.tag || p.tags.includes(options.tag));
+    return options.limit === undefined ? filtered : filtered.slice(0, options.limit);
+  }
   return data;
 }, ['projects'], { tags: ['projects'], revalidate: 300 });
 
