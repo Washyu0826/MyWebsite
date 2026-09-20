@@ -481,3 +481,23 @@ Verification:
 - `node scripts/test-assets-sql.mjs`: passed, with five migrations applied twice and a new revisions suite (numbering, deduplicated snapshots, key-order independence, input validation, permissions, cascade, soft references not blocking recycling).
 - `node tests/assets-browser.mjs`: passed.
 - Not applied to production Supabase; not deployed.
+
+### Time-Limited Share Links (2026-09-20)
+
+A private version can now be handed to someone without an account, through a link that expires on its own and can be revoked.
+
+- `supabase/migrations/20260920000600_asset_shares.sql`: `asset_shares` stores only the **SHA-256 of the token**, so neither a leaked table nor the server itself can reconstruct a working link; the plaintext exists once, in the reply that creates it. Plus `asset_create_share()` (ready version, live asset, expiry between a minute and 30 days, at most 20 live links per asset), the read-only `asset_peek_share()` for the landing page, `asset_redeem_share()` which increments the counter in the same statement that re-checks the cap, and `asset_revoke_share()`.
+- Public surface: `/{locale}/share/{token}` shows the file name, size, expiry and open count, and `…/download` redeems. **Redeeming is POST, not GET**, because mail providers follow links in messages to scan them and would otherwise spend an open; the landing page itself only peeks. Redeeming returns a 60-second signed URL, so revocation stops new opens but cannot recall a URL handed out moments earlier — stated plainly in the docs and on the page.
+- Admin: a 限時分享連結 panel on a ready version. It shows the URL once with a warning that it will not be shown again, then lists every link with its state, expiry, open count and last open, with revoke behind a confirm dialog.
+- `asset_shares` is read through a `.catch(() => [])` in the asset detail, so an asset still opens before the migration is applied.
+
+Documentation: `docs/asset-share-links.md`, including the limits this design does not claim to cover (no password, no identity, open count is not proof of a completed download).
+
+Verification:
+
+- `npx tsc --noEmit` and ESLint on the touched files: clean.
+- `npm test`: passed, including new cases for the token shape (50 generated tokens against the accepted pattern) and for expiry, cap and label validation.
+- `node scripts/test-assets-sql.mjs`: passed, with six migrations applied twice and a new share suite (permissions, hash format, expiry bounds, unverified version, non-owner, peek not spending an open, redeem counting, cap, idempotent revoke, expiry, trashed asset, 20-link ceiling).
+- `node tests/assets-browser.mjs`: passed, including creating a link, the one-time reveal, the list and revoking.
+- `npm run build`: passed, so the new public route and route handler compile and prerender.
+- Not applied to production Supabase; not deployed.

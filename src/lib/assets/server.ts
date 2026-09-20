@@ -5,6 +5,7 @@ import { adminDb } from '@/lib/db/admin';
 import { sniffMimeType } from '@/lib/uploads';
 import { processUploadImage, saveImageMeta, deleteImageMeta, getImageMeta, getImageMetaMap } from '@/lib/images';
 import { assetMaxBytes, privateBucket, type AssetVersion, type AssetPublication, type AssetList, type AssetDetail, type AssetReference, type PublishedList, type PublishSlot, validateAssetInput, isPublishSlot } from './model';
+import { listShares } from './shares';
 
 function checked<T>(result: { data: T; error: { message: string; code?: string } | null }): NonNullable<T> {
   if (result.error) throw Object.assign(new Error(/bucket not found/i.test(result.error.message) ? 'BUCKET_NOT_FOUND' : result.error.message), { code: result.error.code });
@@ -35,13 +36,18 @@ export async function listAssets(actor: string, params: URLSearchParams): Promis
 export async function assetDetail(actor: string, id: string): Promise<AssetDetail> {
   const db = adminDb();
   const asset = checked(await db.from('assets').select('*').eq('owner_id', actor).eq('id', id).maybeSingle());
-  const [versions, publications, events, references] = await Promise.all([
+  const [versions, publications, events, references, shares] = await Promise.all([
     db.from('asset_versions').select('*').eq('asset_id', id).eq('owner_id', actor).order('version_no', { ascending: false }),
     db.from('asset_publications').select('*').eq('asset_id', id).eq('owner_id', actor).order('created_at', { ascending: false }),
     db.from('asset_events').select('*').eq('asset_id', id).eq('actor_id', actor).order('id', { ascending: false }).limit(100),
     db.rpc('asset_references', { p_actor: actor, p_asset: id }),
+    // Share links are a newer migration; an asset must still open without them.
+    listShares(actor, id).catch(() => []),
   ]);
-  return { asset, versions: checked(versions), publications: checked(publications), events: checked(events), references: checked(references) as unknown as AssetReference[] };
+  return {
+    asset, versions: checked(versions), publications: checked(publications), events: checked(events),
+    references: checked(references) as unknown as AssetReference[], shares,
+  };
 }
 
 // Completed public copies, newest first, for the editors' asset picker. Only public URLs leave here.

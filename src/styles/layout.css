@@ -290,3 +290,12 @@
 
 .command-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 10px 16px; border-top: 1px solid var(--rule); color: var(--graphite); font-size: 0.75rem; }
 .command-footer span { display: inline-flex; align-items: center; gap: 5px; }
+.share-page { display: grid; place-items: center; }
+.share-card { display: grid; justify-items: start; gap: 14px; max-width: 520px; width: 100%; padding: 32px; border: 1px solid var(--rule); background: color-mix(in srgb, var(--surface) 72%, transparent); }
+.share-card > svg { color: var(--indigo); }
+.share-card h1 { font-size: var(--text-h2); line-height: 1.3; overflow-wrap: anywhere; }
+.share-meta { display: grid; gap: 10px; width: 100%; border-block: 1px solid var(--rule); padding-block: 14px; font-size: 0.875rem; }
+.share-meta > div { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.share-meta dt { display: inline-flex; align-items: center; gap: 6px; color: var(--graphite); }
+.share-download { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 12px 22px; border: 1px solid var(--ink); background: var(--ink); color: var(--paper); font-weight: 600; }
+.share-download:hover { background: transparent; color: var(--ink); }

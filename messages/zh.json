@@ -31,6 +31,23 @@
     "retry": "重新載入",
     "socialLinks": "社群連結"
   },
+  "Share": {
+    "title": "檔案分享",
+    "description": "透過限時連結取得的檔案。",
+    "heading": "有人分享了一份檔案給你",
+    "expires": "有效期限至 {date}",
+    "opens": "已開啟 {opens} 次",
+    "opensCapped": "已開啟 {opens} 次，上限 {max} 次",
+    "download": "下載檔案",
+    "downloadHint": "下載連結由伺服器即時簽發，只在 60 秒內有效。",
+    "expired": "這個分享連結已過期。",
+    "revoked": "這個分享連結已被撤銷。",
+    "exhausted": "這個分享連結已達開啟次數上限。",
+    "missing": "找不到這個分享連結。",
+    "unavailableHint": "如果你仍需要這份檔案，請與我聯絡重新取得連結。",
+    "contact": "聯絡我",
+    "failed": "檔案暫時無法取得，請稍後再試一次。"
+  },
   "Home": {
     "title": "關於 冼冠宇",
     "description": "冼冠宇的全端與資料工程作品集、專案案例及學習經歷。",

@@ -13,6 +13,23 @@
     "errorTitle": "Content is temporarily unavailable.", "errorBody": "Please try again in a moment or refresh the page.",
     "retry": "Try again", "socialLinks": "Social links"
   },
+  "Share": {
+    "title": "Shared file",
+    "description": "A file shared through a time-limited link.",
+    "heading": "A file has been shared with you",
+    "expires": "Available until {date}",
+    "opens": "Opened {opens} times",
+    "opensCapped": "Opened {opens} of {max} times",
+    "download": "Download the file",
+    "downloadHint": "The download link is signed on request and is valid for 60 seconds.",
+    "expired": "This share link has expired.",
+    "revoked": "This share link has been revoked.",
+    "exhausted": "This share link has reached its limit.",
+    "missing": "This share link does not exist.",
+    "unavailableHint": "If you still need the file, get in touch and I will send a new link.",
+    "contact": "Contact me",
+    "failed": "The file is temporarily unavailable. Please try again."
+  },
   "Home": {
     "title": "About Kuan-Yu Hsien", "description": "Full-stack and data engineering projects, case studies and learning experiences by Kuan-Yu Hsien.",
     "now": "Currently", "featured": "Project", "allProjects": "All projects ({count})",

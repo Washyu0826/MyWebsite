@@ -19,6 +19,8 @@
 - **使用位置**：檔案詳情列出每個公開副本被哪裡引用（個人照／履歷欄位、作品封面／架構圖／畫廊／內文、文章封面／內文），可直接連到對應後台頁面。
 - **素材選擇器**：作品編輯器的網址欄位與文章封面欄位可「從素材庫選擇」已發布的檔案；圖片可一鍵複製 Markdown 語法貼進內文。
 - **撤銷公開副本**：詳情的「公開紀錄」可撤銷未被引用的公開副本。先把紀錄標為已撤銷（列表、選擇器、引用掃描立即忽略），再從公開儲存區移除檔案；移除失敗可重按撤銷完成。私人原始檔與版本不受影響。
+- **限時分享連結**：已驗證的版本可以產生有期限的公開網址，不需登入即可下載，可設開啟次數上限並隨時撤銷。細節與限制見 [limited share links](asset-share-links.md)。
+- **文章修訂**：文章的每次儲存都會保留快照，可比較與還原；舊版本引用的素材會列為 soft 引用。見 [article revisions](article-revisions.md)。
 - 上傳與發布的容量預留在 24 小時後自動失效（Supabase 簽名上傳網址只有 2 小時有效），取消或中斷的上傳不再永久占用預算。
 
 ## 正式 Supabase 必做
@@ -30,7 +32,7 @@
    `supabase/migrations/20260920000100_asset_library.sql`。
    這是增量 migration，不是 `seed.sql`。已有網站資料時不需要重跑示範 seed 或初始化 schema。
 3. 新 migration 建立 `assets`、`asset_versions`、`asset_publications`、`asset_events`、專用 RPC，以及 **非公開**的 `assets-private` bucket。
-   接著執行 `supabase/migrations/20260920000300_asset_references.sql`：它新增 `asset_references()`，並以「仍被引用才擋回收」與「預留 24 小時後失效」取代原本的垃圾桶與容量規則。再執行 `20260920000400_asset_revoke.sql`：新增撤銷／移除公開副本的 RPC 與欄位。沒有套用時，檔案詳情會回報素材庫資料庫尚未更新。
+   接著執行 `supabase/migrations/20260920000300_asset_references.sql`：它新增 `asset_references()`，並以「仍被引用才擋回收」與「預留 24 小時後失效」取代原本的垃圾桶與容量規則。再依序執行 `20260920000400_asset_revoke.sql`（撤銷／移除公開副本）、`20260920000500_post_revisions.sql`（文章修訂與 soft 引用）、`20260920000600_asset_shares.sql`（限時分享連結）。沒有套用時，檔案詳情會回報素材庫資料庫尚未更新。
 4. 檢查原有 `media` 與 `resume` buckets 仍存在、仍是網站原本使用的公開 buckets，且其上限至少為 8 MiB。這兩個 buckets 是既有初始化 migration 建立的，新 migration 不更改它們。
 5. 若要保存最佳化圖片的尺寸與模糊預覽資料，也套用專案另外新增的 `20260920000200_media_dimensions.sql`。此表缺少時圖片發布仍可完成，但 metadata 僅為 best effort。
 6. 檢查 Storage policies 不存在套用「所有 buckets」的廣泛匿名／authenticated 讀寫權限。新 bucket 不需要新增瀏覽器直接讀寫 policies；伺服器提供短期簽名授權。
@@ -115,4 +117,4 @@ node scripts/test-assets-sql.mjs
 - 修改前的本機快照：`artifacts/version-backups/2026-09-20-before-asset-library/`，未包含環境金鑰。這是當時的素材相關程式快照，不含後續其他工作，不能直接覆蓋整個專案。
 - migration 為增量變更。若回退程式，保留新資料表與 buckets，不要用 DROP 或刪 Storage 來回退；否則會失去版本與紀錄。
 - 原先會直接刪除照片／履歷的流程已停用。回退到舊程式也會回復這些舊行為，需先檢查。
-- 尚未實作：全文／語意搜尋、durable worker queue、去重、私人分享連結、全站 release snapshot、一鍵異地備份及災難復原。細節保留在 `file-management-extension-research.md`，本階段沒有把研究提案當成已交付功能。
+- 尚未實作：全文／語意搜尋、durable worker queue、去重、全站 release snapshot、一鍵異地備份及災難復原。細節保留在 `file-management-extension-research.md`，本階段沒有把研究提案當成已交付功能。

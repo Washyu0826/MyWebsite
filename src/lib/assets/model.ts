@@ -21,6 +21,20 @@ export type AssetPublication = {
   content_sha256: string | null; content_type: string | null; content_size: number | null;
   created_at: string; completed_at: string | null;
 };
+export type AssetShare = {
+  id: string; asset_id: string; version_id: string; label: string | null;
+  expires_at: string; max_opens: number | null; opens: number;
+  revoked_at: string | null; last_opened_at: string | null; created_at: string;
+};
+export type ShareState = 'active' | 'expired' | 'revoked' | 'exhausted' | 'missing';
+export type SharePeek = {
+  state: ShareState; name?: string; mime_type?: string; size_bytes?: number;
+  expires_at?: string; opens?: number; max_opens?: number | null; label?: string | null;
+};
+/** 32 random bytes, base64url: 43 characters with no padding. */
+export const shareTokenPattern = /^[A-Za-z0-9_-]{43}$/;
+export const shareHourOptions = [1, 24, 72, 168, 720] as const;
+export const shareHourLabels: Record<number, string> = { 1: '1 小時', 24: '1 天', 72: '3 天', 168: '7 天', 720: '30 天' };
 export type AssetEvent = { id: number; actor_id: string; asset_id: string; version_id: string | null; action: string; detail: Record<string, unknown>; created_at: string };
 export type AssetSummary = Asset & { current: AssetVersion | null; published: boolean };
 export type AssetList = { items: AssetSummary[]; count: number; page: number; usedBytes: number };
@@ -30,7 +44,7 @@ export type AssetReference = {
   /** A retained article revision: it keeps no live page working, so it warns instead of blocking. */
   soft: boolean;
 };
-export type AssetDetail = { asset: Asset; versions: AssetVersion[]; publications: AssetPublication[]; events: AssetEvent[]; references: AssetReference[] };
+export type AssetDetail = { asset: Asset; versions: AssetVersion[]; publications: AssetPublication[]; events: AssetEvent[]; references: AssetReference[]; shares: AssetShare[] };
 export type PublishedAsset = { id: string; asset_id: string; name: string; slot: PublishSlot; public_url: string; mime_type: string | null; size: number | null; completed_at: string; width: number | null; height: number | null };
 export type PublishedList = { items: PublishedAsset[]; count: number; page: number };
 const referenceKinds: Record<AssetReference['kind'], string> = { profile: '個人資料', project: '作品', project_media: '作品畫廊', post: '文章', post_revision: '文章舊版本' };
@@ -50,6 +64,7 @@ export const eventLabels: Record<string, string> = {
   'asset.restore': '從垃圾桶還原', 'asset.version': '切換目前版本', 'asset.cancel': '取消待上傳版本',
   'publish.started': '開始發布', 'publish.complete': '發布完成', 'publish.conflict': '發布衝突',
   'publish.revoked': '撤銷公開副本', 'publish.purged': '公開檔案已移除',
+  'share.created': '建立分享連結', 'share.revoked': '撤銷分享連結',
 };
 export const slotLabels: Record<PublishSlot, string> = { public: '公開連結', avatar: '個人照', resume_zh: '中文履歷', resume_en: '英文履歷' };
 
@@ -72,6 +87,20 @@ export function validateAssetInput(input: Record<string, unknown>) {
 export function isPublishSlot(value: unknown): value is PublishSlot {
   return typeof value === 'string' && Object.hasOwn(slotLabels, value);
 }
+export function validateShareInput(input: Record<string, unknown>) {
+  if (!isUuid(input.versionId)) throw new Error('INVALID_REQUEST');
+  const hours = Number(input.hours);
+  if (!(shareHourOptions as readonly number[]).includes(hours)) throw new Error('INVALID_EXPIRY');
+  let maxOpens: number | null = null;
+  if (input.maxOpens != null && input.maxOpens !== '') {
+    maxOpens = Number(input.maxOpens);
+    if (!Number.isSafeInteger(maxOpens) || maxOpens < 1 || maxOpens > 10000) throw new Error('INVALID_REQUEST');
+  }
+  const raw = typeof input.label === 'string' ? input.label.trim() : '';
+  if (raw.length > 120 || /[\u0000-\u001f\u007f]/.test(raw)) throw new Error('INVALID_REQUEST');
+  return { versionId: input.versionId, hours, maxOpens, label: raw || null };
+}
+
 export function formatAssetBytes(bytes: number) {
   return bytes >= 1_000_000 ? `${(bytes / 1_000_000).toFixed(1)} MB` : `${Math.ceil(bytes / 1000)} KB`;
 }

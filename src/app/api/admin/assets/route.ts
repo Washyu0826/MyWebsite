@@ -1,6 +1,7 @@
 import { assetHandler, assetJson } from '@/lib/assets/http';
 import { assetDetail, beginAssetUpload, changeAsset, finishAssetUpload, listAssets, listAssetEvents, listLegacyAssets, listPublished, previewAsset, publishAsset, revokePublication } from '@/lib/assets/server';
-import { assetName, isPublishSlot, isUuid } from '@/lib/assets/model';
+import { assetName, isPublishSlot, isUuid, validateShareInput } from '@/lib/assets/model';
+import { createShare, revokeShare } from '@/lib/assets/shares';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -26,6 +27,11 @@ export async function POST(request: Request) {
   return assetHandler(request, async actor => {
     const body = await assetJson(request);
     if (body.action === 'upload') return beginAssetUpload(actor, body);
+    if (body.action === 'share') return createShare(actor, validateShareInput(body));
+    if (body.action === 'revoke-share') {
+      if (!isUuid(body.shareId)) throw new Error('INVALID_REQUEST');
+      return revokeShare(actor, body.shareId);
+    }
     if (body.action === 'revoke') {
       if (!isUuid(body.publicationId)) throw new Error('INVALID_REQUEST');
       return revokePublication(actor, body.publicationId);

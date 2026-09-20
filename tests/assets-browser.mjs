@@ -90,6 +90,8 @@ try {
   let next = 40;
   const requests = [];
   let failPublish = true;
+  const shareToken = 'z'.repeat(43);
+  let shares = [];
   let pendingPublication;
   let completedPublication;
   const history = [];
@@ -110,6 +112,7 @@ try {
                 ? [pendingPublication]
                 : [],
           events: history,
+          shares: shares.filter(share => share.asset_id === asset.id),
           references:
             completedPublication && completedPublication.asset_id === asset.id && completedPublication.status === 'complete' && asset.name.includes('portrait')
               ? [{ publication_id: completedPublication.id, url: completedPublication.public_url, kind: 'profile', id: null, slug: null, title: 'avatar', field: 'avatar', soft: false }]
@@ -157,6 +160,27 @@ try {
       return respond(asset);
     }
     if (body.action === 'preview') return respond({ url: `${origin}/preview.jpg` });
+    if (body.action === 'share') {
+      const share = {
+        id: id(6000 + shares.length),
+        asset_id: asset.id,
+        version_id: asset.current.id,
+        label: body.label || null,
+        expires_at: '2026-09-27T04:00:00Z',
+        max_opens: body.maxOpens ? Number(body.maxOpens) : null,
+        opens: 0,
+        revoked_at: null,
+        last_opened_at: null,
+        created_at: now,
+      };
+      shares = [share, ...shares];
+      // The plaintext token is returned once and never stored, exactly as the server does it.
+      return respond({ share, token: shareToken });
+    }
+    if (body.action === 'revoke-share') {
+      shares = shares.map(share => (share.id === body.shareId ? { ...share, revoked_at: now } : share));
+      return respond(shares.find(share => share.id === body.shareId));
+    }
     if (body.action === 'revoke') {
       completedPublication = { ...completedPublication, status: 'revoked', revoked_at: now, purged_at: now };
       asset.published = false;
@@ -313,9 +337,31 @@ try {
   await page.getByRole('button', { name: '撤銷公開 公開連結' }).click();
   await expect(page.getByText(/已撤銷/)).toBeVisible();
   await expect(page.getByRole('button', { name: '移至垃圾桶', exact: true })).toBeEnabled();
+  // Share links: created once, shown once, listed, then revoked.
+  await page.getByRole('button', { name: '檢視 Architecture-3.jpg', exact: true }).click();
+  await page.getByLabel('備註（只有你看得到）').fill('某公司面試');
+  await page.getByLabel('開啟次數上限').fill('3');
+  await page.getByRole('button', { name: '建立連結' }).click();
+  const issued = page.getByText(`${origin.replace(/^https?:\/\//, '')}`, { exact: false }).first();
+  await expect(page.getByText(/只會顯示這一次/)).toBeVisible();
+  await expect(issued).toContainText(shareToken);
+  assert.equal(requests.filter(r => r.action === 'share').length, 1);
+  assert.deepEqual(
+    requests.filter(r => r.action === 'share').map(r => [r.hours, r.maxOpens, r.label]),
+    [[168, '3', '某公司面試']],
+  );
+  await expect(page.getByText(/某公司面試/).last()).toBeVisible();
+  await expect(page.getByText(/有效 · 到期/)).toBeVisible();
+  await page.getByRole('button', { name: '我已保存' }).click();
+  await expect(page.getByText(/只會顯示這一次/)).toBeHidden();
+  page.once('dialog', dialog => dialog.accept());
+  await page.getByRole('button', { name: '撤銷 某公司面試' }).click();
+  await expect(page.getByText(/已撤銷 · 到期/)).toBeVisible();
+  await expect(page.getByRole('button', { name: '撤銷 某公司面試' })).toBeHidden();
+
   assert.deepEqual(errors, []);
   console.log(
-    'PASS: real components, responsive widths 320-1920, preview pixels, axe, pagination, rename, trash/restore, references, publication retry, audit, legacy, 7 MiB TUS upload, asset picker, revoke',
+    'PASS: real components, responsive widths 320-1920, preview pixels, axe, pagination, rename, trash/restore, references, publication retry, audit, legacy, 7 MiB TUS upload, asset picker, revoke, share links',
   );
 } finally {
   await browser?.close();

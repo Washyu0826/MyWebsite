@@ -12,6 +12,8 @@ const errors: Record<string, [number, string]> = {
   ASSET_REFERENCED: [409, '此素材仍被個人資料、作品或文章使用；請先更換那裡的引用，再回收或撤銷。'],
   PUBLICATION_PENDING: [409, '這次發布尚未完成，請先重試發布或等它完成。'],
   OBJECT_REMOVE_FAILED: [503, '公開副本已停止列出，但檔案尚未從儲存區移除；請稍後再按一次撤銷。'],
+  INVALID_EXPIRY: [400, '請選擇有效的有效期限。'],
+  SHARE_LIMIT: [409, '這個素材的有效分享連結已達 20 個上限，請先撤銷不用的連結。'],
   UPLOAD_PENDING: [409, '此檔案仍有待完成的上傳，請重試驗證或取消該版本。'],
   VERSION_NOT_READY: [409, '此版本尚未通過驗證。'], UPLOAD_REJECTED: [409, '此版本已取消或驗證失敗，請重新上傳新版本。'],
   UPLOAD_MISMATCH: [422, '實際檔案內容、大小或格式不符，請重新選擇檔案。'],

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Archive, ArrowLeft, ArrowRight, Ban, Check, Copy, ExternalLink, File, Folder, History, ImageIcon, LoaderCircle, MoreHorizontal, RefreshCw, RotateCcw, Search, Trash2, Upload, X } from 'lucide-react';
 import { assetRequest } from '@/lib/assets/client';
 import { assetQuotaBytes, eventLabels, formatAssetBytes, referenceHref, referenceLabel, slotLabels, type AssetDetail, type AssetEvent, type AssetList, type AssetPublication, type PublishSlot } from '@/lib/assets/model';
+import { AssetShares } from './asset-shares';
 import { AssetUpload } from './asset-upload';
 
 type View = 'library' | 'trash' | 'activity' | 'legacy';
@@ -127,6 +128,7 @@ function AssetInspector({ id, revision, onClose, onChange }: { id: string; revis
           {current?.status === 'pending' && <div className="asset-actions"><button className="asset-secondary" disabled={working} onClick={() => void act({ action: 'complete', versionId }, '檔案驗證完成。')}><RefreshCw size={16} />重試驗證</button><button className="asset-secondary" disabled={working} onClick={() => void act({ action: 'cancel', id, value: versionId }, '此版本已取消；檔案與紀錄仍保留。')}><X size={16} />取消版本</button></div>}
           {preview && <div className="asset-preview">{current?.mime_type.startsWith('image/') ? <Image src={preview} unoptimized width={600} height={450} alt={detail.asset.name} onError={() => setPreview('')} /> : <File size={40} />}<a href={preview} target="_blank" rel="noreferrer">開啟檔案 <ExternalLink size={14} /></a></div>}
           {current?.status === 'ready' && <section className="asset-publish"><h3>發布此版本</h3><label className="asset-field">用途<select value={slot} onChange={event => setSlot(event.target.value as PublishSlot)}>{availableSlots.map(value => <option key={value} value={value}>{slotLabels[value]}</option>)}</select></label><button className="asset-primary" disabled={working} onClick={() => void publish()}><ExternalLink size={16} />{working ? '處理中' : '發布'}</button></section>}
+          {current?.status === 'ready' && <AssetShares versionId={versionId} shares={detail.shares} disabled={working} onChange={onChange} />}
           <section className="asset-version-upload"><h3>新增版本</h3><AssetUpload assetId={id} onComplete={version => { setVersionId(version.id); onChange(); }} /></section>
         </>}
         {references.length > 0 && <section className="asset-references"><h3>使用位置</h3>
