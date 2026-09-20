@@ -40,8 +40,11 @@ export function getProjectBySlug(slug: string) {
         db.from('project_media').select('*').eq('project_id', project.id).order('sort_order').order('id'),
         db.from('project_metrics').select('*').eq('project_id', project.id).order('sort_order').order('id'),
       ]);
-      if (images.error || numbers.error) throw new Error('Unable to load project details.');
-      media = images.data; metrics = numbers.data;
+      if (images.error || numbers.error) {
+        warnProjectsUnavailable(`Unable to load project details for "${slug}"; using fallback detail data.`, images.error || numbers.error);
+      } else {
+        media = images.data; metrics = numbers.data;
+      }
     }
     return { ...project, media, metrics, previous: projects[index - 1] ?? null, next: projects[index + 1] ?? null };
   }, ['project', slug], { tags: ['projects', `project:${slug}`], revalidate: 300 })();
