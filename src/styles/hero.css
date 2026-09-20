@@ -47,16 +47,19 @@
   z-index: 1;
   object-fit: contain;
   object-position: bottom center;
-  filter: drop-shadow(0 26px 46px color-mix(in srgb, #000 58%, transparent));
+  mix-blend-mode: multiply;
+  filter: brightness(1.14) saturate(1.04) contrast(1.06) drop-shadow(0 26px 46px color-mix(in srgb, #000 58%, transparent));
   transition: filter 0.42s ease, transform 0.42s ease;
 }
 .hero-photo:hover img { transform: translateY(-4px) scale(1.012); }
 .light .hero-photo-inner::before { opacity: 0.28; }
-.light .hero-photo-inner img { filter: drop-shadow(0 22px 40px color-mix(in srgb, #000 22%, transparent)); }
+.light .hero-photo-inner img {
+  mix-blend-mode: normal;
+  filter: drop-shadow(0 22px 40px color-mix(in srgb, #000 22%, transparent));
+}
 .hero-typewriter { max-width: 760px; }
 .typewriter-line { overflow-wrap: normal; }
-.typewriter-text { display: inline; }
-.typewriter-word { display: inline-block; white-space: nowrap; }
+.typewriter-text { display: inline-block; max-width: 100%; }
 .home-container .status-line strong {
   position: relative;
   display: inline-block;
@@ -142,14 +145,13 @@
 .letter { display: inline-block; overflow: hidden; padding: 0.14em 0.04em 0.2em; margin: -0.14em -0.04em -0.2em; }
 .letter > span { display: inline-block; }
 @keyframes letter-rise { from { transform: translateY(110%); } to { transform: translateY(0); } }
-@keyframes typewriter-char-in { to { opacity: 1; transform: translateY(0); } }
+@keyframes typewriter-line-in { to { clip-path: inset(0 0 0 0); } }
 @keyframes hero-photo-in { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: no-preference) {
-  html[data-js="1"] .hero-typewriter .typewriter-char {
-    opacity: 0;
-    transform: translateY(0.08em);
-    animation: typewriter-char-in 1ms steps(1, end) forwards;
-    animation-delay: calc((var(--type-start, 0) + var(--type-index, 0)) * 24ms);
+  html[data-js="1"] .hero-typewriter .typewriter-text {
+    clip-path: inset(0 100% 0 0);
+    animation: typewriter-line-in var(--type-duration, 600ms) steps(var(--type-steps, 16), end) forwards;
+    animation-delay: var(--type-line-delay, 0ms);
   }
   html[data-js="1"] .letter-reveal:not([data-letters="done"]) .letter > span { animation: letter-rise 0.62s cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: calc(var(--letter-index, 0) * 26ms); }
   html[data-js="1"] .hero-photo { animation: hero-photo-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.22s both; }

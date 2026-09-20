@@ -21,32 +21,29 @@ import { JsonLd } from '@/components/json-ld';
 import { PwaRegister } from '@/app/offline/pwa-register';
 type Props = { params: Promise<{ locale: Locale }> };
 const heroAlias = 'Zenobia';
+const heroHeadline = 'Software Engineer';
 const focusAreas = ['Multimodal AI', 'AI Agent / MCP', 'GraphRAG', 'Full Stack', 'DevOps'];
 const heroTagline = 'Curiosity driven, clarity obsessed.';
 const designPrinciples = ['why', 'candid', 'iteration'];
 
-function TypewriterLine({ as: Tag = 'p', text, className, id, start = 0 }: {
+function TypewriterLine({ as: Tag = 'p', text, className, id, delay = 0 }: {
   as?: 'p' | 'h1';
   text: string;
   className?: string;
   id?: string;
-  start?: number;
+  delay?: number;
 }) {
-  const parts = text.split(' ');
-  const words = parts.map((word, wordIndex) => ({
-    word,
-    wordStart: parts.slice(0, wordIndex).reduce((sum, part) => sum + part.length + 1, 0),
-  }));
-  return <Tag id={id} className={['typewriter-line', className].filter(Boolean).join(' ')} style={{ '--type-start': start } as React.CSSProperties}>
+  return <Tag
+    id={id}
+    className={['typewriter-line', className].filter(Boolean).join(' ')}
+    style={{
+      '--type-line-delay': `${delay}ms`,
+      '--type-duration': `${Math.max(260, text.length * 34)}ms`,
+      '--type-steps': text.length,
+    } as React.CSSProperties}
+  >
     <span className="sr-only">{text}</span>
-    <span className="typewriter-text" aria-hidden="true">
-      {words.map(({ word, wordStart }, wordIndex) => <span key={`${wordIndex}-${word}`}>
-        {wordIndex ? ' ' : null}
-        <span className="typewriter-word">
-          {[...word].map((char, index) => <span key={`${index}-${char}`} className="typewriter-char" style={{ '--type-index': wordStart + index } as React.CSSProperties}>{char}</span>)}
-        </span>
-      </span>)}
-    </span>
+    <span className="typewriter-text" aria-hidden="true">{text}</span>
   </Tag>;
 }
 
@@ -87,7 +84,7 @@ export default async function Home({ params }: Props) {
   const featured = projects.filter(project => project.is_featured).slice(0, 3);
   // Same @id as the contact page: one person described in two places, which crawlers merge.
   const person = personSchema({
-    name: p.name, locale, jobTitle: p.headline, description: p.bio, email: profile.email, image: profile.avatar_url,
+    name: p.name, locale, jobTitle: heroHeadline, description: p.bio, email: profile.email, image: profile.avatar_url,
     sameAs: profile.social_links.map(link => safeUrl(link.url)),
     alumniOf: experiences.filter(row => row.kind === 'education').map(row => pickLocale(row, locale).org),
   });
@@ -95,10 +92,10 @@ export default async function Home({ params }: Props) {
     <section className="hero" aria-labelledby="intro-heading">
       <div className={profile.avatar_url ? 'hero-grid' : 'hero-grid hero-grid-text-only'}>
         <div>
-          <div className="hero-typewriter" aria-label={`${heroAlias}. ${p.headline}. ${heroTagline}`}>
+          <div className="hero-typewriter" aria-label={`${heroAlias}. ${heroHeadline}. ${heroTagline}`}>
             <TypewriterLine text={heroAlias} className="mb-5 text-meta text-graphite" />
-            <TypewriterLine as="h1" id="intro-heading" text={p.headline} start={8} />
-            <div className="positioning"><TypewriterLine text={heroTagline} start={24} /></div>
+            <TypewriterLine as="h1" id="intro-heading" text={heroHeadline} delay={420} />
+            <div className="positioning"><TypewriterLine text={heroTagline} delay={1120} /></div>
           </div>
           <div className="status-line"><span>{t('now')}</span><span>{nowParts.length > 1 ? <>
             {nowParts[0]} <span aria-hidden="true">·</span> <strong>{nowParts.slice(1).join(' · ')}</strong>
