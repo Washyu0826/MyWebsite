@@ -3,6 +3,7 @@ import { useActionState, useEffect, useId, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { CONTACT_FIELDS, CONTACT_LIMITS, contactDraftSchema, isContactFieldValid, type ContactField } from '@/lib/schema';
 import { buttonVariants } from '@/components/ui/button';
+import { cue } from '@/lib/audio/cue';
 import { sendMessageAction, type ContactState } from './actions';
 
 const FIELD_ERROR: Record<ContactField, 'errorName' | 'errorEmail' | 'errorMessage'> = { name: 'errorName', email: 'errorEmail', message: 'errorMessage' };
@@ -50,7 +51,7 @@ export function ContactForm({ startedAt: initialStartedAt }: { startedAt: string
     if (draft) { setValues(draft); setRestored(true); }
   }, []);
   useEffect(() => { if (state.status !== 'idle') summaryRef.current?.focus(); }, [state]);
-  useEffect(() => { if (state.status === 'ok') clearDraft(); }, [state]);
+  useEffect(() => { if (state.status === 'ok') { clearDraft(); cue('sent'); } }, [state]);
 
   const update = (field: keyof Draft, value: string) => {
     const next = { ...values, [field]: value };

@@ -1,6 +1,7 @@
-/* Ambient audio toggle: a quiet speaker pinned to the bottom-right corner, over the page rather than
-   in it, so it is reachable from every route without taking part in any layout. It is off until it is
-   pressed; the component owns the sound, this file only owns how little it asks for. */
+/* Sound toggle: a quiet speaker pinned to the bottom-right corner, over the page rather than in it, so
+   it is reachable from every route without taking part in any layout. It governs everything audible —
+   the generative piece and the two confirmations — and is off until it is pressed; the component owns
+   the sound, this file only owns how little it asks for. */
 .ambient-toggle {
   position: fixed; z-index: 25;
   right: max(20px, env(safe-area-inset-right)); bottom: max(20px, env(safe-area-inset-bottom));
@@ -12,9 +13,9 @@
 }
 .ambient-toggle:hover, .ambient-toggle:focus-visible { opacity: 1; color: var(--ink); border-color: color-mix(in srgb, var(--indigo) 46%, var(--rule)); }
 .ambient-toggle[data-state="on"] { opacity: 1; color: var(--indigo); border-color: color-mix(in srgb, var(--indigo) 38%, var(--rule)); }
-/* While it plays the icon breathes on the backdrop's 28s sweep — the cycle the filter cutoff follows —
-   so the corner belongs to the picture. globals.css already stops every animation under reduced motion;
-   this query is what keeps the icon from being built out of one in the first place. */
+/* While it plays the icon breathes on the backdrop's 28s sweep — the cycle the notes' register and
+   brightness follow — so the corner belongs to the picture. globals.css already stops every animation
+   under reduced motion; this query is what keeps the icon from being built out of one in the first place. */
 @media (prefers-reduced-motion: no-preference) {
   .ambient-toggle[data-state="on"] svg { animation: ambient-breath 28s var(--ez-inout) infinite; }
 }

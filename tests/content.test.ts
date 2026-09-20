@@ -11,8 +11,11 @@ test('blank English content falls back to Chinese; nonlocalized data is not proj
 });
 test('resume selects exact language and does not offer the other language as a substitute', () => {
   const profile = { resume_zh_url: 'https://example.com/zh.pdf', resume_en_url: null };
-  assert.equal(resumeUrl(profile, 'en'), null);
+  // An uploaded file wins; with none for that language the static PDF of the SAME language is
+  // served. What must never happen is answering a request for English with the Chinese document.
+  assert.equal(resumeUrl(profile, 'en'), '/resumes/kuan-yu-hsien-resume-en.pdf');
   assert.equal(resumeUrl(profile, 'zh'), profile.resume_zh_url);
+  assert.equal(resumeUrl({ resume_zh_url: null, resume_en_url: null }, 'zh'), '/resumes/kuan-yu-hsien-resume-zh.pdf');
   assert.equal(documentUrl('/resumes/kuan-yu-hsien-resume-en.pdf'), '/resumes/kuan-yu-hsien-resume-en.pdf');
   assert.equal(documentUrl('//example.com/resume.pdf'), null);
 });
