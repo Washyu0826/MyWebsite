@@ -9,7 +9,24 @@ import { expect, test, type Page } from '@playwright/test';
 test.describe.configure({ retries: 2 });
 
 const themeLabel = { zh: '切換主題', en: 'Change theme' } as const;
-const paper = { light: 'rgb(247, 246, 241)', dark: 'rgb(13, 14, 16)' } as const;
+const paper = { light: [247, 246, 241], dark: [13, 14, 16] } as const;
+
+/** The daylight tint makes the page colour a color-mix result, so compare by distance, not string. */
+async function expectPaper(page: Page, theme: 'light' | 'dark') {
+  await expect(async () => {
+    const value = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    const parts = value.startsWith('color(')
+      ? value
+          .replace(/^color\(srgb\s*/, '')
+          .replace(/\).*$/, '')
+          .trim()
+          .split(/\s+/)
+          .map(v => Number(v) * 255)
+      : (value.match(/[\d.]+/g) || []).slice(0, 3).map(Number);
+    expect(parts).toHaveLength(3);
+    parts.forEach((channel, index) => expect(Math.abs(channel - paper[theme][index])).toBeLessThan(16));
+  }).toPass({ timeout: 15000 });
+}
 
 const routes = [
   { name: 'home', path: '' },
@@ -28,10 +45,15 @@ async function settle(page: Page, theme: 'light' | 'dark') {
   if (theme === 'light') {
     const select = page.getByRole('combobox', { name: themeLabel.zh });
     await expect(select).not.toHaveValue('system', { timeout: 15000 });
-    await select.selectOption('light');
+    // The select renders before React attaches its handler, so an early selectOption is swallowed
+    // and the class never lands. Keep choosing until it takes.
+    await expect(async () => {
+      await select.selectOption('light');
+      await expect(page.locator('html')).toHaveClass(/light/, { timeout: 2000 });
+    }).toPass({ timeout: 20000 });
   }
   await expect(page.locator('html')).toHaveClass(theme === 'dark' ? /dark/ : /light/, { timeout: 15000 });
-  await expect(page.locator('body')).toHaveCSS('background-color', paper[theme], { timeout: 15000 });
+  await expectPaper(page, theme);
   await expect(page.locator('h1')).toBeVisible({ timeout: 15000 });
   // Web fonts land after first paint and move every line of text.
   await page.evaluate(() => document.fonts.ready);

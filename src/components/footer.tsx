@@ -2,6 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import { getProfile } from '@/lib/db/profile';
 import { emailUrl, safeUrl } from '@/lib/urls';
 import { Container } from './container';
+import { AmbientAudio } from './ambient-audio';
 export async function Footer() {
   const t = await getTranslations('Site');
   const profile = await getProfile();
@@ -12,5 +13,5 @@ export async function Footer() {
       {email && <a className="text-link" href={email}>{t('email')}</a>}
     </div>
     <div className="flex flex-wrap items-center gap-x-6 gap-y-2"><span>{t('footerNote')}</span><span>{t('copyright', { year: new Date().getFullYear() })}</span></div>
-  </Container></footer>;
+  </Container><AmbientAudio /></footer>;
 }

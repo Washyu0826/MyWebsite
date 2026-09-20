@@ -1,0 +1,179 @@
+/* Page chrome: the parts of the interface that answer to the visitor rather than to the content —
+   the theme sweep, the daylight tint, the idle vignette, the scrolled header, the numerals and the
+   scrollbar. Deliberately unlayered: it is imported after layout.css and has to outrank the
+   `@layer base` block in globals.css, which sets `background` on body with the shorthand. */
+
+/* Daylight tint ------------------------------------------------------------
+   --daylight runs 0 (small hours) to 1 (mid-afternoon); components/providers.tsx writes it from the
+   visitor's own clock after hydration. 0.5 is the neutral server value, so first paint cannot flash
+   and the markup carries no clock reading. The mix rides on top of --paper rather than replacing it,
+   so the theme tokens stay in charge of the colour and this only bends its temperature. */
+:root {
+  --daylight: 0.5;
+  --daylight-warm: #ffb067;
+  --daylight-cool: #6e8fb5;
+  --daylight-strength: 3.2%;
+}
+body {
+  background-color: color-mix(
+    in srgb,
+    color-mix(in srgb, var(--daylight-warm) calc(var(--daylight) * 100%), var(--daylight-cool)) var(--daylight-strength),
+    var(--paper)
+  );
+}
+
+/* Theme sweep --------------------------------------------------------------
+   The new theme is clipped in as a circle growing from the toggle's own centre; the old one is left
+   alone underneath, so nothing cross-fades and no wrong colour shows through. components/theme-
+   switch.tsx sets the geometry and the flag, and skips the whole transition where the API is missing
+   or the visitor asked for less motion — the class swap itself never depends on any of this. */
+@media (prefers-reduced-motion: no-preference) {
+  html[data-theme-sweep]::view-transition-old(root),
+  html[data-theme-sweep]::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+  }
+  html[data-theme-sweep]::view-transition-new(root) {
+    animation: theme-sweep var(--dur-sweep, 560ms) var(--ez-standard) forwards;
+  }
+}
+@keyframes theme-sweep {
+  from {
+    clip-path: circle(0 at var(--sweep-x) var(--sweep-y));
+  }
+  to {
+    clip-path: circle(var(--sweep-r) at var(--sweep-x) var(--sweep-y));
+  }
+}
+
+/* Idle vignette ------------------------------------------------------------
+   After ten quiet seconds the edges draw down a little; any pointer, key, wheel or scroll lifts it
+   again. It sits above the header (z 20) and below the cover preview (30) and command palette (60),
+   and `display: none` under reduced motion means no timer result can ever put it on screen. */
+.site-chrome {
+  position: relative;
+}
+.chrome-sentinel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 100vh;
+  pointer-events: none;
+}
+.chrome-vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.4s var(--ez-standard);
+  background: radial-gradient(100% 75% at 50% 46%, transparent 40%, color-mix(in srgb, #000 55%, transparent) 100%);
+}
+.light .chrome-vignette {
+  background: radial-gradient(100% 75% at 50% 46%, transparent 40%, color-mix(in srgb, #2a2418 14%, transparent) 100%);
+}
+.site-chrome[data-idle='1'] .chrome-vignette {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chrome-vignette {
+    display: none;
+  }
+}
+/* Neither of these two is content, and print.css only knows how to strip fixed layers that carry an
+   inline style, so they say so themselves. */
+@media print {
+  .chrome-vignette,
+  .chrome-sentinel {
+    display: none;
+  }
+}
+
+/* Scrolled header ----------------------------------------------------------
+   Driven by an IntersectionObserver over a one-screen sentinel, so nothing measures layout per
+   scroll event. --ash is the darker of the two surface tokens in both themes, which is why the
+   header can darken on paper as well as on the dark plate. */
+.site-header {
+  transition:
+    background-color var(--dur-slow) var(--ez-standard),
+    border-color var(--dur-slow) var(--ez-standard);
+}
+.site-chrome[data-scrolled='1'] .site-header {
+  background-color: color-mix(in srgb, var(--ash) 94%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--ink) 26%, var(--rule));
+}
+
+/* Numerals -----------------------------------------------------------------
+   Years, dates, counts and reading times sit in columns down these lists, so they get tabular
+   figures. Body prose keeps the proportional ones. */
+.article-row-meta,
+.article-meta-line,
+.article-tags,
+.project-row-meta,
+.project-row-head span,
+.project-signal-grid dd,
+.case-meta dd,
+.share-meta,
+.status-line,
+.pagination,
+.experience-row > p:first-child,
+.signature-principle span,
+.command-kbd,
+.experience-section .section-heading::before,
+.project-section .section-heading::before,
+.research-section .section-heading::before {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Scrollbar ----------------------------------------------------------------
+   The site's own greys, narrower than the OS default, and still a visible, grabbable thumb.
+   Chrome honours the two standard properties and ignores the ::-webkit- rules once they are set;
+   the pseudo-elements are there for the WebKit versions that only understand those. */
+:root {
+  scrollbar-color: color-mix(in srgb, var(--ink) 22%, transparent) transparent;
+}
+/* scrollbar-color inherits, scrollbar-width does not, so the narrow track has to be asked for
+   everywhere or the nested scrollers (command results, admin tables) keep the OS default. */
+* {
+  scrollbar-width: thin;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--ink) 22%, transparent);
+  background-clip: padding-box;
+  border: 3px solid transparent;
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in srgb, var(--ink) 38%, transparent);
+}
+
+/* Error and 404 pages ------------------------------------------------------
+   The copy is unchanged; the cubist fragment is set beside it and drops under it on narrow screens. */
+.page-figure {
+  display: grid;
+  gap: 48px;
+  align-items: start;
+}
+.cubist-figure {
+  width: min(100%, 300px);
+  height: auto;
+  color: var(--graphite);
+}
+@media (min-width: 768px) {
+  .page-figure {
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
+    gap: 72px;
+  }
+  .cubist-figure {
+    justify-self: end;
+  }
+}

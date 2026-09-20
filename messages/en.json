@@ -4,6 +4,8 @@
     "navigation": "Main navigation", "openMenu": "Open menu", "closeMenu": "Close menu",
     "skip": "Skip to content", "language": "切換至繁體中文", "languageShort": "中",
     "theme": "Change theme", "light": "Light", "dark": "Dark", "system": "System",
+    "audioPlay": "Play ambient sound", "audioMute": "Mute ambient sound",
+    "audioPlaying": "Ambient sound on", "audioMuted": "Ambient sound off",
     "copyright": "© {year} Kuan-Yu Hsien", "footerNote": "Always learning. Building with care.",
     "demo": "Sample content", "demoNote": "Projects, experience and metrics are illustrative samples, not personal achievements.",
     "email": "Email", "resume": "Download résumé PDF", "resumeUnavailable": "Résumé coming soon. Feel free to request it by email.",

@@ -1,7 +1,20 @@
 import { expect, test, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 const themeLabel = { zh: '切換主題', en: 'Change theme' } as const;
-const paper = { light: 'rgb(247, 246, 241)', dark: 'rgb(13, 14, 16)' } as const;
+const paper = { light: [247, 246, 241], dark: [13, 14, 16] } as const;
+// The daylight tint mixes a few percent of warmth into the page colour, so the computed value is a
+// color-mix result rather than the token verbatim. Compare by distance: a wrong theme is hundreds of
+// levels away, the tint is single digits.
+async function expectPaper(page: Page, scheme: 'light' | 'dark') {
+  await expect(async () => {
+    const rgb = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    const parts = rgb.startsWith('color(')
+      ? rgb.replace(/^color\(srgb\s*/, '').replace(/\).*$/, '').trim().split(/\s+/).map(v => Number(v) * 255)
+      : (rgb.match(/[\d.]+/g) || []).slice(0, 3).map(Number);
+    expect(parts).toHaveLength(3);
+    parts.forEach((value, index) => expect(Math.abs(value - paper[scheme][index])).toBeLessThan(16));
+  }).toPass({ timeout: 15000 });
+}
 // The default theme is a fixed `dark`; light is opted into through the theme <select>.
 async function chooseTheme(page: Page, locale: 'zh' | 'en', theme: 'light' | 'dark') {
   const select = page.getByRole('combobox', { name: themeLabel[locale] });
@@ -20,7 +33,7 @@ for (const locale of ['zh', 'en'] as const) {
         await expect(page.locator('html')).toHaveClass(/dark/);
         if (colorScheme === 'light') await chooseTheme(page, locale, 'light');
         await expect(page.locator('html')).toHaveClass(colorScheme === 'dark' ? /dark/ : /light/);
-        await expect(page.locator('body')).toHaveCSS('background-color', paper[colorScheme], { timeout: 15000 });
+        await expectPaper(page, colorScheme);
         await page.evaluate(() => document.fonts.ready);
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
         const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();

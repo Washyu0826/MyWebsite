@@ -1,10 +1,12 @@
 'use client';
 import { Fragment, useEffect, useRef } from 'react';
+import { useHeadingGlow } from './glow-heading';
 const DURATION = 620, STEP = 26;
 // Screen readers get the plain string; the per-letter spans are decoration. CSS in hero.css only animates
 // when the inline script marked JS as available, so no-JS and reduced-motion render finished text.
 export function LetterReveal({ text }: { text: string }) {
   const scope = useRef<HTMLSpanElement>(null);
+  useHeadingGlow(scope);
   let offset = 0;
   const words = text.split(' ').map(word => { const start = offset; offset += word.length + 1; return { word, start }; });
   useEffect(() => {
