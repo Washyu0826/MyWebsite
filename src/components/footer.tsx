@@ -7,10 +7,13 @@ export async function Footer() {
   const t = await getTranslations('Site');
   const profile = await getProfile();
   const email = emailUrl(profile.email);
+  const linkedin = profile.social_links.find(link => link.platform.toLowerCase() === 'linkedin' && safeUrl(link.url));
+  const github = profile.social_links.find(link => link.platform.toLowerCase() === 'github' && safeUrl(link.url));
   return <footer className="site-footer"><Container className="footer-inner">
     <div className="flex flex-wrap items-center gap-5">
-      {profile.social_links.filter(s => safeUrl(s.url)).map(s => <a className="text-link" key={s.id} href={s.url} target="_blank" rel="noopener noreferrer">{s.label || s.platform}</a>)}
       {email && <a className="text-link" href={email}>{t('email')}</a>}
+      {linkedin && <a className="text-link" href={linkedin.url} target="_blank" rel="noopener noreferrer">{linkedin.label || 'LinkedIn'}</a>}
+      {github && <a className="text-link" href={github.url} target="_blank" rel="noopener noreferrer">{github.label || 'GitHub'}</a>}
     </div>
     <div className="flex flex-wrap items-center gap-x-6 gap-y-2"><span>{t('footerNote')}</span><span>{t('copyright', { year: new Date().getFullYear() })}</span></div>
   </Container><AmbientAudio /></footer>;

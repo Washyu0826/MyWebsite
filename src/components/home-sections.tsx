@@ -14,10 +14,13 @@ export async function HomeSections({ locale }: { locale: Locale }) {
     {!experiences.length && <p className="enter-item text-graphite">{t('noExperience')}</p>}
     {experiences.map((experience, index) => {
       const e = pickLocale(experience, locale);
+      const period = monthRangeLabel(experience.start_date, experience.is_current ? null : experience.end_date, locale, t('present'));
       return <div key={experience.id} className="experience-row" style={{ '--enter-index': index } as React.CSSProperties}>
-        <p className="text-meta text-graphite">{monthRangeLabel(experience.start_date, experience.is_current ? null : experience.end_date, locale, t('present'))}</p>
-        <div>
-          <h3 className="font-medium">{e.org}<span className="ml-4 text-graphite">{e.role}</span></h3>
+        <div className="experience-row-main">
+          <div className="experience-row-heading">
+            <h3 className="font-medium">{e.org}<span className="ml-4 text-graphite">{e.role}</span></h3>
+            <p className="text-meta text-graphite">{period}</p>
+          </div>
           <div className="mt-2 text-meta text-graphite"><Markdown>{e.description}</Markdown></div>
         </div>
       </div>;

@@ -1,5 +1,4 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import Image from 'next/image';
 import { Github, Instagram, Link as LinkIcon, Linkedin, Mail, MapPin, MessageCircle, Phone } from 'lucide-react';
 import type { Locale } from '@/i18n/routing';
 import { getProfile, listExperiences } from '@/lib/db/profile';
@@ -61,12 +60,17 @@ export default async function Contact({ params }: Props) {
     alumniOf: experiences.filter(row => row.kind === 'education').map(row => pickLocale(row, locale).org),
   });
   const crumbs = breadcrumbSchema([{ name: site('brand'), path: `/${locale}` }, { name: t('title'), path: `/${locale}/contact` }]);
-  return <Container className="page"><JsonLd nodes={[person, crumbs]} /><PwaRegister /><header className="page-heading"><h1>{t('title')}</h1><p>{t('description')}</p></header>
+  return <Container className="page contact-page"><JsonLd nodes={[person, crumbs]} /><PwaRegister /><header className="page-heading contact-page-heading"><h1>{t('title')}</h1><p>{t('description')}</p></header>
     <section className="contact-intro">
-      <div><h2 className="text-h2">{t('intro')}</h2><p className="mt-4 text-graphite">{t('body')}</p></div>
-      {profile.avatar_url ? <div className="contact-portrait">
-        <Image src={profile.avatar_url} alt={p.name} width={360} height={450} sizes="(min-width: 768px) 320px, 100vw" />
-      </div> : null}
+      <div>
+        <p className="text-meta text-graphite">{p.name}</p>
+        <h2 className="text-h2">{t('intro')}</h2>
+        <p className="mt-4 text-graphite">{t('body')}</p>
+      </div>
+      <div className="contact-intro-actions">
+        {email ? <a className="contact-direct-link" href={email}><Mail size={18} aria-hidden="true" />{site('email')}</a> : null}
+        <ResumeLink profile={profile} locale={locale} />
+      </div>
     </section>
     {items.length === 0 ? <p className="text-graphite">{site('contactUnavailable')}</p> : <dl className="contact-list">
       {items.map(item => {
@@ -90,6 +94,5 @@ export default async function Contact({ params }: Props) {
       {/* Server-rendered clock so the form also submits without JavaScript; the client replaces it on mount. */}
       <ContactForm startedAt={String(Date.now())} />
     </section>
-    <section className="mt-16"><h2 className="mb-5 text-h2">{t('resumeTitle')}</h2><ResumeLink profile={profile} locale={locale} /></section>
   </Container>;
 }

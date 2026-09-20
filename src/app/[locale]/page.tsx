@@ -7,7 +7,7 @@ import { getProfile } from '@/lib/db/profile';
 import { listProjects } from '@/lib/db/projects';
 import { listExperiences } from '@/lib/db/profile';
 import { pickLocale } from '@/lib/locale';
-import { emailUrl, gmailComposeUrl, safeUrl } from '@/lib/urls';
+import { gmailComposeUrl, safeUrl } from '@/lib/urls';
 import { pageMetadata } from '@/lib/metadata';
 import { personSchema } from '@/lib/structured-data';
 import { Container } from '@/components/container';
@@ -16,11 +16,9 @@ import { ProjectList } from '@/components/project-list';
 import { HomeSections } from '@/components/home-sections';
 import { CubistBackdrop } from '@/components/cubist-backdrop';
 import { ResumeLink } from '@/components/resume-link';
-import { buttonVariants } from '@/components/ui/button';
 import { JsonLd } from '@/components/json-ld';
 import { PwaRegister } from '@/app/offline/pwa-register';
 type Props = { params: Promise<{ locale: Locale }> };
-const heroAlias = 'Zenobia';
 const heroHeadline = 'Software Engineer';
 const heroAvatarUrl = '/demo/portrait-cut.png';
 const focusAreas = ['Multimodal AI', 'AI Agent / MCP', 'GraphRAG', 'Full Stack', 'DevOps'];
@@ -28,7 +26,7 @@ const heroTagline = 'Curiosity driven, clarity obsessed.';
 const designPrinciples = ['why', 'candid', 'iteration'];
 
 function TypewriterLine({ as: Tag = 'p', text, className, id, delay = 0 }: {
-  as?: 'p' | 'h1';
+  as?: 'p' | 'h1' | 'span';
   text: string;
   className?: string;
   id?: string;
@@ -80,7 +78,6 @@ export default async function Home({ params }: Props) {
   setRequestLocale(locale);
   const [profile, projects, experiences, t, site] = await Promise.all([getProfile(), listProjects(), listExperiences(), getTranslations('Home'), getTranslations('Site')]);
   const p = pickLocale(profile, locale);
-  const email = emailUrl(profile.email);
   const nowParts = p.now.split(' · ');
   const featured = projects.filter(project => project.is_featured).slice(0, 3);
   // Same @id as the contact page: one person described in two places, which crawlers merge.
@@ -93,10 +90,9 @@ export default async function Home({ params }: Props) {
     <section className="hero" aria-labelledby="intro-heading">
       <div className={heroAvatarUrl ? 'hero-grid' : 'hero-grid hero-grid-text-only'}>
         <div>
-          <div className="hero-typewriter" aria-label={`${heroAlias}. ${heroHeadline}. ${heroTagline}`}>
-            <TypewriterLine text={heroAlias} className="mb-5 text-meta text-graphite" />
-            <TypewriterLine as="h1" id="intro-heading" text={heroHeadline} delay={420} />
-            <div className="positioning"><TypewriterLine text={heroTagline} delay={1120} /></div>
+          <div className="hero-typewriter" aria-label={`${heroHeadline}. ${heroTagline}`}>
+            <TypewriterLine as="h1" id="intro-heading" text={heroHeadline} />
+            <div className="positioning"><TypewriterLine text={heroTagline} delay={820} /></div>
           </div>
           <div className="status-line"><span>{t('now')}</span><span>{nowParts.length > 1 ? <>
             {nowParts[0]} <span aria-hidden="true">·</span> <strong>{nowParts.slice(1).join(' · ')}</strong>
@@ -110,7 +106,7 @@ export default async function Home({ params }: Props) {
             <div className="signature-principles" aria-label={t('principles.label')}>
               {designPrinciples.map((key, index) => <div key={key} className="signature-principle" style={{ '--enter-index': index } as React.CSSProperties}>
                 <span>{`0${index + 1}`}</span>
-                <strong>{t(`principles.${key}.title`)}</strong>
+                <strong><TypewriterLine as="span" text={t(`principles.${key}.title`)} /></strong>
                 <p>{t(`principles.${key}.body`)}</p>
               </div>)}
             </div>
@@ -133,7 +129,7 @@ export default async function Home({ params }: Props) {
       <p className="enter-item">{t('noResearch')}</p>
     </SectionReveal>
     <section className="contact-invitation"><h2>{t('invitation')}</h2><p className="mt-3 text-graphite">{t('invitationBody')}</p>
-      <div className="actions">{email && <a className={buttonVariants()} href={email}>{site('write')}</a>}<ResumeLink profile={profile} locale={locale} /></div>
+      <div className="actions"><ResumeLink profile={profile} locale={locale} variant="default" /></div>
     </section>
   </Container></div>;
 }

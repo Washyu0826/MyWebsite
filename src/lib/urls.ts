@@ -15,7 +15,9 @@ export function gmailComposeUrl(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(value)}` : null;
 }
 export function resumeUrl(profile: { resume_zh_url: string | null; resume_en_url: string | null }, locale: string) {
-  return documentUrl(locale === 'en' ? profile.resume_en_url : profile.resume_zh_url);
+  const normalized = locale === 'zh' ? 'zh' : 'en';
+  const uploaded = documentUrl(normalized === 'en' ? profile.resume_en_url : profile.resume_zh_url);
+  return uploaded ?? `/resumes/kuan-yu-hsien-resume-${normalized}.pdf`;
 }
 export type ClassifiedHref =
   | { kind: 'external' | 'internal' | 'anchor'; href: string }

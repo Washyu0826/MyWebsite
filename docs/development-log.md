@@ -501,3 +501,13 @@ Verification:
 - `node tests/assets-browser.mjs`: passed, including creating a link, the one-time reveal, the list and revoking.
 - `npm run build`: passed, so the new public route and route handler compile and prerender.
 - Not applied to production Supabase; not deployed.
+
+### Homepage Layout Polish (2026-09-21)
+
+Implemented update request:
+
+- About/homepage text now stays inside the visual left boundary set by the header logo on desktop and mobile.
+- Hero eyebrow text was removed, the résumé CTA now downloads the PDF directly, and the principle headings use a typewriter reveal before their body copy fades in.
+- Experience, Project and Research section content aligns to the section title text, with experience dates moved after the role/title line.
+- Footer links are limited to Email, LinkedIn and GitHub in that order.
+- Contact was redesigned without the portrait, keeping direct email, résumé, copyable contact rows and the contact form.
