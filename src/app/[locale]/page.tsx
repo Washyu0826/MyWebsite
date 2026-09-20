@@ -22,6 +22,7 @@ import { PwaRegister } from '@/app/offline/pwa-register';
 type Props = { params: Promise<{ locale: Locale }> };
 const heroAlias = 'Zenobia';
 const heroHeadline = 'Software Engineer';
+const heroAvatarUrl = '/demo/portrait-cut.png';
 const focusAreas = ['Multimodal AI', 'AI Agent / MCP', 'GraphRAG', 'Full Stack', 'DevOps'];
 const heroTagline = 'Curiosity driven, clarity obsessed.';
 const designPrinciples = ['why', 'candid', 'iteration'];
@@ -90,7 +91,7 @@ export default async function Home({ params }: Props) {
   });
   return <div className="home-stage"><JsonLd nodes={[person]} /><PwaRegister /><CubistBackdrop /><Container className="home-container">
     <section className="hero" aria-labelledby="intro-heading">
-      <div className={profile.avatar_url ? 'hero-grid' : 'hero-grid hero-grid-text-only'}>
+      <div className={heroAvatarUrl ? 'hero-grid' : 'hero-grid hero-grid-text-only'}>
         <div>
           <div className="hero-typewriter" aria-label={`${heroAlias}. ${heroHeadline}. ${heroTagline}`}>
             <TypewriterLine text={heroAlias} className="mb-5 text-meta text-graphite" />
@@ -116,8 +117,8 @@ export default async function Home({ params }: Props) {
           </SectionReveal>
           <div className="mt-6 md:hidden"><ResumeLink profile={profile} locale={locale} /></div>
         </div>
-        {profile.avatar_url && <div className="hero-photo"><div className="hero-photo-inner">
-          <Image src={profile.avatar_url} alt={p.name} width={560} height={700} priority sizes="(min-width: 768px) 440px, 100vw" />
+        {heroAvatarUrl && <div className="hero-photo"><div className="hero-photo-inner">
+          <Image src={heroAvatarUrl} alt={p.name} width={560} height={700} priority sizes="(min-width: 768px) 440px, 100vw" />
         </div></div>}
       </div>
     </section>

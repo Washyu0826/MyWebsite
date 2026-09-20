@@ -47,14 +47,12 @@
   z-index: 1;
   object-fit: contain;
   object-position: bottom center;
-  mix-blend-mode: multiply;
-  filter: brightness(1.14) saturate(1.04) contrast(1.06) drop-shadow(0 26px 46px color-mix(in srgb, #000 58%, transparent));
+  filter: drop-shadow(0 26px 46px color-mix(in srgb, #000 58%, transparent));
   transition: filter 0.42s ease, transform 0.42s ease;
 }
 .hero-photo:hover img { transform: translateY(-4px) scale(1.012); }
 .light .hero-photo-inner::before { opacity: 0.28; }
 .light .hero-photo-inner img {
-  mix-blend-mode: normal;
   filter: drop-shadow(0 22px 40px color-mix(in srgb, #000 22%, transparent));
 }
 .hero-typewriter { max-width: 760px; }
