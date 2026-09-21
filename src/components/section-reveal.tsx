@@ -16,7 +16,11 @@ export function SectionReveal({ as: Tag = 'section', children, deferInitial = fa
   useEffect(() => {
     const element = scope.current;
     if (!element) return;
-    const show = () => { element.dataset.enter = 'in'; };
+    // Both writes are guarded. The observer below carries nine thresholds and fires many times per
+    // section on the way down the page; writing an attribute that already holds the value still
+    // invalidates style for the section and everything under it, which is most of the page.
+    let shown = false, lit: boolean | null = null;
+    const show = () => { if (shown) return; shown = true; element.dataset.enter = 'in'; };
     const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
     const below = element.getBoundingClientRect().top > window.innerHeight * 0.85;
     if (!('IntersectionObserver' in window)) { show(); return; }
@@ -27,7 +31,7 @@ export function SectionReveal({ as: Tag = 'section', children, deferInitial = fa
         if (entry.isIntersecting) show();
         const viewport = entry.rootBounds?.height ?? window.innerHeight;
         const active = entry.isIntersecting && sectionActive(entry.intersectionRatio, entry.intersectionRect.height, viewport);
-        element.dataset.active = active ? '1' : '';
+        if (active !== lit) { lit = active; element.dataset.active = active ? '1' : ''; }
       }
     }, { rootMargin: '0px 0px -12% 0px', threshold: STEPS });
     observer.observe(element);

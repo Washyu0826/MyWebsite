@@ -568,3 +568,76 @@ Verification:
   committed from a CI run.**
 - Applied to production Supabase (bucket created, both files uploaded with a one-year `cacheControl`).
   Not deployed.
+
+### Depth on the Lists, and the Homepage Performance Debt Behind It (2026-09-21)
+
+Experience, project and article rows now tip back and stand up as the page brings them into view, and
+the homepage's main-thread cost was cut on the way.
+
+**The effect.** Each row is hinged along its own bottom edge (`transform-origin: 50% 100%`), starts at
+`rotateX(12deg)` and `translateZ(-170px)` against a 1000px perspective — 0.855 of its size — at 0.35
+opacity, and arrives upright and solid. The attitude is a pure function of scroll position, not a timed
+animation a scroll event kicks off, which is what makes it feel attached to the wheel. Phones take half
+the angle and half the distance: a hard perspective across a 375px column throws the far edge a long way
+off-axis, and angled text re-rastered on a phone GPU is the first thing to look cheap.
+
+All of it is `animation-timeline: view()`, so the compositor drives it and the main thread does no work
+per frame. That is the only reason a continuous scroll effect belongs on a page that also carries a
+canvas; the same job written as a scroll handler would cost what the canvas already costs. Two gates:
+`prefers-reduced-motion: no-preference`, and `@supports (animation-timeline: view())` so that Firefox,
+which has no scroll-driven animations yet, keeps the fade-and-rise entrance `hero.css` declares.
+
+`animation-fill-mode` is `forwards`, not `both`, and that is an accessibility decision rather than a
+stylistic one. With `both` every row further down the page sits at the keyframe start with its text at
+0.35 opacity; Lighthouse accessibility on the homepage fell from 100 to 97 with six colour-contrast
+violations, all of them real for anyone whose page has stopped there. With `forwards` a row carries its
+ordinary styling until the moment it starts to appear. Nothing looks different, because the range begins
+while the row's top edge is still level with the bottom of the screen.
+
+**The debt.** The homepage had been scoring 74 on performance against a floor of 85, with 990ms of total
+blocking time while the other two measured routes sat at 95. CI had not caught when it happened, because
+the visual step had been failing first on every run since and Lighthouse never executed.
+
+Wall-clock measurement on this machine is useless — three runs of one unchanged build spread 318ms to
+4231ms — so the diagnosis went through counters instead, via `Performance.getMetrics`, which count what
+the page asks for rather than how long a loaded CPU takes to do it. The homepage asked for **541 style
+recalculations** against the contact page's 34. A `disabled-by-default-devtools.timeline.invalidationTracking`
+trace then attributed them.
+
+Two causes, both waste rather than design:
+
+- `cubist-backdrop.tsx` wrote `canvas.style.transform` and `.opacity` straight from its scroll handler.
+  A wheel fires scroll events faster than the screen refreshes, so that was a style invalidation per
+  event, done inside the handler — which is also exactly what the reported judder feels like. The write
+  is now coalesced onto one rAF and skipped entirely when the value has not moved. The canvas's share of
+  task time fell from 628ms to 169ms.
+- `section-reveal.tsx` set `element.dataset.active` on every observer callback. The observer carries
+  nine thresholds across three sections, so it fires constantly on the way down the page, and writing an
+  attribute that already holds its value still invalidates style for the section and everything under
+  it. Both writes are now guarded.
+
+The backdrop additionally runs at one frame in three while the page is moving, returning to full rate
+180ms after the last scroll event. Behind moving text nobody can resolve its detail, and the frames are
+worth more to the scroll.
+
+Also: Chrome's overscroll bounce is switched off on pointer-fine devices, where against tipping rows it
+read as the new effect springing back. Touch keeps it, because there the same gesture is pull-to-refresh.
+
+Verification:
+
+- `npx tsc --noEmit`, Prettier, ESLint: clean (0 errors, 16 pre-existing warnings).
+- `npm test`: 123 passed, including a new `tests/motion.test.ts` — both gates present, the keyframes
+  touching only `transform` and `opacity`, `forwards` rather than `both`, the amplitudes and the phone
+  halving, the overscroll rule scoped, the backdrop's handler free of direct style writes, and the
+  observer's guarded attribute writes.
+- `npm run test:e2e`: 26 passed, including a new browser test that reads the tilt back off the row's own
+  matrix — resting rows untransformed, an arriving row tipped and faint, an arrived row upright, and
+  still upright after it has left the top.
+- `npx vitest run`: 65 passed.
+- `npm run test:visual`: 16 passed **with no baseline changes**, because the screenshots emulate reduced
+  motion and the effect is gated behind it. Worth keeping: it means this class of work cannot silently
+  churn the baselines.
+- Counters after the fix: the homepage's style recalculations and its canvas cost are both down as
+  described. **Lighthouse was not re-measured usefully** — a local run scored project-en at 85 where CI
+  scores it 95, with the homepage moving in step, which is the machine rather than the build. CI is the
+  measurement that counts.

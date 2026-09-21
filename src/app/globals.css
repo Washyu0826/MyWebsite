@@ -7,6 +7,8 @@
 @import "../styles/hero.css";
 @import "../styles/interactions.css";
 @import "../styles/polish.css";
+/* After hero.css and polish.css: the scroll-driven depth replaces the per-row entrance they declare. */
+@import "../styles/depth.css";
 @import "../styles/print.css";
 /* Last so its :lang() blocks outrank the :root defaults in tokens.css — equal specificity. */
 @import "../styles/typography.css";

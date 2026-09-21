@@ -1,0 +1,91 @@
+/* Depth on the three lists — experience, projects, articles.
+
+   Each row is hinged along its own bottom edge, tipped away from the reader and set back in space,
+   and it stands up as the page brings it into view. The attitude is a pure function of where the row
+   sits in the scrollport, not a timed animation that a scroll event starts: scroll half as far and the
+   row is half upright, scroll back and it tips back down. That is what makes it feel attached to the
+   wheel rather than chasing it.
+
+   All of it runs on `animation-timeline: view()`, which the compositor drives. The main thread does no
+   work per frame, which is the only reason a continuous scroll effect belongs on a page that also
+   carries a canvas. A JS scroll handler doing the same job would cost what the canvas already costs.
+
+   Two gates guard it. `prefers-reduced-motion` is the accessibility one, and it also pins the
+   screenshot tests, which emulate that preference. `@supports (animation-timeline: view())` is the
+   compatibility one: Firefox has no scroll-driven animations yet, so it keeps the fade-and-rise
+   entrance that hero.css declares. Nobody sees a broken page; some people see a quieter one. */
+
+:root {
+  --depth-lens: 1000px; /* perspective distance: the smaller it is, the harder the foreshortening */
+  --depth-back: -170px; /* 1000/1170, so a row starts at 0.855 of its size and grows to 1 */
+  --depth-tip: 12deg; /* how far the top is tipped away at the start */
+  --depth-dim: 0.35; /* never 0: a row read at speed is faint, not missing */
+}
+
+/* Narrow screens take half the amplitude. A strong perspective across a 375px column throws the far
+   edge a long way off-axis, and text that is being re-rastered at an angle on a phone GPU is the
+   first thing to look cheap. */
+@media (max-width: 767px) {
+  :root {
+    --depth-back: -85px;
+    --depth-tip: 6deg;
+  }
+}
+
+@keyframes row-stand-up {
+  from {
+    opacity: var(--depth-dim);
+    transform: perspective(var(--depth-lens)) translateZ(var(--depth-back)) rotateX(var(--depth-tip));
+  }
+  to {
+    opacity: 1;
+    transform: perspective(var(--depth-lens)) translateZ(0) rotateX(0deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .experience-row,
+    .project-row,
+    .article-row {
+      /* `forwards`, not `both`, and the difference is an accessibility one. With `both`, every row
+         further down the page sits at the tipped-back pose with its text at 0.35 opacity, and a
+         contrast checker reads the whole list as failing — which it is, for anyone whose page has
+         stopped there. With `forwards` a row carries its ordinary styling until the moment it starts
+         to appear, and holds the upright pose for good once it has. Nothing looks different: the range
+         below begins when the row's top edge is still level with the bottom of the screen. */
+      animation: row-stand-up linear forwards;
+      animation-timeline: view();
+      /* Upright the moment the row is completely on screen, which for a row of ordinary height is the
+         lower quarter of the viewport. It is finished standing before it reaches the part of the page
+         anyone reads. Retune here and nowhere else. */
+      animation-range: entry 0% entry 100%;
+      /* The hinge. Origin at the centre would swing both edges and read as a wobble; at the bottom
+         edge the row stands up off the surface it is sitting on. */
+      transform-origin: 50% 100%;
+    }
+
+    /* The per-row entrance in hero.css is replaced, not layered. Both write `transform`, so keeping
+       both would mean whichever lands last silently erases the other. The rule that draws itself in
+       across the width of each heading is untouched: different element, different idea, still wanted. */
+    [data-enter='out'] .experience-row,
+    [data-enter='out'] .project-row {
+      opacity: 1;
+      transform: none;
+    }
+    [data-enter='in'] .experience-row,
+    [data-enter='in'] .project-row {
+      transition: none;
+    }
+  }
+}
+
+/* Chrome bounces the page past its own top and bottom on a wheel or trackpad, and against rows that
+   are themselves tipping the bounce reads as the new effect springing back. Pointer-fine devices lose
+   it. Touch keeps it, because on touch the same gesture is also pull-to-refresh, and taking that away
+   to tidy up a desktop animation would be a bad trade. */
+@media (hover: hover) and (pointer: fine) {
+  html {
+    overscroll-behavior-y: none;
+  }
+}

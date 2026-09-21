@@ -39,6 +39,9 @@ const FOCUS: Point = [1.04, 0.44];
 const SPREAD = 0.74, OPEN = 0.46, SETTLE = SPREAD + OPEN + 0.9;
 // Light sweep: a soft diagonal band crossing the plate once every SWEEP seconds.
 const SWEEP = 28, SWA = -0.62, SWX = Math.cos(SWA), SWY = Math.sin(SWA), BAND = 0.36;
+// While the page is scrolling the picture runs at a third of the frame rate, and full rate comes back
+// this long after the last scroll event. Both are about the scroll, not about the drawing.
+const SCROLL_EVERY = 3, SCROLL_QUIET = 180;
 const SW0 = Math.min(0, H * SWY) - 0.75, SW1 = Math.max(0, W * SWX) + 0.75;
 // Construction lines redraw themselves on this loop.
 const GROW = 34;
@@ -238,6 +241,9 @@ function startBackdrop(canvas: HTMLCanvasElement | null): () => void {
     const eased = { x: 0, y: 0, cx: -1e4, cy: -1e4, glow: 0 };
     const v: View = { w: 0, h: 0, dpr: 1, t: 0, px: 0, py: 0, mx: -1e4, my: -1e4, glow: 0, theme: readTheme(), still: reduce.matches };
     let top = 0, scroll = 0, shift = 0, raf = 0, running = false, visible = true, slow = 0, tick = 0;
+    // Scroll bookkeeping. `drifting` is the pending rAF for the parallax write and `moved` is when the
+    // page last moved, which is what slows the picture down while it is moving.
+    let drifting = 0, moved = -1e9, placed = { shift: NaN, fade: NaN };
     const render = () => {
       v.t = (performance.now() - start) / 1000;
       v.still = reduce.matches;
@@ -248,12 +254,22 @@ function startBackdrop(canvas: HTMLCanvasElement | null): () => void {
     const drift = () => {
       const d = v.still ? { shift: 0, fade: 1 } : scrollDepth(scroll, v.h || 1);
       shift = d.shift;
+      // Writing the same value again is still an attribute write, and an attribute write is still a
+      // style invalidation. This used to run once per scroll event: hundreds of recalculations on the
+      // way down the page, and the judder that comes with doing them inside the scroll handler.
+      if (Math.abs(d.shift - placed.shift) < 0.05 && Math.abs(d.fade - placed.fade) < 0.002) return;
+      placed = d;
       canvas.style.transform = `translate3d(0,${d.shift.toFixed(1)}px,0)`;
       canvas.style.opacity = d.fade.toFixed(3);
     };
     const frame = () => {
       raf = requestAnimationFrame(frame);
-      if (slow > 6 && tick++ % 2) return; // struggling: halve the update rate, never freeze
+      tick += 1;
+      // While the page is moving, the picture is behind moving text and nobody can resolve its detail.
+      // One frame in three keeps it alive and hands the rest of the budget to the scroll itself.
+      // Struggling on a slow machine halves the rate instead. Neither ever freezes it.
+      const every = performance.now() - moved < SCROLL_QUIET ? SCROLL_EVERY : slow > 6 ? 2 : 1;
+      if (every > 1 && tick % every) return;
       const started = performance.now();
       eased.x += (pointer.x - eased.x) * 0.045; eased.y += (pointer.y - eased.y) * 0.045;
       eased.cx += (pointer.cx - eased.cx) * 0.09; eased.cy += (pointer.cy - eased.cy) * 0.09;
@@ -273,7 +289,13 @@ function startBackdrop(canvas: HTMLCanvasElement | null): () => void {
       canvas.width = Math.round(v.w * v.dpr); canvas.height = Math.round(v.h * v.dpr);
       drift(); render();
     };
-    const onScroll = () => { scroll = window.scrollY; drift(); };
+    // Coalesced onto the frame: a wheel can fire scroll events far faster than the screen refreshes,
+    // and the parallax only has to be right once per painted frame.
+    const onScroll = () => {
+      scroll = window.scrollY;
+      moved = performance.now();
+      if (!drifting) drifting = requestAnimationFrame(() => { drifting = 0; drift(); });
+    };
     const onPointer = (e: PointerEvent) => {
       pointer.x = e.clientX / window.innerWidth - 0.5; pointer.y = e.clientY / window.innerHeight - 0.5;
       pointer.cx = e.clientX; pointer.cy = e.clientY; pointer.glow = 1;
@@ -291,7 +313,8 @@ function startBackdrop(canvas: HTMLCanvasElement | null): () => void {
     reduce.addEventListener('change', sync);
     sync();
     return () => {
-      cancelAnimationFrame(raf); sizer.disconnect(); watcher.disconnect(); themer.disconnect();
+      cancelAnimationFrame(raf); if (drifting) cancelAnimationFrame(drifting);
+      sizer.disconnect(); watcher.disconnect(); themer.disconnect();
       window.removeEventListener('pointermove', onPointer); window.removeEventListener('scroll', onScroll);
       window.removeEventListener('blur', onLeave); document.removeEventListener('pointerleave', onLeave);
       document.removeEventListener('visibilitychange', sync); reduce.removeEventListener('change', sync);
