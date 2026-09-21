@@ -5,7 +5,6 @@ import type { Experience } from '@/types/content';
 import { listExperiences } from '@/lib/db/profile';
 import { pickLocale } from '@/lib/locale';
 import { monthRangeLabel } from '@/lib/format';
-import { FacetHeading } from './facet-heading';
 import { SectionReveal } from './section-reveal';
 import { Markdown } from './markdown';
 
@@ -46,12 +45,12 @@ export async function HomeSections({ locale }: { locale: Locale }) {
   const labels = { present: t('present') };
 
   return <>
-    {education.length > 0 && <SectionReveal className="section experience-section education-section" aria-labelledby="education-heading">
-      <div className="section-heading"><FacetHeading id="education-heading" text={t('education')} /></div>
+    {education.length > 0 && <SectionReveal replay className="section experience-section education-section" aria-labelledby="education-heading">
+      <div className="section-heading"><h2 id="education-heading" className="section-title">{t('education')}</h2></div>
       <ExperienceRows rows={education} locale={locale} labels={labels} />
     </SectionReveal>}
-    <SectionReveal className="section experience-section" aria-labelledby="experience-heading">
-      <div className="section-heading"><FacetHeading id="experience-heading" text={t('experience')} /></div>
+    <SectionReveal replay className="section experience-section" aria-labelledby="experience-heading">
+      <div className="section-heading"><h2 id="experience-heading" className="section-title">{t('experience')}</h2></div>
       {!work.length && <p className="enter-item text-graphite">{t('noExperience')}</p>}
       <ExperienceRows rows={work} locale={locale} labels={labels} />
     </SectionReveal>

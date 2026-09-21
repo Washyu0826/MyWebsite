@@ -9,7 +9,7 @@
 @import "../styles/polish.css";
 /* After hero.css and polish.css: the scroll-driven depth replaces the per-row entrance they declare. */
 @import "../styles/depth.css";
-/* Facet headings, page grain and the faint planes behind the lower sections. After depth.css: it retunes the first rows' range. */
+/* Section titles, one-section-per-stop snapping, page grain and the faint planes behind the lower sections. */
 @import "../styles/facets.css";
 @import "../styles/print.css";
 /* Last so its :lang() blocks outrank the :root defaults in tokens.css — equal specificity. */

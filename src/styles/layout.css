@@ -112,6 +112,13 @@
 .contact-invitation .actions { margin-top: 0; justify-self: start; }
 /* Room at the end of the page before the footer takes over. */
 .home-container { padding-bottom: clamp(56px, 9vh, 128px); }
+/* One left edge for the whole page: the hero column sits a little in from the container, and every
+   section below starts on the same line as its headline rather than the other way round. */
+.home-container { --column-indent: 0px; }
+@media (min-width: 768px) {
+  .home-container { --column-indent: clamp(20px, 2vw, 44px); }
+  .home-container .section, .home-container .contact-invitation { margin-left: var(--column-indent); }
+}
 /* Contact: the five ways to reach a person on the left, the form on the right. Two columns because
    stacked they made a 2000px page whose middle third was empty; side by side the whole thing is one
    screen on a laptop. Below 900px they fall back into one column, details first. */

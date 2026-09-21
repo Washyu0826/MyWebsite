@@ -763,3 +763,16 @@ values; `npx vitest run` 66 passed, the contact-form suite rewritten for three f
 test:e2e` 26 passed, including the axe sweep that the hover-revealed copy buttons had to survive;
 `npm run test:visual` 16 passed after updating the Windows baselines. **The Linux set still has to be
 committed from a CI run.**
+
+### Homepage: One Edge, Plain Titles, One Section Per Wheel (2026-09-22)
+
+Three corrections to the previous pass, decided with the user in five one-at-a-time questions.
+
+- **Alignment, the right way round.** The earlier pass moved the hero column out to the container edge; the user wanted the reverse. The hero keeps its indent (`--column-indent`, 20 to 44px from 768px up) and every section below plus the closing band now takes the same indent, so the whole page shares the hero's left edge (measured 64px for the headline, the principles, each title and the band at 1600 wide).
+- **Titles fade in, and again on every stop.** The seven-slice facet headings are gone: they duplicated each title seven times in the DOM, which is what a copy or a screen reader saw, and the stagger read as stutter. A title is one `<h2 class="section-title">` that fades in and rises 12px. `SectionReveal` gains `replay`: the section is marked out again once it has fully left the viewport, so arriving at any section replays its title and rule. Reduced motion shows everything at rest.
+- **One section per wheel gesture** (`components/section-stepper.tsx`). Native `scroll-snap-type: mandatory` was tried first and measured: a 260px wheel tick landed nearer the hero than Education and was pulled back to 0 every time, six times out of six, because a mandatory snap goes to the nearest stop, not the next. The stepper takes the wheel on a fine pointer from 768px up, scrolls to the next stop (each section's top 48px under the 77px header; the hero and the page end are stops too), and ignores the wheel for 850ms so a trackpad's coasting cannot fire twice. A section taller than the viewport scrolls natively until its far edge is on screen, so no row is unreachable. Touch, keyboard and reduced motion are left alone (reduced motion jumps instead of gliding). Measured: wheel 1 lands Education's title at 125px from the top, wheel 2 Experience's at 125px; inside the tall Experience list three ticks scroll natively; the next tick reaches the next stop.
+
+Verification:
+
+- `npx tsc --noEmit`, ESLint on the touched files and `npm run format:check`: clean.
+- Production build served with demo content; Playwright wheel events and scroll traces for the stops, the title replay (out at 0, in at 718 with opacity 0 to 1, out again after leaving, mid-fade 0.44 on return) and the left edges; screenshot of a stop reviewed.

@@ -12,7 +12,7 @@ import { pageMetadata } from '@/lib/metadata';
 import { personSchema } from '@/lib/structured-data';
 import { Container } from '@/components/container';
 import { SectionReveal } from '@/components/section-reveal';
-import { FacetHeading } from '@/components/facet-heading';
+import { SectionStepper } from '@/components/section-stepper';
 import { PrincipleRotator } from '@/components/principle-rotator';
 import { ProjectList } from '@/components/project-list';
 import { HomeSections } from '@/components/home-sections';
@@ -88,7 +88,10 @@ export default async function Home({ params }: Props) {
     sameAs: profile.social_links.map(link => safeUrl(link.url)),
     alumniOf: experiences.filter(row => row.kind === 'education').map(row => pickLocale(row, locale).org),
   });
-  return <div className="home-stage"><JsonLd nodes={[person]} /><PwaRegister /><CubistBackdrop /><Container className="home-container">
+  return <div className="home-stage"><JsonLd nodes={[person]} /><PwaRegister /><CubistBackdrop />
+    {/* Stops: each section's top, 48px under the 77px header; the hero and the page end are added by the stepper. */}
+    <SectionStepper selector=".education-section, .experience-section:not(.education-section), .project-section, .research-section" offset={125} />
+    <Container className="home-container">
     <section className="hero" aria-labelledby="intro-heading">
       <div className={heroAvatarUrl ? 'hero-grid' : 'hero-grid hero-grid-text-only'}>
         <div>
@@ -125,18 +128,18 @@ export default async function Home({ params }: Props) {
       </div>
     </section>
     <HomeSections locale={locale} />
-    <SectionReveal className="section project-section" aria-labelledby="projects-heading">
-      <div className="section-heading"><FacetHeading id="projects-heading" text={t('featured')} />
+    <SectionReveal replay className="section project-section" aria-labelledby="projects-heading">
+      <div className="section-heading"><h2 id="projects-heading" className="section-title">{t('featured')}</h2>
         <Link className="text-link text-meta" href="/projects">{t('allProjects', { count: projects.length })}</Link></div>
       {featured.length ? <ProjectList projects={featured} locale={locale} headingLevel={3} /> : <p className="enter-item">{t('noProjects')}</p>}
     </SectionReveal>
-    <SectionReveal className="section research-section" aria-labelledby="research-heading">
-      <div className="section-heading"><FacetHeading id="research-heading" text={t('research')} /></div>
+    <SectionReveal replay className="section research-section" aria-labelledby="research-heading">
+      <div className="section-heading"><h2 id="research-heading" className="section-title">{t('research')}</h2></div>
       <p className="enter-item">{t('noResearch')}</p>
     </SectionReveal>
-    <SectionReveal className="contact-invitation" aria-labelledby="invitation-heading">
+    <SectionReveal replay className="contact-invitation" aria-labelledby="invitation-heading">
       <div className="contact-invitation-copy">
-        <FacetHeading id="invitation-heading" text={t('invitation')} />
+        <h2 id="invitation-heading" className="section-title">{t('invitation')}</h2>
         <p className="text-graphite">{t('invitationBody')}</p>
       </div>
       <div className="actions"><ResumeLink profile={profile} locale={locale} variant="default" /></div>
