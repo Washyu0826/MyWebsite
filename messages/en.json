@@ -6,6 +6,7 @@
     "theme": "Change theme", "light": "Light", "dark": "Dark", "system": "System",
     "audioPlay": "Turn on sound", "audioMute": "Turn off sound",
     "audioPlaying": "Sound on", "audioMuted": "Sound off",
+    "audioCredit": "Music: Chopin, Nocturne in F minor, Op. 55 No. 1. Recording released by <src>Musopen</src> under <lic>CC0 1.0</lic>.",
     "copyright": "© {year} Kuan-Yu Hsien", "footerNote": "Always learning. Building with care.",
     "demo": "Sample content", "demoNote": "Projects, experience and metrics are illustrative samples, not personal achievements.",
     "email": "Email", "resume": "Download résumé PDF", "resumeUnavailable": "Résumé coming soon. Feel free to request it by email.",

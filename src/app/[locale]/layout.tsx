@@ -23,11 +23,14 @@ const mono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-jetbrains', 
 const revealScript = "try{document.documentElement.dataset.js=sessionStorage.getItem('hsien-intro')?'seen':'1'}catch(e){document.documentElement.dataset.js='1'}";
 // viewport-fit=cover lets the page paint under the notch, so every edge-anchored element has to keep
 // itself out of the inset. Inline because layout.css belongs to another workstream; nothing else here.
+// The footer is not in this list: the sound toggle floats over its bottom-right corner and needs more
+// clearance than the inset alone, so styles/audio.css owns .site-footer's bottom padding and folds the
+// inset into it. A rule here would silently win - this block is inline, so it comes last - and did,
+// until the credit line made the collision visible.
 const safeAreaCss = `
 .container { padding-left: max(20px, env(safe-area-inset-left)); padding-right: max(20px, env(safe-area-inset-right)); }
 @media (min-width: 640px) { .container { padding-left: max(32px, env(safe-area-inset-left)); padding-right: max(32px, env(safe-area-inset-right)); } }
 .site-header { padding-top: env(safe-area-inset-top); }
-.site-footer { padding-bottom: env(safe-area-inset-bottom); }
 .skip-link { top: max(12px, env(safe-area-inset-top)); left: max(20px, env(safe-area-inset-left)); }
 `;
 type Props = { children: React.ReactNode; params: Promise<{ locale: string }> };

@@ -1,33 +1,17 @@
 import assert from 'node:assert/strict';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
-  AMBIENT_KEY, BELL, BREATH, CUES, CUE_GAIN, DRIFT, FADE_IN, FADE_OUT, GAP_FAST, GAP_SLOW, PEAK_GAIN, ROOT, SCALE,
-  breath, centreAt, decayAt, gapAt, hzOf, levelAt, pickStep, pluck, readPreference, savePreference, toneAt,
+  AMBIENT_KEY, BELL, CUES, CUE_GAIN, DUCK, FADE_IN, FADE_OUT, MUSIC_GAIN,
+  outputPeakDbfs, readPreference, savePreference,
 } from '../src/lib/audio/ambient';
-import { mulberry32 } from '../src/components/cubist-backdrop';
+import { FORMATS, TRACK, pickFormat, trackUrl } from '../src/lib/audio/track';
 
 const source = (path: string) => readFileSync(new URL(`../src/${path}`, import.meta.url), 'utf8');
-const samples = (n: number, step: number, f: (t: number) => number) => Array.from({ length: n }, (_, i) => f(i * step));
-const RATE = 48000;
-
-/** RMS of one window, and the amplitude of one harmonic over it (Goertzel), so a rendered note can be
- *  measured the way the browser analyser measures it. */
-function rms(signal: Float32Array, from: number, len: number) {
-  let square = 0;
-  for (let i = from; i < from + len && i < signal.length; i++) square += signal[i] * signal[i];
-  return Math.sqrt(square / len);
-}
-function harmonic(signal: Float32Array, from: number, len: number, hz: number) {
-  const w = (2 * Math.PI * hz) / RATE, c = 2 * Math.cos(w);
-  let s1 = 0, s2 = 0;
-  for (let i = from; i < from + len && i < signal.length; i++) { const s = signal[i] + c * s1 - s2; s2 = s1; s1 = s; }
-  return Math.hypot(s1 - s2 * Math.cos(w), s2 * Math.sin(w)) / len;
-}
-function note(hz: number, tone = 0.5, seed = 3) {
-  const decay = decayAt(hz), out = new Float32Array(Math.round(RATE * decay));
-  return { signal: pluck(out, hz, RATE, tone, decay, mulberry32(seed)), decay };
-}
+const graph = source('lib/audio/ambient.ts');
+/** The module with its comments stripped, for the rules that are about code and not about prose. */
+const code = graph.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*/g, '');
 
 test('only an explicit opt-in counts as on', () => {
   assert.equal(readPreference('on'), true);
@@ -46,7 +30,7 @@ test('the toggle and the cue helper agree with the graph on the storage key', ()
   assert.match(source('components/ambient-audio.tsx'), new RegExp(`localStorage\\.getItem\\('${AMBIENT_KEY}'\\) === 'on'`));
   assert.match(source('lib/audio/cue.ts'), new RegExp(`localStorage\\.getItem\\('${AMBIENT_KEY}'\\) !== 'on'`));
   // And the helper must reach the graph by dynamic import only, or every page that copies an address
-  // downloads the synthesis whether or not the visitor ever asked for sound.
+  // downloads the graph whether or not the visitor ever asked for sound.
   assert.match(source('lib/audio/cue.ts'), /void import\('\.\/ambient'\)/);
   assert.doesNotMatch(source('lib/audio/cue.ts'), /^import \{[^}]*\} from '\.\/ambient'/m);
 });
@@ -64,163 +48,6 @@ test('the confirmation sounds are wired to exactly two events', () => {
   assert.equal(callers.length, Object.keys(CUES).length);
 });
 
-test('the sound breathes on the backdrop\'s own sweep period', () => {
-  // cubist-backdrop.tsx cannot be imported for its phase (the canvas owns its start time) and cannot
-  // be edited, so the two share a clock and this constant. If the painting's sweep is retimed, retime this.
-  const sweep = /const SWEEP = (\d+)/.exec(source('components/cubist-backdrop.tsx'));
-  assert.ok(sweep, 'the backdrop still declares SWEEP');
-  assert.equal(Number(sweep[1]), BREATH);
-  assert.ok(DRIFT >= 20 && DRIFT <= 40, 'the second cycle sits inside the facets\' 20-40s drift band');
-  assert.notEqual(BREATH, DRIFT); // equal periods would collapse into one plain sine
-});
-
-test('the breath stays inside 0..1, starts closed and repeats only on the joint period', () => {
-  const values = samples(4000, 0.25, breath);
-  for (const [i, v] of values.entries()) assert.ok(v >= 0 && v <= 1, `${i}: ${v}`);
-  assert.ok(Math.abs(breath(0)) < 1e-12);
-  assert.ok(Math.max(...values) > 0.99 && Math.min(...values) < 0.01, 'it uses the whole range');
-  assert.ok(Math.abs(breath(123) - breath(123 + BREATH * DRIFT)) < 1e-9, 'it repeats after 28 x 37 seconds');
-  assert.ok(Math.abs(breath(7) - breath(7 + BREATH)) > 0.02, 'but not on the sweep alone');
-  // Nothing steps: a jump in the curve is a jump in the writing, and that is audible.
-  for (let i = 1; i < values.length; i++) assert.ok(Math.abs(values[i] - values[i - 1]) < 0.03, `step at ${i}`);
-});
-
-test('register and brightness drift on the breath and nothing else', () => {
-  const centres = samples(2000, 0.5, centreAt);
-  for (const c of centres) assert.ok(c >= 4.6 && c <= 9.01, String(c));
-  assert.ok(Math.max(...centres) - Math.min(...centres) > 4, 'the centre really travels about a fifth');
-  for (const t of [0, 3, 11, 19, 47]) assert.ok(Math.abs(centreAt(t) - (4.6 + 4.4 * breath(t))) < 1e-12);
-  for (const t of [0, 5, 31]) assert.equal(toneAt(t), breath(t));
-  // The pointer is not an input anywhere in the graph: the user asked for the picture's clock only.
-  const code = source('lib/audio/ambient.ts').replace(/\/\/.*|\/\*[\s\S]*?\*\//g, '');
-  assert.doesNotMatch(code, /pointer|mouse|client[XY]|scroll/i);
-});
-
-test('notes fall every three to six seconds on average, and never on a grid', () => {
-  const means = samples(400, 0.25, t => gapAt(t, 0.5));
-  for (const g of means) assert.ok(g >= 3 && g <= 6, `${g}s`);
-  assert.ok(Math.min(...means) < GAP_FAST + 0.1 && Math.max(...means) > GAP_SLOW - 0.1, 'the breath uses both ends');
-  // The draw scatters each gap far enough that two in a row are never the same length.
-  const scatter = Array.from({ length: 200 }, (_, i) => gapAt(13, i / 199)), middle = gapAt(13, 0.5);
-  assert.ok(Math.max(...scatter) / Math.min(...scatter) > 1.7, 'the jitter is worth having');
-  assert.ok(Math.min(...scatter) < middle * 0.75 && Math.max(...scatter) > middle * 1.25, 'it reaches either side of the mean');
-  assert.ok(Math.min(...scatter) > 2.4, 'but never so short that two notes land on top of each other');
-  const rand = mulberry32(42);
-  const drawn = Array.from({ length: 500 }, () => gapAt(rand() * 100, rand()));
-  const mean = drawn.reduce((sum, g) => sum + g, 0) / drawn.length;
-  assert.ok(mean > 3 && mean < 6, `mean gap ${mean}s`);
-  for (let i = 1; i < drawn.length; i++) assert.notEqual(drawn[i], drawn[i - 1]);
-});
-
-test('the pitch set is one fixed consonant scale over three octaves', () => {
-  assert.equal(SCALE.length, 15);
-  assert.deepEqual(SCALE.slice(0, 5), [0, 3, 5, 7, 10]); // minor pentatonic
-  for (let i = 1; i < SCALE.length; i++) assert.ok(SCALE[i] > SCALE[i - 1], 'strictly rising');
-  for (const step of SCALE) assert.ok(![1, 2, 6, 11].includes(step % 12), `${step} is outside the set`);
-  assert.equal(hzOf(0), ROOT);
-  assert.ok(Math.abs(hzOf(14) - 784) < 2, 'the top degree is a G5');
-  for (const step of SCALE.keys()) assert.ok(hzOf(step) >= 110 && hzOf(step) <= 790);
-});
-
-test('the writing never repeats a note or an interval, and leans on the drifting centre', () => {
-  const rand = mulberry32(5);
-  let prev = -1, before = -1;
-  const played: number[] = [];
-  for (let i = 0; i < 4000; i++) {
-    const step = pickStep(prev, before, centreAt(i * 4.6), rand());
-    assert.ok(step >= 0 && step < SCALE.length);
-    assert.notEqual(step, prev, 'the same note twice');
-    if (prev >= 0 && before >= 0) assert.notEqual(step - prev, prev - before, 'the same interval twice is a motif');
-    before = prev; prev = step;
-    played.push(step);
-  }
-  // Every degree is reachable, but the middle of the range carries the piece.
-  const counts = SCALE.map((_, i) => played.filter(s => s === i).length);
-  for (const [i, n] of counts.entries()) assert.ok(n > 0, `degree ${i} never sounded`);
-  const middle = counts.slice(4, 11).reduce((sum, n) => sum + n, 0);
-  assert.ok(middle / played.length > 0.6, `only ${middle} of ${played.length} notes sat in the middle`);
-  // No three-note phrase should come back often enough to be recognised as one.
-  const phrases = new Map<string, number>();
-  for (let i = 2; i < played.length; i++) {
-    const key = played.slice(i - 2, i + 1).join(',');
-    phrases.set(key, (phrases.get(key) ?? 0) + 1);
-  }
-  assert.ok(Math.max(...phrases.values()) / played.length < 0.01, 'a phrase repeats often enough to hum');
-});
-
-test('a rendered note is a pluck: it peaks at once and decays for seconds', () => {
-  for (const step of [0, 4, 9, 14]) {
-    const hz = hzOf(step), { signal, decay } = note(hz);
-    assert.ok(decay >= 2 && decay <= 4, `${hz} Hz decays over ${decay}s`);
-    let peak = 0, at = 0;
-    for (let i = 0; i < signal.length; i++) if (Math.abs(signal[i]) > peak) { peak = Math.abs(signal[i]); at = i; }
-    assert.ok(Math.abs(peak - 1) < 1e-6, `peak-normalised, got ${peak}`); // the caller's gain is the whole level
-    assert.ok(at / RATE < 0.012, `${hz} Hz peaks at ${((at / RATE) * 1000).toFixed(1)}ms, which is a swell, not a pluck`);
-    // A pad holds its level; a string has shed half of it before the fifth of a second is out.
-    const win = Math.round(RATE * 0.05);
-    const opening = rms(signal, 0, win);
-    assert.ok(rms(signal, Math.round(RATE * 0.2), win) < opening * 0.5, `${hz} Hz sustains like a pad`);
-    assert.ok(rms(signal, Math.round(RATE * decay * 0.5), win) < opening * 0.12, `${hz} Hz is still loud halfway through`);
-    const last = Math.round(RATE * 0.02);
-    assert.ok(rms(signal, signal.length - last, last) < opening * 0.01, `${hz} Hz has not finished by its own end`);
-    assert.equal(Math.abs(signal[signal.length - 1]), 0, 'the buffer must land on silence or the tail is a click');
-  }
-});
-
-test('the higher partials die before the fundamental does', () => {
-  const win = Math.round(RATE * 0.1);
-  for (const hz of [110, 220, 440]) {
-    const { signal } = note(hz);
-    const early = harmonic(signal, 0, win, hz * 4) / harmonic(signal, 0, win, hz);
-    const late = harmonic(signal, RATE, win, hz * 4) / harmonic(signal, RATE, win, hz);
-    assert.ok(late < early * 0.2, `${hz} Hz: the fourth partial holds on (${early} -> ${late})`);
-  }
-});
-
-test('a brighter pluck is measurably brighter, and only the burst changes', () => {
-  const win = Math.round(RATE * 0.15);
-  for (const hz of [110, 440]) {
-    const centroid = (tone: number) => {
-      const { signal } = note(hz, tone);
-      let num = 0, den = 0;
-      for (let m = 1; m <= 20 && hz * m < RATE / 2; m++) {
-        const power = harmonic(signal, 0, win, hz * m) ** 2;
-        num += power * hz * m; den += power;
-      }
-      return num / den;
-    };
-    const dark = centroid(0), bright = centroid(1);
-    assert.ok(bright > dark * 1.18, `${hz} Hz: ${dark.toFixed(0)} Hz -> ${bright.toFixed(0)} Hz is not an audible change`);
-    assert.ok(bright < dark * 2, 'and it is a drift, not a filter sweep');
-  }
-  // Brightness must not smuggle in a different string: a harder pluck still rings for seconds.
-  const win2 = Math.round(RATE * 0.05), at = Math.round(RATE * 1.2);
-  const dark = note(220, 0), bright = note(220, 1);
-  const ratio = rms(bright.signal, at, win2) / rms(dark.signal, at, win2);
-  assert.ok(ratio > 0.45 && ratio < 2.2, `the tails diverge by ${ratio}x`);
-});
-
-test('the same seed renders the same note, and nothing renders out of range', () => {
-  const a = note(330, 0.5, 11).signal, b = note(330, 0.5, 11).signal;
-  assert.deepEqual(Array.from(a), Array.from(b));
-  for (const step of SCALE.keys()) for (const tone of [0, 1]) {
-    const { signal } = note(hzOf(step), tone, step + 1);
-    for (const v of signal) assert.ok(Number.isFinite(v) && Math.abs(v) <= 1.0000001, `${hzOf(step)} Hz ran away`);
-  }
-});
-
-test('the piece is quiet, and both fades are long enough not to click', () => {
-  assert.ok(PEAK_GAIN > 0 && PEAK_GAIN <= 0.0708, `${PEAK_GAIN} is louder than -23 dBFS`);
-  assert.ok(20 * Math.log10(PEAK_GAIN) < -23);
-  assert.ok(FADE_IN >= 1 && FADE_OUT >= 1);
-  // Levels only ever scale a note down, so one attack can never exceed PEAK_GAIN.
-  for (const step of SCALE.keys()) for (const r of [0, 0.5, 1]) {
-    const level = levelAt(step, r);
-    assert.ok(level > 0.35 && level <= 1, `${level} at degree ${step}`);
-  }
-  assert.ok(levelAt(14, 1) < levelAt(0, 1), 'the top of the range is played more lightly');
-});
-
 test('a confirmation is a short inharmonic ping, not a note', () => {
   const total = BELL.reduce((sum, [, level]) => sum + level, 0) * CUE_GAIN;
   assert.ok(20 * Math.log10(total) < -15, `a strike can reach ${20 * Math.log10(total)} dBFS`);
@@ -235,4 +62,133 @@ test('a confirmation is a short inharmonic ping, not a note', () => {
   assert.equal(CUES.sent.length, 2);
   assert.ok(CUES.sent[1][0] > CUES.sent[0][0], 'the sent pair rises');
   assert.ok(CUES.sent[1][1] > 0 && CUES.sent[1][1] < 0.3, 'and arrives as one gesture, not two events');
+});
+
+test('the music is held a long way down, and both fades are long enough not to click', () => {
+  // The brief is a recording you can ignore. The file peaks at -5.4 dBFS; the gain is what makes that
+  // quiet, and this is the assertion that stops anyone raising it without meaning to.
+  assert.ok(outputPeakDbfs() <= -25, `the loudest moment leaves the page at ${outputPeakDbfs().toFixed(1)} dBFS`);
+  assert.ok(outputPeakDbfs() > -32, 'and not so far down that turning it on does nothing');
+  assert.ok(Math.abs(outputPeakDbfs(1) - TRACK.peakDbfs) < 1e-9, 'unity gain is the file itself');
+  assert.ok(MUSIC_GAIN > 0 && MUSIC_GAIN < 1);
+  assert.ok(FADE_IN >= 1 && FADE_OUT >= 1, 'a fade under a second is heard as a switch');
+  assert.ok(DUCK > 0 && DUCK < FADE_OUT, 'tabbing away is quicker than switching off, but not a cut');
+});
+
+test('the recording is public domain, and the credit says so', () => {
+  assert.equal(TRACK.licence, 'CC0 1.0');
+  assert.equal(TRACK.licenceUrl, 'https://creativecommons.org/publicdomain/zero/1.0/');
+  assert.match(TRACK.sourceUrl, /^https:\/\/archive\.org\/details\//);
+  // The footer credits what the graph plays, and takes both addresses from the same constant, so a
+  // different piece can never be credited as this one.
+  const footer = source('components/footer.tsx');
+  assert.match(footer, /TRACK\.sourceUrl/);
+  assert.match(footer, /TRACK\.licenceUrl/);
+  assert.match(footer, /t\.rich\('audioCredit'/);
+  for (const locale of ['zh', 'en'] as const) {
+    const messages = JSON.parse(readFileSync(new URL(`../messages/${locale}.json`, import.meta.url), 'utf8'));
+    const line: string = messages.Site.audioCredit;
+    assert.ok(line, `${locale} has no credit line`);
+    assert.match(line, /<src>Musopen<\/src>/, locale);
+    assert.match(line, /<lic>CC0 1\.0<\/lic>/, locale);
+    assert.match(line, /55/, `${locale} names the piece`);
+  }
+});
+
+test('the file is fetched from the project\'s own Supabase bucket, or not at all', () => {
+  assert.equal(trackUrl('a.opus', 'https://example.supabase.co'), 'https://example.supabase.co/storage/v1/object/public/audio/a.opus');
+  assert.equal(trackUrl('a.opus', 'https://example.supabase.co/'), 'https://example.supabase.co/storage/v1/object/public/audio/a.opus');
+  // No Supabase configured is silence, not a broken request to a hard-coded host. (An explicit
+  // `undefined` would fall through to the default parameter, which is the env var; '' is the case
+  // a missing NEXT_PUBLIC_SUPABASE_URL actually produces once Next has inlined it.)
+  assert.equal(trackUrl('a.opus', ''), null);
+  // And the host is never written into the source: it follows NEXT_PUBLIC_SUPABASE_URL.
+  assert.doesNotMatch(source('lib/audio/track.ts').replace(/archive\.org|creativecommons\.org/g, ''), /https:\/\/[a-z0-9-]+\.supabase\.co/);
+});
+
+test('Opus is offered first and AAC is the fallback, and a browser that plays neither gets silence', () => {
+  assert.equal(FORMATS.length, 2);
+  assert.match(FORMATS[0].type, /opus/);
+  assert.match(FORMATS[1].type, /mp4a/);
+  assert.equal(pickFormat(() => 'probably'), FORMATS[0]);
+  assert.equal(pickFormat(type => (type.includes('opus') ? '' : 'maybe')), FORMATS[1], 'older Safari lands on AAC');
+  assert.equal(pickFormat(() => ''), null);
+  // 'maybe' is an answer, not a refusal: only the empty string means no.
+  assert.equal(pickFormat(type => (type.includes('opus') ? 'maybe' : 'probably')), FORMATS[0]);
+});
+
+test('nothing is downloaded, and no context is opened, before the visitor asks', () => {
+  // The element is built inside media(), which start() reaches, and never at module scope.
+  assert.equal((code.match(/new Audio\(/g) ?? []).length, 1);
+  assert.doesNotMatch(code, /^ {0,2}(?:const|let|var)\s+\w+\s*=\s*new Audio\(/m);
+  const media = code.slice(code.indexOf('const media ='), code.indexOf('const start ='));
+  assert.match(media, /new Audio\(/, 'the element is built somewhere other than media()');
+  assert.match(code, /preload = 'none'/);
+  assert.doesNotMatch(code, /autoplay/);
+  // One AudioContext, built in build(), which only start() calls.
+  assert.equal((code.match(/new AudioContext\(/g) ?? []).length, 1);
+  assert.match(code, /if \(!ctx\) build\(\);/);
+  // Cross-origin has to be declared before the graph may read the stream, or the gain node gets silence.
+  assert.match(code, /crossOrigin = 'anonymous'/);
+});
+
+test('the piece loops whole, and the graph never plays it at the file\'s own level', () => {
+  assert.match(code, /\.loop = true/);
+  assert.doesNotMatch(code, /volume = 1\b/);
+  // The only level the music is ever ramped up to.
+  const targets = [...code.matchAll(/ramp\(([^,]+),/g)].map(m => m[1].trim());
+  assert.deepEqual([...new Set(targets)].sort(), ['0', 'MUSIC_GAIN']);
+  // Where there is no GainNode the element's own volume is the control, and iOS ignores writes to it.
+  // The graph has to read it back and refuse rather than let the file out at -5 dBFS.
+  assert.match(code, /Math\.abs\(el\.volume - MUSIC_GAIN\) > 0\.01[\s\S]*broken = true/);
+});
+
+test('the sound is torn down completely, and the download with it', () => {
+  const dispose = code.slice(code.indexOf('const dispose ='));
+  for (const call of ['el.pause()', "el.removeAttribute('src')", 'node?.disconnect()', 'ctx?.close()']) {
+    assert.ok(dispose.includes(call), `dispose does not ${call}`);
+  }
+  assert.match(code, /removeEventListener\('visibilitychange', onVisibility\)/);
+  assert.match(code, /addEventListener\('visibilitychange', onVisibility\)/);
+});
+
+test('the pointer is not an input anywhere in the graph', () => {
+  // The picture reacts to the pointer; the sound does not, and never has.
+  assert.doesNotMatch(code, /pointer|mouse|client[XY]|scroll/i);
+});
+
+// The encoded files are what the gain above is calibrated against, so measure them rather than trust
+// the constants. Off by default: it downloads five minutes of audio and shells out to ffmpeg, which is
+// a poor fit for a pre-commit run. `AUDIO_VERIFY=1 npm test` is how you check the files after a
+// re-encode or a re-upload.
+const verify = process.env.AUDIO_VERIFY === '1';
+const ffmpeg = (() => {
+  try { execFileSync('ffmpeg', ['-version'], { stdio: 'ignore' }); return true; }
+  catch { return false; }
+})();
+
+test('the published files match what TRACK claims about them', {
+  skip: !verify ? 'set AUDIO_VERIFY=1 to measure the published files' : !ffmpeg && 'ffmpeg not installed',
+}, async () => {
+  const origin = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!origin) return assert.ok(true, 'no Supabase configured in this environment');
+  for (const format of FORMATS) {
+    const href: string = trackUrl(format.file, origin)!;
+    const response: Response = await fetch(href, { method: 'HEAD' });
+    assert.equal(response.status, 200, `${format.file} is not published`);
+    assert.equal(response.headers.get('content-type'), format.type.split(';')[0], format.file);
+    const bytes = Number(response.headers.get('content-length'));
+    assert.ok(bytes > 0 && bytes < 8 * 1024 * 1024, `${format.file} is ${bytes} bytes`);
+  }
+  const primary = trackUrl(FORMATS[0].file, origin)!;
+  // ffmpeg writes the ebur128 report to stderr, so spawnSync rather than execFileSync, which only
+  // hands back stdout.
+  const run = spawnSync('ffmpeg', ['-nostdin', '-hide_banner', '-i', primary, '-af', 'ebur128=peak=true', '-f', 'null', '-'],
+    { encoding: 'utf8', timeout: 180_000 });
+  assert.equal(run.status, 0, run.stderr?.slice(-400));
+  const summary = run.stderr.slice(run.stderr.lastIndexOf('Summary:'));
+  const read = (label: string) => Number(new RegExp(`${label}:\\s*(-?[\\d.]+)`).exec(summary)?.[1]);
+  assert.ok(Math.abs(read('I') - TRACK.loudnessLufs) < 0.5, `integrated ${read('I')} LUFS, TRACK says ${TRACK.loudnessLufs}`);
+  assert.ok(Math.abs(read('Peak') - TRACK.peakDbfs) < 0.5, `peak ${read('Peak')} dBFS, TRACK says ${TRACK.peakDbfs}`);
+  assert.ok(read('LRA') < 8, `a ${read('LRA')} LU range is too wide to sit under a page`);
 });

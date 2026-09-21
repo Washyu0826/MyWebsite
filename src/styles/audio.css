@@ -1,6 +1,6 @@
 /* Sound toggle: a quiet speaker pinned to the bottom-right corner, over the page rather than in it, so
    it is reachable from every route without taking part in any layout. It governs everything audible —
-   the generative piece and the two confirmations — and is off until it is pressed; the component owns
+   the background music and the two confirmations — and is off until it is pressed; the component owns
    the sound, this file only owns how little it asks for. */
 .ambient-toggle {
   position: fixed; z-index: 25;
@@ -13,21 +13,37 @@
 }
 .ambient-toggle:hover, .ambient-toggle:focus-visible { opacity: 1; color: var(--ink); border-color: color-mix(in srgb, var(--indigo) 46%, var(--rule)); }
 .ambient-toggle[data-state="on"] { opacity: 1; color: var(--indigo); border-color: color-mix(in srgb, var(--indigo) 38%, var(--rule)); }
-/* While it plays the icon breathes on the backdrop's 28s sweep — the cycle the notes' register and
-   brightness follow — so the corner belongs to the picture. globals.css already stops every animation
-   under reduced motion; this query is what keeps the icon from being built out of one in the first place. */
+/* While it plays the icon breathes on the backdrop's 28s sweep, so the corner belongs to the picture.
+   globals.css already stops every animation under reduced motion; this query is what keeps the icon
+   from being built out of one in the first place. */
 @media (prefers-reduced-motion: no-preference) {
   .ambient-toggle[data-state="on"] svg { animation: ambient-breath 28s var(--ez-inout) infinite; }
 }
 @keyframes ambient-breath { 0%, 100% { opacity: 0.62; } 50% { opacity: 1; } }
-/* The toggle floats over the footer's bottom-right corner, so the footer has to clear it. On a narrow
-   screen the right-hand column is already the full width and padding there just forces a wrap, costing
-   ~59px of page height; the gap goes underneath instead. layout.css belongs to another workstream, so
-   the offset is declared beside the thing that needs it. */
-.site-footer { padding-bottom: max(56px, calc(env(safe-area-inset-bottom) + 44px)); }
+/* The toggle floats over the footer's bottom-right corner, so the footer has to clear it. The button
+   sits 20px off the bottom and is 44px tall, so the last 64px of the page is under it; the credit line
+   is what ends up there, and 78px leaves it a gap rather than a collision. On a narrow screen the gap
+   has to go underneath: right-hand padding there just forces a wrap, which costs more height than it
+   saves. Above 640px the credit has room beside the button instead. layout.css belongs to another
+   workstream, so the offset is declared beside the thing that needs it. */
+.site-footer { padding-bottom: max(78px, calc(env(safe-area-inset-bottom) + 76px)); }
 @media (min-width: 640px) {
-  .site-footer { padding-bottom: 0; }
-  .footer-inner > div:last-child { padding-right: 52px; }
+  /* Wide enough for the credit to sit beside the button, so the footer only owes the notch its inset. */
+  .site-footer { padding-bottom: env(safe-area-inset-bottom); }
+  .audio-credit { padding-right: 52px; }
 }
+
+/* Where the recording is credited. Its own row under the footer's two columns, a size down from the
+   rest of the footer, because it is a fact about the page rather than part of it. CC0 does not require
+   the line; saying where the music came from is the reason it is here. */
+.audio-credit {
+  flex-basis: 100%; margin-top: 2px;
+  font-size: 0.75rem; line-height: 1.6;
+  /* Inherits the footer's --graphite rather than being lightened: at 12px this is still ordinary
+     body text as far as WCAG is concerned, and anything paler than --graphite fails 4.5:1 on paper. */
+  text-wrap: pretty;
+}
+.audio-credit a { color: inherit; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+.audio-credit a:hover, .audio-credit a:focus-visible { color: var(--ink); }
 /* Nothing to hear on paper. */
 @media print { .ambient-toggle { display: none; } }

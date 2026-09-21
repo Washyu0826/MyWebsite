@@ -511,3 +511,60 @@ Implemented update request:
 - Experience, Project and Research section content aligns to the section title text, with experience dates moved after the role/title line.
 - Footer links are limited to Email, LinkedIn and GitHub in that order.
 - Contact was redesigned without the portrait, keeping direct email, résumé, copyable contact rows and the contact form.
+
+### Background Music: A Public-Domain Recording Replaces the Synthesiser (2026-09-21)
+
+The sound toggle now plays Chopin's Nocturne in F minor, Op. 55 No. 1, instead of generating plucked
+notes. The two confirmation chimes are unchanged and still synthesised.
+
+The hard part was licensing, not playback. A Chopin nocturne is out of copyright; a *recording* of one
+is a separate work with its own rights, and most files advertised as "free classical music" are free
+only in the first sense. The recording used here is from Musopen's Complete Chopin Collection, whose
+archive.org item metadata carries `licenseurl = creativecommons.org/publicdomain/zero/1.0/` and was
+uploaded by Musopen's founder — a CC0 dedication covering the performance itself, verified from the
+metadata endpoint rather than from page copy.
+
+- The piece was chosen by measurement, not taste: six candidate nocturnes and preludes were run
+  through `ebur128`, and Op. 55 No. 1 had the narrowest loudness range (12.4 LU against 20.3 for the
+  Raindrop prelude). A compressor took that to 6.0 LU and two-pass `loudnorm` set it to −19 LUFS, so
+  the climax no longer jumps out from under a page. Encoded to Ogg Opus at 64 kbps (2.50 MB) with an
+  AAC copy (3.19 MB) for Safari before 17.5; one or the other is fetched, never both.
+- `MUSIC_GAIN` is 0.1, exactly −20 dB, which puts the file's −5.4 dBFS peak at about −25 dBFS at the
+  page's output — the level the generative piece ran at. `outputPeakDbfs()` is the one expression for
+  this and the test fails if it rises.
+- Served from a new public `audio` bucket (`supabase/migrations/20260921000100_audio_bucket.sql`),
+  addressed from `NEXT_PUBLIC_SUPABASE_URL` so no host is written into the source. Nothing downloads
+  until the toggle is pressed: the `<audio>` element is built inside the graph, carries
+  `preload="none"`, and `dispose()` clears `src` so a paused element cannot finish fetching.
+- On a platform where `createMediaElementSource` is unavailable the element's own `volume` is the only
+  control, and iOS ignores writes to it. The graph writes the gain, reads it back, and declines to
+  play the music if the value did not take, rather than let the file out twenty decibels over brief.
+- `src/lib/audio/track.ts` holds the recording's identity apart from the graph, so the footer can
+  credit it without pulling Web Audio into a server component. CC0 requires no attribution; the line
+  is there because saying where the music came from is worth one line.
+
+One real bug surfaced while checking the new footer line on a phone. `src/app/[locale]/layout.tsx`
+injects an inline `<style>` for the notch insets, and it contained
+`.site-footer { padding-bottom: env(safe-area-inset-bottom); }`. Inline styles come last in document
+order, so it had been silently overriding the clearance `styles/audio.css` declares for the floating
+sound toggle — the earlier mobile-footer fix had never taken effect, and the toggle had been sitting
+on top of the footer's last row all along. The footer's bottom padding now belongs to `audio.css`
+alone, which folds the inset into it.
+
+Documentation: `docs/background-music.md` (licensing check, the full encode chain, and how to swap the
+piece); `docs/testing.md` gained the `AUDIO_VERIFY=1` section.
+
+Verification:
+
+- `npx tsc --noEmit`, Prettier and ESLint: clean (0 errors, 16 pre-existing warnings).
+- `npm test`: 116 tests passed. `tests/audio.test.ts` was rewritten for file playback — 13 offline
+  tests plus one gated by `AUDIO_VERIFY=1` that fetches both published encodes and measures the Opus
+  file with `ffmpeg` against what `TRACK` claims. Run with the flag: −19.0 LUFS, 6.0 LU, −5.4 dBFS,
+  matching.
+- `npx vitest run`: 9 files, 65 tests passed.
+- `npm run test:e2e`: 25 passed, including the axe sweep that first caught the credit line at 3.45:1
+  (it now inherits the footer's `--graphite`).
+- `npm run test:visual`: 16 passed. **Windows baselines updated; the Linux set still has to be
+  committed from a CI run.**
+- Applied to production Supabase (bucket created, both files uploaded with a one-year `cacheControl`).
+  Not deployed.
