@@ -249,73 +249,122 @@ span.typewriter-line { display: inline-block; }
 }
 
 /* --- principles, rotated one at a time ------------------------------------ */
-/* Scoped under the entered block on purpose. The reveal rules above own the entrance and target the
-   same elements, so rotation only takes over once the section has arrived; before that, the block
-   stays faded out exactly as it did. Every selector here therefore outranks its [data-enter="in"]
-   counterpart, including the typewriter keyframe, which has to be switched off so the stepped
-   transition below can restart on each turn.
-   All three panels share one grid cell, so the block is as tall as the longest one and nothing
-   shifts as they change. */
-.signature-block .principle-rotator[data-rotating='true'] .signature-principles { display: grid; border-block: 0; }
+/* Scoped under the entered block on purpose: the reveal rules above target the same elements, so
+   rotation only takes over once the section has arrived. All three panels share one grid cell, so
+   the block is as tall as the longest one and nothing shifts as they change. The title and body use
+   transitions rather than keyframes because a transition restarts every time data-active flips; the
+   number and its ring are keyed in React instead, so their animations replay on each turn. */
+.signature-block .principle-rotator[data-rotating='true'] {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: clamp(16px, 1.6vw, 26px);
+  row-gap: 14px;
+  align-items: start;
+  /* The rule above needs air; the title used to sit right on it. */
+  margin-top: 22px;
+}
+.signature-block .principle-rotator[data-rotating='true'] .signature-principles {
+  display: grid;
+  border-block: 0;
+  min-width: 0;
+}
 .signature-block .principle-rotator[data-rotating='true'] .signature-principle {
   grid-area: 1 / 1;
   grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
   border-bottom: 0;
   padding: 0;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.42s ease, visibility 0s linear 0.42s;
+  transition: opacity 0.3s ease, visibility 0s linear 0.3s;
 }
 .signature-block .principle-rotator[data-rotating='true'] .signature-principle[data-active='true'] {
   opacity: 1;
   visibility: visible;
-  transition: opacity 0.42s ease;
+  transition: opacity 0.3s ease;
 }
-/* The step row already says which one this is. */
+/* The marker on the left already carries the number. */
 .signature-block .principle-rotator[data-rotating='true'] .signature-principle > span { display: none; }
-.signature-block[data-enter] .principle-rotator[data-rotating='true'] .signature-principle .typewriter-text {
-  animation: none;
-  clip-path: inset(0 100% 0 0);
-  transition: clip-path var(--type-duration, 600ms) steps(var(--type-steps, 16), end);
+.signature-block[data-enter] .principle-rotator[data-rotating='true'] .signature-principle strong {
+  display: block;
+  font-size: clamp(1.15rem, 0.95rem + 0.7vw, 1.5rem);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.44s ease, transform 0.44s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.signature-block[data-enter] .principle-rotator[data-rotating='true'] .signature-principle[data-active='true'] .typewriter-text {
-  clip-path: inset(0 0 0 0);
+.signature-block[data-enter='in'] .principle-rotator[data-rotating='true'] .signature-principle[data-active='true'] strong {
+  opacity: 1;
+  transform: none;
+  transition-delay: 120ms;
 }
 .signature-block[data-enter] .principle-rotator[data-rotating='true'] .signature-principle p {
+  max-width: 46ch;
+  font-size: 0.9375rem;
+  line-height: 1.7;
   opacity: 0;
-  transform: translateY(6px);
-  transition: opacity var(--body-fade, 620ms) ease, transform var(--body-fade, 620ms) cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateY(8px);
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .signature-block[data-enter='in'] .principle-rotator[data-rotating='true'] .signature-principle[data-active='true'] p {
   opacity: 1;
   transform: none;
-  transition-delay: var(--body-delay, 800ms);
+  transition-delay: 420ms;
 }
-.principle-controls { display: flex; align-items: center; gap: 14px; margin-top: 14px; }
-.principle-steps { display: flex; align-items: center; gap: 4px; }
-.principle-steps button,
-.principle-toggle {
+
+/* The number, and the ring that counts the turn down around it. */
+.principle-marker { grid-row: span 2; }
+.principle-number {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: clamp(58px, 5vw, 76px);
+  aspect-ratio: 1;
+  animation: principle-flip 0.46s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.principle-number > span {
+  font-family: var(--font-mono);
+  font-size: clamp(1.25rem, 1rem + 0.8vw, 1.6rem);
+  font-weight: 600;
+  line-height: 1;
+  color: var(--indigo);
+}
+.principle-ring { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
+.principle-ring circle { fill: none; stroke-width: 2; }
+.principle-ring-track { stroke: color-mix(in srgb, var(--indigo) 22%, transparent); }
+.principle-ring-progress {
+  stroke: var(--indigo);
+  stroke-linecap: round;
+  stroke-dasharray: var(--ring, 289);
+  stroke-dashoffset: var(--ring, 289);
+  animation: principle-ring-fill var(--cycle, 4500ms) linear forwards;
+}
+/* Whenever the turn is not running the ring simply stops where it is, which is the pause. */
+.principle-rotator[data-running='false'] .principle-ring-progress { animation-play-state: paused; }
+@keyframes principle-ring-fill { to { stroke-dashoffset: 0; } }
+@keyframes principle-flip {
+  from { transform: perspective(360px) rotateX(-82deg); opacity: 0; }
+  to { transform: perspective(360px) rotateX(0deg); opacity: 1; }
+}
+
+.principle-steps { grid-column: 2; display: flex; align-items: center; gap: 2px; }
+.principle-steps button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 28px;
-  padding: 4px 8px;
+  min-height: 26px;
+  padding: 3px 7px;
   border-radius: 3px;
-  color: var(--graphite);
+  color: color-mix(in srgb, var(--graphite) 80%, transparent);
   font-family: var(--font-mono);
   font-size: 0.6875rem;
   line-height: 1;
   transition: color 0.2s ease, background-color 0.2s ease;
 }
-.principle-steps button[aria-pressed='true'] { color: var(--indigo); background: color-mix(in srgb, var(--indigo) 12%, transparent); }
-.principle-steps button:hover,
-.principle-toggle:hover { color: var(--ink); background: var(--ash); }
-.principle-toggle { padding: 4px 7px; }
-/* A hint of the beat, so a still page still shows something is running. */
-.principle-controls::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  max-width: 96px;
-  background: linear-gradient(90deg, color-mix(in srgb, var(--indigo) 50%, transparent), transparent);
+.principle-steps button[aria-pressed='true'] { color: var(--indigo); }
+.principle-steps button:hover { color: var(--ink); background: var(--ash); }
+@media (prefers-reduced-motion: reduce) {
+  .principle-number, .principle-ring-progress { animation: none; }
+  .principle-ring-progress { stroke-dashoffset: 0; }
 }

@@ -112,8 +112,6 @@ export default async function Home({ params }: Props) {
               }))}
               labels={{
                 group: t('principles.label'),
-                pause: t('principles.pause'),
-                play: t('principles.play'),
                 show: t('principles.show', { index: '{index}' }),
               }}
             />

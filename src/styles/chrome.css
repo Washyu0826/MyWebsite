@@ -14,12 +14,17 @@
   --daylight-cool: #6e8fb5;
   --daylight-strength: 3.2%;
 }
-body {
-  background-color: color-mix(
+/* The page is not painted in --paper: the daylight tint bends it. Anything that fades out into the
+   page has to fade into this, not into the raw token, or it leaves a visible rectangle behind. */
+:root {
+  --page-bg: color-mix(
     in srgb,
     color-mix(in srgb, var(--daylight-warm) calc(var(--daylight) * 100%), var(--daylight-cool)) var(--daylight-strength),
     var(--paper)
   );
+}
+body {
+  background-color: var(--page-bg);
 }
 
 /* Theme sweep --------------------------------------------------------------

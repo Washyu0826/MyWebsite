@@ -1,33 +1,29 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Pause, Play } from 'lucide-react';
 
 export type Principle = { code: string; title: string; body: string };
-type Labels = { group: string; pause: string; play: string; show: string };
+type Labels = { group: string; show: string };
 
-/** Matches the hero typewriter: a fixed floor plus a per-character cost. */
-function typeDuration(text: string) {
-  return Math.max(260, text.length * 34);
-}
-const BODY_DELAY = 220;
-const BODY_FADE = 620;
-const DWELL = 2600;
+/** One full turn: the number flips in, the title slides up, the body follows, then it holds. */
+const CYCLE = 4500;
+/** r=46 in a 100-unit box; the ring is drawn as one dash the length of its own circumference. */
+const RING = 2 * Math.PI * 46;
 
 /**
- * The three principles, one at a time: the title types itself, the body fades in under it, then the
- * next one takes over. Three stacked blocks used to push the last one below the fold; rotating them
- * keeps the hero to one screen.
+ * The three principles, one at a time. The oversized number carries the eye and its ring doubles as
+ * the clock: when the ring closes, the next one takes over.
  *
- * What it will not do: rotate before JavaScript has decided it may. The server renders all three
- * expanded, which is what a crawler, a failed bundle and `prefers-reduced-motion` all keep. Motion
- * only starts once the block is on screen and the tab is in front, and it stops on hover, on focus,
- * and whenever the reader presses pause — content that moves on its own needs a way to stop it.
+ * There is no play button on purpose. The ring freezes whenever the reader hovers the block, tabs
+ * into it, or picks a number, which is the stop that auto-advancing content owes them; picking a
+ * number also parks it there. Nothing rotates at all under `prefers-reduced-motion`, off-screen, or
+ * on a background tab, and the server renders all three expanded, so a crawler or a failed bundle
+ * still sees every word.
  */
 export function PrincipleRotator({ items, labels }: { items: Principle[]; labels: Labels }) {
   const [rotating, setRotating] = useState(false);
   const [index, setIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
+  const [parked, setParked] = useState(false);
   const [held, setHeld] = useState(false);
   const [onScreen, setOnScreen] = useState(true);
   const [visible, setVisible] = useState(true);
@@ -56,33 +52,44 @@ export function PrincipleRotator({ items, labels }: { items: Principle[]; labels
     };
   }, []);
 
-  const current = items[index];
-  const running = rotating && !paused && !held && onScreen && visible && items.length > 1;
+  const running = rotating && !parked && !held && onScreen && visible && items.length > 1;
 
   useEffect(() => {
-    if (!running || !current) return;
-    const timer = window.setTimeout(
-      () => setIndex(value => (value + 1) % items.length),
-      typeDuration(current.title) + BODY_DELAY + BODY_FADE + DWELL,
-    );
+    if (!running) return;
+    const timer = window.setTimeout(() => setIndex(value => (value + 1) % items.length), CYCLE);
     return () => window.clearTimeout(timer);
-  }, [running, current, index, items.length]);
+  }, [running, index, items.length]);
 
-  // Choosing a panel by hand means taking over; the play button hands control back.
+  // Picking a number is taking over: it stops there until the reader picks another one.
   const select = useCallback((next: number) => {
     setIndex(next);
-    setPaused(true);
+    setParked(true);
   }, []);
+
+  const current = items[index];
 
   return <div
     ref={scope}
     className="principle-rotator"
     data-rotating={rotating ? 'true' : 'false'}
+    data-running={running ? 'true' : 'false'}
+    style={{ '--cycle': `${CYCLE}ms`, '--ring': RING.toFixed(2) } as React.CSSProperties}
     onMouseEnter={() => setHeld(true)}
     onMouseLeave={() => setHeld(false)}
     onFocusCapture={() => setHeld(true)}
     onBlurCapture={() => setHeld(false)}
   >
+    {rotating && current && <div className="principle-marker" aria-hidden="true">
+      {/* Keyed on the index so the flip and the ring start again on every turn. */}
+      <div className="principle-number" key={`${index}-${parked}`}>
+        <svg className="principle-ring" viewBox="0 0 100 100">
+          <circle className="principle-ring-track" cx="50" cy="50" r="46" />
+          <circle className="principle-ring-progress" cx="50" cy="50" r="46" />
+        </svg>
+        <span>{current.code}</span>
+      </div>
+    </div>}
+
     <div className="signature-principles" aria-label={labels.group}>
       {items.map((item, position) => {
         const active = !rotating || position === index;
@@ -90,38 +97,23 @@ export function PrincipleRotator({ items, labels }: { items: Principle[]; labels
           key={item.code}
           className="signature-principle"
           data-active={active ? 'true' : 'false'}
-          // Only the panel on show is reachable; the others are out of the tab order and unread.
           inert={rotating && !active}
-          style={{
-            '--type-duration': `${typeDuration(item.title)}ms`,
-            '--type-steps': item.title.length,
-            '--body-delay': `${typeDuration(item.title) + BODY_DELAY}ms`,
-            '--body-fade': `${BODY_FADE}ms`,
-          } as React.CSSProperties}
         >
           <span>{item.code}</span>
-          <strong><span className="sr-only">{item.title}</span><span className="typewriter-text" aria-hidden="true">{item.title}</span></strong>
+          <strong>{item.title}</strong>
           <p>{item.body}</p>
         </div>;
       })}
     </div>
 
-    {rotating && items.length > 1 && <div className="principle-controls">
-      <div className="principle-steps">
-        {items.map((item, position) => <button
-          key={item.code}
-          type="button"
-          aria-pressed={position === index}
-          aria-label={labels.show.replace('{index}', item.code)}
-          onClick={() => select(position)}
-        >{item.code}</button>)}
-      </div>
-      <button
+    {rotating && items.length > 1 && <div className="principle-steps">
+      {items.map((item, position) => <button
+        key={item.code}
         type="button"
-        className="principle-toggle"
-        aria-label={paused ? labels.play : labels.pause}
-        onClick={() => setPaused(value => !value)}
-      >{paused ? <Play size={13} aria-hidden="true" /> : <Pause size={13} aria-hidden="true" />}</button>
+        aria-pressed={position === index}
+        aria-label={labels.show.replace('{index}', item.code)}
+        onClick={() => select(position)}
+      >{item.code}</button>)}
     </div>}
   </div>;
 }
