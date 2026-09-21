@@ -10,6 +10,12 @@ export default defineConfig({
   // Locally a failure should stay a failure, so the retry only applies where the noise is.
   retries: process.env.CI ? 2 : 0,
   use: { baseURL, browserName: 'chromium', channel, trace: 'off', screenshot: 'only-on-failure', launchOptions: { timeout: 30000 } },
+  // Font rasterisation is not deterministic across runs on the same machine: one CI attempt in three
+  // differed from the other two by 18 pixels, all of them sub-pixel antialiasing on the monospace
+  // "Ctrl K" chip in the header. A tolerance of 60 is triple the worst observed noise and still
+  // 0.004% of a full-page shot, far below anything a real regression moves - a changed icon alone is
+  // hundreds of pixels, a layout shift is thousands.
+  expect: { toHaveScreenshot: { maxDiffPixels: 60 } },
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : [['list']],
   webServer: { command: `npm run start -- -p ${port}`, url: `${baseURL}/zh`, reuseExistingServer: !process.env.CI, timeout: 120000, env: { DEMO_MODE: 'true' } },
 });
