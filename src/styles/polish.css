@@ -23,11 +23,6 @@
   .letter-reveal .letter { transition: color 0.26s ease-out; }
 }
 
-/* --- section numbers: a bookmark ------------------------------------------- */
-/* data-active is set by the same IntersectionObserver that runs the section entrance. */
-.section .section-heading::before { transition: color 0.4s ease, border-color 0.4s ease; }
-.section[data-active="1"] .section-heading::before { color: var(--indigo); border-color: color-mix(in srgb, var(--indigo) 45%, var(--rule)); }
-
 /* --- rules under the pointer ------------------------------------------------ */
 /* The same tapered hairline layout.css and hero.css draw, with the ink share as a registered
    percentage so it can be lifted and, unlike a plain gradient swap, interpolated. */

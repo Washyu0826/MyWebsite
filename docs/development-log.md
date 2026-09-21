@@ -670,3 +670,37 @@ Verification: `npx tsc --noEmit`, Prettier and ESLint clean; `npm test` 125 pass
 `tests/motion.test.ts` extended to cover the three frame rates, the per-second pointer follow and the
 resolution cap; `npm run test:e2e` 26 passed; `npm run test:visual` 16 passed with no baseline change.
 Local timing remains too noisy to quote — CI is the measurement that counts.
+
+### Sound Removed, and the Section Numbers With It (2026-09-21)
+
+The whole sound feature is gone at the owner's request: the background music, the toggle in the
+bottom-right corner, the two confirmation chimes, the footer credit line and the messages behind them.
+`src/lib/audio/`, `src/components/ambient-audio.tsx`, `src/styles/audio.css`, `tests/audio.test.ts`,
+`docs/background-music.md` and the `audio` bucket migration are deleted, and the two encoded files and
+the bucket itself are deleted from Supabase Storage. Nothing on the site plays a sound now.
+
+One thing moved rather than vanished. `styles/audio.css` had taken ownership of `.site-footer`'s bottom
+padding, because the floating toggle needed more clearance than the notch inset alone; with the toggle
+gone the footer only owes the inset again, so that declaration went back into the inline safe-area
+block in the locale layout beside the header's and the skip link's.
+
+**The numbered badges** beside the Experience, Project and Research headings are gone too — the 01/02/03
+in a circle, not the headings. The three principles in the hero keep theirs; they are a different
+element and were explicitly left alone.
+
+Removing them stranded a whole mechanism. The badge tint was the only consumer of `data-active`, which
+`SectionReveal` maintained by running its IntersectionObserver with **nine thresholds** so it could keep
+reporting which section was being read as it travelled through the viewport. With nothing left to tint,
+all of that was paying for nothing, so the observer now carries one threshold, fires once, writes the
+entrance attribute and disconnects. `sectionActive()` and its test went with it.
+
+The grid the badge occupied lost its first column: the three section headings go from
+`auto | max-content | 1fr` to `max-content | 1fr`, the desktop projects heading shifts its rule and its
+link down one column each, and `--section-content-offset` — 56px, the badge plus its gap, which existed
+to align the rows under the heading *text* — is removed along with the two margins that used it. The
+content is flush with the heading now because the heading starts at the container edge.
+
+Verification: `npx tsc --noEmit`, Prettier and ESLint clean (0 errors, 16 pre-existing warnings);
+`npm test` 111 passed; `npx vitest run` 65 passed; `npm run test:e2e` 26 passed; `npm run test:visual`
+16 passed after updating 14 Windows baselines for the missing footer line and the missing badges. **The
+Linux set still has to be committed from a CI run.**

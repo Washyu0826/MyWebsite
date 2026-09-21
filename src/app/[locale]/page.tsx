@@ -12,6 +12,7 @@ import { pageMetadata } from '@/lib/metadata';
 import { personSchema } from '@/lib/structured-data';
 import { Container } from '@/components/container';
 import { SectionReveal } from '@/components/section-reveal';
+import { PrincipleRotator } from '@/components/principle-rotator';
 import { ProjectList } from '@/components/project-list';
 import { HomeSections } from '@/components/home-sections';
 import { CubistBackdrop } from '@/components/cubist-backdrop';
@@ -103,13 +104,19 @@ export default async function Home({ params }: Props) {
           </ul>
           <SectionReveal as="div" className="signature-block" deferInitial>
             <div className="enter-rule" aria-hidden="true" />
-            <div className="signature-principles" aria-label={t('principles.label')}>
-              {designPrinciples.map((key, index) => <div key={key} className="signature-principle" style={{ '--enter-index': index } as React.CSSProperties}>
-                <span>{`0${index + 1}`}</span>
-                <strong><TypewriterLine as="span" text={t(`principles.${key}.title`)} /></strong>
-                <p>{t(`principles.${key}.body`)}</p>
-              </div>)}
-            </div>
+            <PrincipleRotator
+              items={designPrinciples.map((key, index) => ({
+                code: `0${index + 1}`,
+                title: t(`principles.${key}.title`),
+                body: t(`principles.${key}.body`),
+              }))}
+              labels={{
+                group: t('principles.label'),
+                pause: t('principles.pause'),
+                play: t('principles.play'),
+                show: t('principles.show', { index: '{index}' }),
+              }}
+            />
           </SectionReveal>
           <div className="mt-6 md:hidden"><ResumeLink profile={profile} locale={locale} /></div>
         </div>

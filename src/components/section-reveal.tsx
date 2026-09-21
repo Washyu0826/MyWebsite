@@ -1,14 +1,6 @@
 'use client';
 import { useEffect, useRef } from 'react';
 type Props = React.ComponentProps<'section'> & { as?: 'section' | 'div'; deferInitial?: boolean };
-// Thresholds the entrance does not need; they are what lets the same observer keep reporting while a
-// section travels through the viewport, so the section number can follow the reading position.
-const STEPS = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.65, 0.8, 1];
-// A section is the one being read when half of it is on screen, or when it covers half the screen —
-// the second clause is for sections taller than the viewport, whose ratio never reaches a half.
-export function sectionActive(ratio: number, visible: number, viewport: number) {
-  return ratio >= 0.5 || (viewport > 0 && visible >= viewport * 0.5);
-}
 // Nothing is hidden until JS decides to hide it, and only while the block sits below the fold,
 // so a failed bundle or a missing IntersectionObserver still leaves every section readable.
 export function SectionReveal({ as: Tag = 'section', children, deferInitial = false, ...rest }: Props) {
@@ -16,24 +8,21 @@ export function SectionReveal({ as: Tag = 'section', children, deferInitial = fa
   useEffect(() => {
     const element = scope.current;
     if (!element) return;
-    // Both writes are guarded. The observer below carries nine thresholds and fires many times per
-    // section on the way down the page; writing an attribute that already holds the value still
-    // invalidates style for the section and everything under it, which is most of the page.
-    let shown = false, lit: boolean | null = null;
+    // Guarded, because writing an attribute that already holds its value still invalidates style for
+    // the section and everything under it, and the callback below can fire more than once.
+    let shown = false;
     const show = () => { if (shown) return; shown = true; element.dataset.enter = 'in'; };
     const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
     const below = element.getBoundingClientRect().top > window.innerHeight * 0.85;
     if (!('IntersectionObserver' in window)) { show(); return; }
-    // The observer outlives the entrance: after it has shown the section it keeps the number in step.
     if (preference.matches || (!below && !deferInitial)) show(); else element.dataset.enter = 'out';
+    // One threshold and one job. This used to carry nine, so that it could keep reporting which
+    // section was being read while it travelled through the viewport - which existed to tint the
+    // numbered badge beside each heading. The badges are gone, so the extra callbacks were paying
+    // for nothing.
     const observer = new IntersectionObserver(entries => {
-      for (const entry of entries) {
-        if (entry.isIntersecting) show();
-        const viewport = entry.rootBounds?.height ?? window.innerHeight;
-        const active = entry.isIntersecting && sectionActive(entry.intersectionRatio, entry.intersectionRect.height, viewport);
-        if (active !== lit) { lit = active; element.dataset.active = active ? '1' : ''; }
-      }
-    }, { rootMargin: '0px 0px -12% 0px', threshold: STEPS });
+      if (entries.some(entry => entry.isIntersecting)) { show(); observer.disconnect(); }
+    }, { rootMargin: '0px 0px -12% 0px' });
     observer.observe(element);
     const finish = () => { if (preference.matches) show(); };
     preference.addEventListener('change', finish);

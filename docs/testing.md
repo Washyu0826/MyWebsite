@@ -293,26 +293,3 @@ gone.
 The consequence of getting this wrong is worse than it sounds: a returning visitor holds the old
 shell, and reloading does not help them, because the worker answers before the network. Only
 clearing site data would, and nobody does that.
-
-## The background music is verified against the published files, on request
-
-`tests/audio.test.ts` covers the toggle's contract without a browser: only `'on'` counts as an
-opt-in, the three copies of the storage key agree, exactly two events may ask for a chime, nothing is
-downloaded and no `AudioContext` is opened before the visitor presses the button, and the music is
-never ramped up to anything but `MUSIC_GAIN`.
-
-One test in that file is skipped by default:
-
-```bash
-AUDIO_VERIFY=1 npm test
-```
-
-It fetches both published encodes from Supabase Storage, checks their content types and sizes, and
-runs `ffmpeg -af ebur128` over the Opus file to confirm the integrated loudness, loudness range and
-true peak still match what `TRACK` in `src/lib/audio/track.ts` claims. `MUSIC_GAIN` is calibrated
-against that peak, so if the file is re-encoded or replaced and the constant is not updated, the
-music plays at the wrong level and nothing else would catch it.
-
-It is off by default because it downloads five minutes of audio and shells out to `ffmpeg`, which is
-too slow for a pre-commit run and would make the suite depend on the network. Run it after any
-re-encode or re-upload. `docs/background-music.md` has the encode chain.

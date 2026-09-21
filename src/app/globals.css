@@ -12,7 +12,6 @@
 @import "../styles/print.css";
 /* Last so its :lang() blocks outrank the :root defaults in tokens.css — equal specificity. */
 @import "../styles/typography.css";
-@import "../styles/audio.css";
 :root {
   --paper: #0D0E10; --ink: #F5F5F2; --graphite: #A7A9AD;
   --rule: #2B2D31; --ash: #17191D; --indigo: #C8B06A; --surface: #121418;

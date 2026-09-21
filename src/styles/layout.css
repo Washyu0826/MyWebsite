@@ -1,5 +1,5 @@
 .container { width: 100%; max-width: 1120px; margin-inline: auto; padding-inline: 20px; }
-.home-container { max-width: none; position: relative; --section-content-offset: 56px; }
+.home-container { max-width: none; position: relative; }
 /* Cubist backdrop: canvas drawn by components/cubist-backdrop.tsx, faded toward the copy column and the sections below. */
 .home-stage { position: relative; }
 .cubist-backdrop { position: absolute; top: 0; left: 0; width: 100%; height: clamp(560px, 100vh, 1080px); overflow: hidden; pointer-events: none; z-index: 0; opacity: 0.62; }
@@ -59,18 +59,13 @@
 .section { margin-block: 48px 64px; }
 .section-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 20px; }
 .section-heading h2 { font-size: var(--text-h2); line-height: 1.25; }
-.experience-section .section-heading, .project-section .section-heading, .research-section .section-heading { position: relative; display: grid; grid-template-columns: auto minmax(0, max-content) minmax(24px, 1fr); justify-content: stretch; align-items: center; column-gap: 14px; row-gap: 10px; margin-bottom: 24px; }
-.experience-section .section-heading::before, .project-section .section-heading::before, .research-section .section-heading::before { width: 42px; aspect-ratio: 1; display: grid; place-items: center; border: 1px solid var(--rule); border-radius: 50%; background: color-mix(in srgb, var(--surface) 76%, transparent); color: var(--graphite); font-family: var(--font-mono); font-size: 0.75rem; line-height: 1; }
-.experience-section .section-heading::before { content: '01'; }
-.project-section .section-heading::before { content: '02'; }
-.research-section .section-heading::before { content: '03'; }
+.experience-section .section-heading, .project-section .section-heading, .research-section .section-heading { position: relative; display: grid; grid-template-columns: minmax(0, max-content) minmax(24px, 1fr); justify-content: stretch; align-items: center; column-gap: 14px; row-gap: 10px; margin-bottom: 24px; }
 .experience-section .section-heading::after, .project-section .section-heading::after, .research-section .section-heading::after { content: ''; height: 1px; background: linear-gradient(90deg, color-mix(in srgb, var(--ink) 46%, var(--rule)), transparent); align-self: center; }
 .experience-section .section-heading h2, .project-section .section-heading h2, .research-section .section-heading h2 { min-width: 0; color: var(--ink); font-size: clamp(1.9rem, 7vw, var(--text-h1)); font-weight: 760; line-height: 1.08; }
 .project-section .section-heading .text-link { grid-column: 1 / -1; justify-self: start; min-height: 32px; }
 .experience-section > .enter-item,
 .project-section > .enter-item,
 .project-section > .project-list,
-.research-section > .enter-item { margin-left: var(--section-content-offset); }
 .project-list { border-top: 1px solid var(--rule); }
 .project-row { position: relative; border-bottom: 1px solid var(--rule); display: block; padding: 24px 0; }
 .project-row::before { content: ''; position: absolute; left: -10px; top: 24px; bottom: 24px; width: 2px; background: var(--indigo); transform: scaleY(0); transform-origin: top; transition: transform 0.18s; }
@@ -92,14 +87,18 @@
 .project-copy { min-width: 0; }
 .tech-list { display: flex; flex-wrap: wrap; gap: 8px 16px; }
 .tech-list li { color: var(--ink); }
-.experience-row { border-top: 1px solid var(--rule); margin-left: var(--section-content-offset); padding-block: 24px; display: block; max-width: 920px; }
+.experience-row { border-top: 1px solid var(--rule); padding-block: 24px; display: block; max-width: 920px; }
 .experience-row-main { min-width: 0; }
 .experience-row-heading { display: grid; gap: 8px; min-width: 0; }
 .experience-row-heading h3 { min-width: 0; line-height: 1.45; }
 .experience-row-heading h3 span { display: inline; }
-.contact-invitation { border: 1px solid var(--rule); border-left-color: var(--indigo); padding: 28px; margin-block: 64px; background: color-mix(in srgb, var(--surface) 72%, transparent); }
-.contact-invitation h2 { font-size: var(--text-h2); }
+/* A closing call to action, not a second hero: it sits narrower than the text column and keeps
+   its heading one step below a section heading. */
+.contact-invitation { border: 1px solid var(--rule); border-left-color: var(--indigo); padding: 22px 24px; margin-block: 56px; max-width: 640px; background: color-mix(in srgb, var(--surface) 72%, transparent); }
+.contact-invitation h2 { font-size: var(--text-h3); }
+.contact-invitation p { font-size: 0.9375rem; }
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 24px; }
+.contact-invitation .actions { margin-top: 18px; }
 .contact-page { max-width: none; }
 .contact-page-heading { max-width: 980px; }
 .contact-intro { display: grid; gap: 28px; align-items: end; margin-bottom: 40px; border-block: 1px solid var(--rule); padding-block: 32px; }
@@ -250,15 +249,15 @@
   .hero-photo { justify-self: end; }
   .cubist-backdrop { opacity: 1; }
   .contact-intro { grid-template-columns: minmax(0, 1fr) auto; gap: 48px; }
-  .project-section .section-heading { grid-template-columns: auto minmax(0, max-content) minmax(40px, 1fr) auto; }
-  .project-section .section-heading::after { grid-column: 3; grid-row: 1; width: 100%; }
-  .project-section .section-heading .text-link { grid-column: 4; grid-row: 1; justify-self: end; min-height: 32px; }
+  .project-section .section-heading { grid-template-columns: minmax(0, max-content) minmax(40px, 1fr) auto; }
+  .project-section .section-heading::after { grid-column: 2; grid-row: 1; width: 100%; }
+  .project-section .section-heading .text-link { grid-column: 3; grid-row: 1; justify-self: end; min-height: 32px; }
   .project-row-content { grid-template-columns: 220px minmax(0, 1fr); align-items: start; gap: 28px; }
   .section { margin-block: 64px 96px; }
   .page { padding-block: 80px 96px; }
   .case-grid { grid-template-columns: 200px minmax(0, 1fr); gap: 48px; }
   .case-meta { position: sticky; top: 32px; align-self: start; grid-template-columns: 1fr; border-top: 0; border-bottom: 0; padding: 0 24px 0 0; border-right: 1px solid var(--rule); }
-  .contact-invitation { padding: 40px; }
+  .contact-invitation { padding: 28px 32px; }
   .article-heading { margin-bottom: 48px; }
 }
 @media (min-width: 1024px) { .container { padding-inline: 48px; } }

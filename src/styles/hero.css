@@ -122,6 +122,9 @@ span.typewriter-line { display: inline-block; }
     justify-content: start;
     gap: clamp(32px, 4vw, 64px);
   }
+  .home-container .hero-grid:not(.hero-grid-text-only) > div:first-child {
+    margin-left: clamp(20px, 2vw, 44px);
+  }
   .home-container .hero-photo { justify-self: start; }
 }
 @media (min-width: 1280px) {
@@ -190,3 +193,129 @@ span.typewriter-line { display: inline-block; }
 }
 [data-enter] .project-row:nth-child(2) { --enter-index: 1; }
 [data-enter] .project-row:nth-child(3) { --enter-index: 2; }
+
+/* --- focus areas: a slow light passing along the row ----------------------- */
+/* The labels keep a faint sheen after they arrive, so the row stays alive without moving. The
+   highlight is painted into the text itself and swept across it; each item is delayed a little so
+   the light travels down the list rather than flashing all at once. The dot brightens on the same
+   beat. globals.css disables animation under prefers-reduced-motion, and the start position keeps
+   the highlight off the glyphs, so a still frame reads as plain ink. */
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .home-container .hero-focus-list li {
+    /* The accent itself is the highlight: it is lighter than the ink in the dark theme and warmer
+       than it in the light one, so the glint reads in both without a second colour. */
+    background-image: linear-gradient(100deg,
+      var(--focus-ink, currentColor) 44%,
+      color-mix(in srgb, var(--indigo) 70%, var(--focus-ink)) 48%,
+      var(--indigo) 50%,
+      color-mix(in srgb, var(--indigo) 70%, var(--focus-ink)) 52%,
+      var(--focus-ink, currentColor) 56%);
+    /* The image is three times the box, so any background-position between 0% and 100% still
+       covers every glyph; stepping outside that range would leave letters with no paint at all. */
+    background-size: 300% 100%;
+    background-position: 100% 0;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: focus-sheen 9s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+    animation-delay: calc(var(--focus-index, 0) * 380ms);
+  }
+  /* Hover still owns the item: the sweep stops and the label goes to full ink. */
+  .home-container .hero-focus-list li:hover {
+    animation-play-state: paused;
+    -webkit-text-fill-color: var(--ink);
+  }
+}
+.home-container .hero-focus-list li { --focus-ink: color-mix(in srgb, var(--ink) 88%, var(--graphite)); }
+.home-container .hero-focus-list li::before {
+  animation: focus-dot-sheen 9s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  animation-delay: calc(var(--focus-index, 0) * 380ms);
+}
+.home-container .hero-focus-list li:nth-child(2) { --focus-index: 1; }
+.home-container .hero-focus-list li:nth-child(3) { --focus-index: 2; }
+.home-container .hero-focus-list li:nth-child(4) { --focus-index: 3; }
+.home-container .hero-focus-list li:nth-child(5) { --focus-index: 4; }
+.home-container .hero-focus-list li:nth-child(6) { --focus-index: 5; }
+/* The bright band sits at the middle of the image, so it is out of view at both ends of the
+   travel; the loop can snap back without the highlight visibly jumping. */
+@keyframes focus-sheen {
+  0% { background-position: 100% 0; }
+  40%, 100% { background-position: 0% 0; }
+}
+@keyframes focus-dot-sheen {
+  0%, 30% { background-color: var(--ink); box-shadow: none; }
+  38% { background-color: var(--indigo); box-shadow: 0 0 12px color-mix(in srgb, var(--indigo) 55%, transparent); }
+  52%, 100% { background-color: var(--ink); box-shadow: none; }
+}
+
+/* --- principles, rotated one at a time ------------------------------------ */
+/* Scoped under the entered block on purpose. The reveal rules above own the entrance and target the
+   same elements, so rotation only takes over once the section has arrived; before that, the block
+   stays faded out exactly as it did. Every selector here therefore outranks its [data-enter="in"]
+   counterpart, including the typewriter keyframe, which has to be switched off so the stepped
+   transition below can restart on each turn.
+   All three panels share one grid cell, so the block is as tall as the longest one and nothing
+   shifts as they change. */
+.signature-block .principle-rotator[data-rotating='true'] .signature-principles { display: grid; border-block: 0; }
+.signature-block .principle-rotator[data-rotating='true'] .signature-principle {
+  grid-area: 1 / 1;
+  grid-template-columns: minmax(0, 1fr);
+  border-bottom: 0;
+  padding: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.42s ease, visibility 0s linear 0.42s;
+}
+.signature-block .principle-rotator[data-rotating='true'] .signature-principle[data-active='true'] {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.42s ease;
+}
+/* The step row already says which one this is. */
+.signature-block .principle-rotator[data-rotating='true'] .signature-principle > span { display: none; }
+.signature-block[data-enter] .principle-rotator[data-rotating='true'] .signature-principle .typewriter-text {
+  animation: none;
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path var(--type-duration, 600ms) steps(var(--type-steps, 16), end);
+}
+.signature-block[data-enter] .principle-rotator[data-rotating='true'] .signature-principle[data-active='true'] .typewriter-text {
+  clip-path: inset(0 0 0 0);
+}
+.signature-block[data-enter] .principle-rotator[data-rotating='true'] .signature-principle p {
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity var(--body-fade, 620ms) ease, transform var(--body-fade, 620ms) cubic-bezier(0.16, 1, 0.3, 1);
+}
+.signature-block[data-enter='in'] .principle-rotator[data-rotating='true'] .signature-principle[data-active='true'] p {
+  opacity: 1;
+  transform: none;
+  transition-delay: var(--body-delay, 800ms);
+}
+.principle-controls { display: flex; align-items: center; gap: 14px; margin-top: 14px; }
+.principle-steps { display: flex; align-items: center; gap: 4px; }
+.principle-steps button,
+.principle-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 4px 8px;
+  border-radius: 3px;
+  color: var(--graphite);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+.principle-steps button[aria-pressed='true'] { color: var(--indigo); background: color-mix(in srgb, var(--indigo) 12%, transparent); }
+.principle-steps button:hover,
+.principle-toggle:hover { color: var(--ink); background: var(--ash); }
+.principle-toggle { padding: 4px 7px; }
+/* A hint of the beat, so a still page still shows something is running. */
+.principle-controls::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  max-width: 96px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--indigo) 50%, transparent), transparent);
+}

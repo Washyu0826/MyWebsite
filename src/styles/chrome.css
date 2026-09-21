@@ -119,10 +119,7 @@ body {
 .pagination,
 .experience-row > p:first-child,
 .signature-principle span,
-.command-kbd,
-.experience-section .section-heading::before,
-.project-section .section-heading::before,
-.research-section .section-heading::before {
+.command-kbd {
   font-variant-numeric: tabular-nums;
 }
 

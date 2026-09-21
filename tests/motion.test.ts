@@ -117,11 +117,15 @@ test('the canvas is drawn at CSS resolution, not at the density of the screen', 
   assert.match(code, /v\.dpr = Math\.min\(window\.devicePixelRatio \|\| 1, DETAIL\);/);
 });
 
-test('the section observer writes an attribute only when the value changes', () => {
+test('the section observer asks for one callback and writes one attribute', () => {
   const code = bare(reveal);
-  // Nine thresholds on three sections: the callback runs constantly on the way down the page, and an
-  // attribute write is a style invalidation for the section and everything under it even when the
-  // value is unchanged. Measured on the homepage: 541 style recalculations became 3.
-  assert.match(code, /if \(active !== lit\) \{ lit = active; element\.dataset\.active =/);
+  // It used to carry nine thresholds so it could keep reporting which section was being read, which
+  // existed only to tint the numbered badge beside each heading. The badges are gone, so those
+  // callbacks - and the style invalidation each of their attribute writes caused - paid for nothing.
+  assert.doesNotMatch(code, /threshold:/);
+  assert.doesNotMatch(code, /dataset\.active/);
+  assert.doesNotMatch(code, /intersectionRatio|intersectionRect|rootBounds/);
+  // And the entrance is written once, then the observer stops watching.
   assert.match(code, /const show = \(\) => \{ if \(shown\) return; shown = true; element\.dataset\.enter = 'in'; \};/);
+  assert.match(code, /show\(\); observer\.disconnect\(\);/);
 });

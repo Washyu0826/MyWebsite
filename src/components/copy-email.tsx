@@ -2,7 +2,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Copy, Check } from 'lucide-react';
-import { cue } from '@/lib/audio/cue';
 import { Button } from './ui/button';
 export function CopyValue({ value, label, copiedLabel }: { value: string; label: string; copiedLabel?: string }) {
   const [status, setStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
@@ -17,7 +16,6 @@ export function CopyValue({ value, label, copiedLabel }: { value: string; label:
     try {
       await navigator.clipboard.writeText(value);
       setStatus('copied'); setRun(current => current + 1);
-      cue('copy'); // only on the success path: a failed copy is reported, not congratulated
       window.clearTimeout(timer.current);
       timer.current = window.setTimeout(() => setStatus('idle'), 1900);
     }
