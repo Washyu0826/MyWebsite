@@ -641,3 +641,32 @@ Verification:
   described. **Lighthouse was not re-measured usefully** — a local run scored project-en at 85 where CI
   scores it 95, with the homepage moving in step, which is the machine rather than the build. CI is the
   measurement that counts.
+
+### The Canvas Gets a Frame Budget (2026-09-21)
+
+The first pass at the homepage's performance debt moved it from 74 to 77 and cut total blocking time
+from 990ms to 740ms, but the CI profile then said plainly where the rest was: **"Other" main-thread
+work is 7220ms on the homepage against 188ms on contact**, while Style & Layout is comparable on both
+(494ms and 433ms). It is the canvas, and only the canvas.
+
+Every frame the backdrop fills and strokes 42 polygons and clips a hatch through some of them, which
+is pixel-bound work. Two caps, both of which trade nothing anyone can see:
+
+- **Half the frames.** The light sweep takes 28 seconds to cross and the facets drift on 20-40 second
+  cycles, so 30fps is indistinguishable from 60. While the page is moving it drops to 10 and a
+  struggling machine gets 15; full rate returns 180ms after the last scroll event. The pointer follow
+  is now written per second rather than per frame, so the rate decides how often the picture is drawn
+  and not how quickly it answers the mouse.
+- **A quarter of the pixels.** The backing store is capped at CSS resolution instead of 2x. Nothing on
+  this canvas is text: it is soft, low-contrast geometry with hairline strokes, and it survives being
+  scaled by the compositor. Compared side by side at `deviceScaleFactor: 2` the facets, hatching and
+  strokes are indistinguishable.
+
+The screenshot baselines are unchanged, because Playwright shoots at `deviceScaleFactor: 1`, where
+both the old cap and the new one resolve to 1. The change only reaches retina screens — which is
+exactly where it was costing four times as much.
+
+Verification: `npx tsc --noEmit`, Prettier and ESLint clean; `npm test` 125 passed, with
+`tests/motion.test.ts` extended to cover the three frame rates, the per-second pointer follow and the
+resolution cap; `npm run test:e2e` 26 passed; `npm run test:visual` 16 passed with no baseline change.
+Local timing remains too noisy to quote — CI is the measurement that counts.

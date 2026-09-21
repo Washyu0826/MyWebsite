@@ -83,13 +83,38 @@ test('the backdrop does its scroll work once per frame, not once per event', () 
   assert.match(code, /Math\.abs\(d\.shift - placed\.shift\)[\s\S]{0,120}return;/);
 });
 
-test('the picture gives the scroll most of the frames while the page is moving', () => {
+test('the picture is drawn far less often than the screen refreshes', () => {
   const code = bare(backdrop);
-  const every = /const SCROLL_EVERY = (\d+), SCROLL_QUIET = (\d+);/.exec(code);
-  assert.ok(every, 'the two scroll constants are still declared together');
-  assert.ok(Number(every[1]) >= 2 && Number(every[1]) <= 4, 'it thins the frames, it does not freeze');
-  assert.ok(Number(every[2]) >= 100 && Number(every[2]) <= 400, 'full rate comes back promptly after the last scroll');
-  assert.match(code, /performance\.now\(\) - moved < SCROLL_QUIET \? SCROLL_EVERY/);
+  const rates = /const FRAME_MS = 1000 \/ (\d+), SCROLL_FRAME_MS = 1000 \/ (\d+), SLOW_FRAME_MS = 1000 \/ (\d+);/.exec(code);
+  assert.ok(rates, 'the three frame rates are still declared together');
+  const [rest, scrolling, struggling] = rates.slice(1, 4).map(Number);
+  // Nothing on this canvas moves quickly - the light sweep takes 28s to cross - so half the screen's
+  // rate is indistinguishable and costs half as much. Every frame fills and strokes 42 polygons.
+  assert.ok(rest >= 20 && rest <= 40, `${rest} frames a second is not a saving`);
+  assert.ok(scrolling < rest, 'the scroll gets the frames back while the page is moving');
+  assert.ok(struggling < rest, 'and a struggling machine draws less, never more');
+  assert.ok(scrolling >= 8, 'but it is thinned, never frozen');
+  const quiet = /const SCROLL_QUIET = (\d+);/.exec(code);
+  assert.ok(quiet && Number(quiet[1]) >= 100 && Number(quiet[1]) <= 400, 'full rate returns promptly after the scroll');
+  assert.match(code, /now - moved < SCROLL_QUIET \? SCROLL_FRAME_MS : slow > 6 \? SLOW_FRAME_MS : FRAME_MS/);
+});
+
+test('the pointer follow is written per second, not per frame', () => {
+  const code = bare(backdrop);
+  // Otherwise changing the rate above would change how fast the picture answers the mouse, which is a
+  // different decision and not one the frame budget should be making.
+  assert.match(code, /const decay = \(rate: number\) => 1 - \(1 - rate\) \*\* Math\.min\(6, since \/ 16\.667\)/);
+  assert.doesNotMatch(code, /eased\.[a-z]+ \+= \([^)]*\) \* 0\.\d+;/, 'no bare per-frame easing constants are left');
+});
+
+test('the canvas is drawn at CSS resolution, not at the density of the screen', () => {
+  const code = bare(backdrop);
+  const detail = /const DETAIL = ([\d.]+);/.exec(code);
+  assert.ok(detail, 'the resolution cap is still a named constant');
+  // Fill and clip work is proportional to pixel count, and this canvas carries no text - only soft
+  // low-contrast geometry that survives being scaled up by the compositor.
+  assert.ok(Number(detail[1]) > 0 && Number(detail[1]) <= 1, `${detail[1]} is not a saving on a retina screen`);
+  assert.match(code, /v\.dpr = Math\.min\(window\.devicePixelRatio \|\| 1, DETAIL\);/);
 });
 
 test('the section observer writes an attribute only when the value changes', () => {

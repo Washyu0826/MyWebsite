@@ -39,9 +39,21 @@ const FOCUS: Point = [1.04, 0.44];
 const SPREAD = 0.74, OPEN = 0.46, SETTLE = SPREAD + OPEN + 0.9;
 // Light sweep: a soft diagonal band crossing the plate once every SWEEP seconds.
 const SWEEP = 28, SWA = -0.62, SWX = Math.cos(SWA), SWY = Math.sin(SWA), BAND = 0.36;
-// While the page is scrolling the picture runs at a third of the frame rate, and full rate comes back
-// this long after the last scroll event. Both are about the scroll, not about the drawing.
-const SCROLL_EVERY = 3, SCROLL_QUIET = 180;
+// How often the picture is redrawn, in milliseconds between frames.
+//
+// Nothing here moves quickly: the light sweep takes 28 seconds to cross and the facets drift on 20-40
+// second cycles, so 30 frames a second is indistinguishable from 60 and costs half as much. Every
+// frame fills and strokes 42 polygons and clips a hatch through some of them, which is the most
+// expensive thing this page does - on the profile it is 7.2 seconds of main-thread time against the
+// contact page's 0.2. While the page is moving it drops to 10: the picture is behind moving text then,
+// and the frames are worth more to the scroll. A struggling machine gets 15.
+const FRAME_MS = 1000 / 30, SCROLL_FRAME_MS = 1000 / 10, SLOW_FRAME_MS = 1000 / 15;
+const SCROLL_QUIET = 180; // full rate returns this long after the last scroll event
+// Backing-store resolution. The painting is soft low-contrast geometry with hairline strokes, so it
+// survives being drawn at CSS resolution and scaled up by the compositor, and the fill and clip work
+// that dominates the frame is proportional to pixel count: dropping from 2 to 1 on a retina screen is
+// four times less of it. Text is never drawn here; nothing on this canvas needs the extra samples.
+const DETAIL = 1;
 const SW0 = Math.min(0, H * SWY) - 0.75, SW1 = Math.max(0, W * SWX) + 0.75;
 // Construction lines redraw themselves on this loop.
 const GROW = 34;
@@ -240,10 +252,10 @@ function startBackdrop(canvas: HTMLCanvasElement | null): () => void {
     const pointer = { x: 0, y: 0, cx: -1e4, cy: -1e4, glow: 0 };
     const eased = { x: 0, y: 0, cx: -1e4, cy: -1e4, glow: 0 };
     const v: View = { w: 0, h: 0, dpr: 1, t: 0, px: 0, py: 0, mx: -1e4, my: -1e4, glow: 0, theme: readTheme(), still: reduce.matches };
-    let top = 0, scroll = 0, shift = 0, raf = 0, running = false, visible = true, slow = 0, tick = 0;
+    let top = 0, scroll = 0, shift = 0, raf = 0, running = false, visible = true, slow = 0;
     // Scroll bookkeeping. `drifting` is the pending rAF for the parallax write and `moved` is when the
     // page last moved, which is what slows the picture down while it is moving.
-    let drifting = 0, moved = -1e9, placed = { shift: NaN, fade: NaN };
+    let drifting = 0, moved = -1e9, painted = -1e9, placed = { shift: NaN, fade: NaN };
     const render = () => {
       v.t = (performance.now() - start) / 1000;
       v.still = reduce.matches;
@@ -264,18 +276,20 @@ function startBackdrop(canvas: HTMLCanvasElement | null): () => void {
     };
     const frame = () => {
       raf = requestAnimationFrame(frame);
-      tick += 1;
-      // While the page is moving, the picture is behind moving text and nobody can resolve its detail.
-      // One frame in three keeps it alive and hands the rest of the budget to the scroll itself.
-      // Struggling on a slow machine halves the rate instead. Neither ever freezes it.
-      const every = performance.now() - moved < SCROLL_QUIET ? SCROLL_EVERY : slow > 6 ? 2 : 1;
-      if (every > 1 && tick % every) return;
-      const started = performance.now();
-      eased.x += (pointer.x - eased.x) * 0.045; eased.y += (pointer.y - eased.y) * 0.045;
-      eased.cx += (pointer.cx - eased.cx) * 0.09; eased.cy += (pointer.cy - eased.cy) * 0.09;
-      eased.glow += (pointer.glow - eased.glow) * 0.05;
+      const now = performance.now();
+      const wanted = now - moved < SCROLL_QUIET ? SCROLL_FRAME_MS : slow > 6 ? SLOW_FRAME_MS : FRAME_MS;
+      const since = now - painted;
+      if (since < wanted - 1) return; // the millisecond of slack is for a rAF that lands a hair early
+      painted = now;
+      // The pointer follow is written per second rather than per frame, so that changing the rate above
+      // changes how often the picture is drawn and not how quickly it answers the mouse.
+      const decay = (rate: number) => 1 - (1 - rate) ** Math.min(6, since / 16.667);
+      const slowFollow = decay(0.045), fastFollow = decay(0.09), glowFollow = decay(0.05);
+      eased.x += (pointer.x - eased.x) * slowFollow; eased.y += (pointer.y - eased.y) * slowFollow;
+      eased.cx += (pointer.cx - eased.cx) * fastFollow; eased.cy += (pointer.cy - eased.cy) * fastFollow;
+      eased.glow += (pointer.glow - eased.glow) * glowFollow;
       render();
-      slow = performance.now() - started > 13 ? slow + 1 : Math.max(0, slow - 1);
+      slow = performance.now() - now > 13 ? slow + 1 : Math.max(0, slow - 1);
     };
     const sync = () => {
       const should = visible && !reduce.matches && !document.hidden;
@@ -284,7 +298,7 @@ function startBackdrop(canvas: HTMLCanvasElement | null): () => void {
     };
     const resize = () => {
       const rect = host.getBoundingClientRect();
-      v.w = rect.width; v.h = rect.height; v.dpr = Math.min(window.devicePixelRatio || 1, 2);
+      v.w = rect.width; v.h = rect.height; v.dpr = Math.min(window.devicePixelRatio || 1, DETAIL);
       top = rect.top + window.scrollY; scroll = window.scrollY;
       canvas.width = Math.round(v.w * v.dpr); canvas.height = Math.round(v.h * v.dpr);
       drift(); render();
