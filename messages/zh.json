@@ -54,7 +54,7 @@
     "now": "目前",
     "featured": "Project",
     "allProjects": "所有作品（{count}）",
-    "experience": "經歷",
+    "experience": "經歷", "education": "學歷",
     "research": "Research",
     "present": "至今",
     "hashtags": "關注領域",
@@ -139,9 +139,7 @@
       "intro": "留下姓名與 Email，我會在幾天內回覆。",
       "name": "姓名",
       "email": "Email",
-      "subject": "主旨",
       "message": "訊息內容",
-      "optional": "選填",
       "required": "必填",
       "send": "送出訊息",
       "sending": "送出中…",
@@ -160,6 +158,7 @@
     "copyPhone": "複製電話",
     "copyLink": "複製連結",
     "region": "所在地",
+    "detailsTitle": "聯絡方式",
     "phone": "電話"
   },
   "Manifest": {

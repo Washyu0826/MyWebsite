@@ -206,3 +206,6 @@
   .admin-diff-row { grid-template-columns: 28px 14px minmax(0, 1fr); }
   .admin-diff-row .admin-diff-gutter:first-child { display: none; }
 }
+
+.admin-logo-preview { display: inline-grid; place-items: center; width: 56px; aspect-ratio: 1; overflow: hidden; border: 1px solid var(--rule); border-radius: 4px; background: var(--paper); }
+.admin-logo-preview img { width: 100%; height: 100%; object-fit: contain; }

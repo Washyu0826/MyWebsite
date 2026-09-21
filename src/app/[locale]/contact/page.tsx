@@ -38,10 +38,10 @@ export default async function Contact({ params }: Props) {
     email: t('copyEmail'), phone: t('copyPhone'), linkedin: t('copyLink'), github: t('copyLink'), link: t('copyLink'),
   };
 
-  // Everything below comes from the database: profile.email / location, then social_links in sort order.
+  // Everything below comes from the database: profile.email, then social_links in sort order, then
+  // profile.location. The address goes last on purpose - it is the one row nobody is here to act on.
   const items: Item[] = [];
   if (email) items.push({ key: 'email', label: site('email'), value: profile.email, href: email, Icon: Mail, copyValue: profile.email, copyLabel: t('copyEmail') });
-  if (region) items.push({ key: 'region', label: t('region'), value: region, Icon: MapPin });
   for (const row of profile.social_links) {
     const link = describeSocialLink(row);
     if (!link || (link.kind === 'email' && email)) continue;
@@ -52,6 +52,7 @@ export default async function Contact({ params }: Props) {
       copyValue: link.copyValue, copyLabel: copyLabels[link.kind] || t('copyValue'),
     });
   }
+  if (region) items.push({ key: 'region', label: t('region'), value: region, Icon: MapPin });
 
   // The homepage renders the same @id; both describe one person, so a crawler merges them.
   const person = personSchema({
@@ -60,39 +61,39 @@ export default async function Contact({ params }: Props) {
     alumniOf: experiences.filter(row => row.kind === 'education').map(row => pickLocale(row, locale).org),
   });
   const crumbs = breadcrumbSchema([{ name: site('brand'), path: `/${locale}` }, { name: t('title'), path: `/${locale}/contact` }]);
-  return <Container className="page contact-page"><JsonLd nodes={[person, crumbs]} /><PwaRegister /><header className="page-heading contact-page-heading"><h1>{t('title')}</h1><p>{t('description')}</p></header>
-    <section className="contact-intro">
+  return <Container className="page contact-page"><JsonLd nodes={[person, crumbs]} /><PwaRegister />
+    <header className="page-heading contact-page-heading">
       <div>
-        <p className="text-meta text-graphite">{p.name}</p>
-        <h2 className="text-h2">{t('intro')}</h2>
-        <p className="mt-4 text-graphite">{t('body')}</p>
+        <h1>{t('title')}</h1>
+        <p>{t('description')}</p>
       </div>
-      <div className="contact-intro-actions">
-        {email ? <a className="contact-direct-link" href={email}><Mail size={18} aria-hidden="true" />{site('email')}</a> : null}
-        <ResumeLink profile={profile} locale={locale} />
-      </div>
-    </section>
-    {items.length === 0 ? <p className="text-graphite">{site('contactUnavailable')}</p> : <dl className="contact-list">
-      {items.map(item => {
-        const { Icon } = item;
-        const external = item.href ? isExternalHref(item.href) : false;
-        const value = item.href
-          ? <a href={item.href} className="contact-value-link" target={external ? '_blank' : undefined} rel={external ? 'noopener noreferrer' : undefined}>{item.value}</a>
-          : <span>{item.value}</span>;
-        return <div key={item.key} className="contact-list-row">
-          <dt><Icon size={18} aria-hidden="true" /><span>{item.label}</span></dt>
-          <dd>
-            <div className="contact-value">{value}</div>
-            {item.copyValue ? <CopyValue value={item.copyValue} label={item.copyLabel || t('copyValue')} copiedLabel={t('copied')} /> : null}
-          </dd>
-        </div>;
-      })}
-    </dl>}
-    <section className="mt-16" aria-labelledby="contact-form-heading" data-print="hide">
-      <h2 id="contact-form-heading" className="text-h2">{t('form.title')}</h2>
-      <p className="mt-4 mb-8 max-w-[60ch] text-graphite">{t('form.intro')}</p>
-      {/* Server-rendered clock so the form also submits without JavaScript; the client replaces it on mount. */}
-      <ContactForm startedAt={String(Date.now())} />
-    </section>
+      <ResumeLink profile={profile} locale={locale} />
+    </header>
+    <div className="contact-grid">
+      <section className="contact-details" aria-labelledby="contact-details-heading">
+        <h2 id="contact-details-heading" className="contact-column-heading">{t('detailsTitle')}</h2>
+        {items.length === 0 ? <p className="text-graphite">{site('contactUnavailable')}</p> : <dl className="contact-list">
+          {items.map(item => {
+            const { Icon } = item;
+            const external = item.href ? isExternalHref(item.href) : false;
+            return <div key={item.key} className="contact-list-row">
+              <dt><Icon size={15} aria-hidden="true" /><span>{item.label}</span></dt>
+              <dd>
+                {item.href
+                  ? <a href={item.href} className="contact-value-link" target={external ? '_blank' : undefined} rel={external ? 'noopener noreferrer' : undefined}>{item.value}</a>
+                  : <span className="contact-value">{item.value}</span>}
+                {item.copyValue ? <CopyValue compact value={item.copyValue} label={item.copyLabel || t('copyValue')} copiedLabel={t('copied')} /> : null}
+              </dd>
+            </div>;
+          })}
+        </dl>}
+      </section>
+      <section className="contact-form-panel" aria-labelledby="contact-form-heading" data-print="hide">
+        <h2 id="contact-form-heading" className="contact-column-heading">{t('form.title')}</h2>
+        <p className="contact-form-intro">{t('form.intro')}</p>
+        {/* Server-rendered clock so the form also submits without JavaScript; the client replaces it on mount. */}
+        <ContactForm startedAt={String(Date.now())} />
+      </section>
+    </div>
   </Container>;
 }

@@ -1,0 +1,166 @@
+/* The hero's geometry carried down the page, quietly.
+
+   Three things live here. The section headings are cut into diagonal facets that slide into place as
+   the page scrolls them up, with the gold rule beside each one drawing in on the same beat. A faint
+   grain covers the whole page instead of stopping where the hero does. And two large, very faint
+   facet shapes sit behind the lower sections so the page below the fold is not a flat black field.
+
+   Motion runs on `animation-timeline: view()` like depth.css: the compositor drives it, the main
+   thread does nothing per frame, and scrolling back plays it back. Firefox has no scroll-driven
+   animations, so `@supports` hands it a one-shot entrance instead. Reduced motion gets finished
+   headings and nothing moving. */
+
+/* --- facet headings -------------------------------------------------------- */
+.facet-heading { position: relative; }
+.facet-stack { position: relative; display: inline-block; max-width: 100%; }
+.facet {
+  display: block;
+  /* All facets set the same text, so every clipped copy lines up with the one in flow. */
+  white-space: inherit;
+}
+.facet:not(:first-child) { position: absolute; inset: 0; }
+/* Slice i takes the band from i/N to (i+1)/N of the width, leaning like the backdrop's planes. The
+   outer slices overshoot the box so the lean never leaves a sliver uncovered at either edge. */
+.facet {
+  --w: calc(100% / var(--facets, 7));
+  --lean: 10%;
+  --x0: calc(var(--i, 0) * var(--w));
+  --x1: calc((var(--i, 0) + 1) * var(--w));
+  clip-path: polygon(
+    calc(var(--x0) + var(--lean)) -10%,
+    calc(var(--x1) + var(--lean)) -10%,
+    var(--x1) 110%,
+    var(--x0) 110%
+  );
+}
+.facet:first-child { clip-path: polygon(-30% -10%, calc(var(--x1) + var(--lean)) -10%, var(--x1) 110%, -30% 110%); }
+.facet:last-child { clip-path: polygon(calc(var(--x0) + var(--lean)) -10%, 130% -10%, 130% 110%, var(--x0) 110%); }
+
+/* The rule beside each heading: a hairline that begins with one small gold facet, the same shape
+   the backdrop is made of, instead of a dot or a plain end. */
+.experience-section .section-heading::after,
+.project-section .section-heading::after,
+.research-section .section-heading::after { position: relative; }
+.experience-section .section-heading::before,
+.project-section .section-heading::before,
+.research-section .section-heading::before {
+  content: '';
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: start;
+  width: 9px;
+  height: 9px;
+  margin-left: -1px;
+  background: var(--indigo);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  opacity: 0.85;
+  pointer-events: none;
+}
+.project-section .section-heading::before { grid-column: 2; }
+
+@keyframes facet-in {
+  from { opacity: 0; transform: translate(-16px, 10px); }
+  to { opacity: 1; transform: translate(0, 0); }
+}
+@keyframes rule-draw {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    /* The beat is a scroll distance, not a share of the viewport. A heading assembles over
+       --reveal pixels of travel after its top enters at the bottom edge, which on a 900px screen
+       lands it around the lower half. Sections near the end of the page cannot travel that far
+       before the page runs out, so they get a shorter distance and still finish; a share-based
+       range would leave the last headings half-built for good. Each facet's window starts a
+       little after the last, so the heading assembles left to right. */
+    [data-enter] { --reveal: 420px; }
+    [data-enter].research-section { --reveal: 220px; }
+    [data-enter].contact-invitation { --reveal: 150px; }
+    [data-enter] .facet-heading .facet {
+      animation: facet-in linear both;
+      animation-timeline: view();
+      animation-range:
+        cover calc(var(--i, 0) * var(--reveal, 420px) / 12)
+        cover calc(var(--reveal, 420px) / 2 + var(--i, 0) * var(--reveal, 420px) / 12);
+    }
+    /* The rule is one element with one job; give it the whole span of the same beat. It overrides
+       the hover-driven transition hero.css declares on the same pseudo. */
+    [data-enter] .experience-section .section-heading::after,
+    [data-enter] .project-section .section-heading::after,
+    [data-enter] .research-section .section-heading::after {
+      transform-origin: left center;
+      transition: none;
+      animation: rule-draw linear both;
+      animation-timeline: view();
+      animation-range: cover 0px cover var(--reveal, 420px);
+    }
+    [data-enter='out'] .experience-section .section-heading::after,
+    [data-enter='out'] .project-section .section-heading::after,
+    [data-enter='out'] .research-section .section-heading::after { transform: none; }
+    /* The first row under a heading finishes standing on the heading's beat, not its own. */
+    .experience-section .experience-row:first-of-type,
+    .project-section .project-row:first-of-type {
+      animation-range: cover 0px cover var(--reveal, 420px);
+    }
+  }
+  @supports not (animation-timeline: view()) {
+    /* One-shot entrance, driven by the section arriving (components/section-reveal.tsx). */
+    [data-enter='out'] .facet-heading .facet { opacity: 0; transform: translate(-16px, 10px); }
+    [data-enter='in'] .facet-heading .facet {
+      animation: facet-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+      animation-delay: calc(var(--i, 0) * 55ms);
+    }
+  }
+}
+
+/* --- grain across the whole page ------------------------------------------- */
+/* The hero's paper texture, continued. Fixed so it costs one layer, and behind everything. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.045;
+  mix-blend-mode: screen;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.light body::before { mix-blend-mode: multiply; opacity: 0.07; }
+/* Admin pages keep their own flat surfaces. */
+.admin-shell ~ *, body:has(.admin-shell)::before { display: none; }
+
+/* --- two faint planes behind the lower sections ---------------------------- */
+/* Static, no animation: the backdrop's vocabulary at a whisper. Positioned in the stage's own
+   coordinates and clipped so they can never add horizontal scroll. */
+/* Clipped on both axes: the planes are decoration and must never lengthen the page. */
+.home-stage { overflow: clip; }
+.home-stage::before,
+.home-stage::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--indigo) 9%, transparent), transparent 70%);
+}
+.home-stage::before {
+  top: clamp(880px, 108vh, 1240px);
+  right: -6vw;
+  width: min(54vw, 760px);
+  height: min(58vw, 820px);
+  clip-path: polygon(38% 0, 100% 10%, 84% 100%, 0 78%);
+}
+.home-stage::after {
+  bottom: 4%;
+  left: -8vw;
+  width: min(48vw, 680px);
+  height: min(52vw, 740px);
+  clip-path: polygon(0 18%, 62% 0, 100% 64%, 24% 100%);
+  background: linear-gradient(20deg, color-mix(in srgb, var(--indigo) 7%, transparent), transparent 72%);
+}
+.light .home-stage::before,
+.light .home-stage::after { opacity: 0.7; }
+@media (max-width: 767px) {
+  .home-stage::before, .home-stage::after { display: none; }
+}

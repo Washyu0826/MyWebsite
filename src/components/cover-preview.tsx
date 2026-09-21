@@ -7,20 +7,25 @@ export const previewSize = { width: 240, height: 135 };
 const edge = 12, gap = 20;
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), Math.max(min, max));
 
-/** Offsets the card from the cursor, flipping to the left when it would run past the right edge. */
-export function previewPosition(x: number, y: number, viewport: { width: number; height: number },
-  size: { width: number; height: number } = previewSize) {
-  const left = x + gap + size.width > viewport.width - edge ? x - gap - size.width : x + gap;
-  return {
-    left: clamp(left, edge, viewport.width - size.width - edge),
-    top: clamp(y - size.height / 2, edge, viewport.height - size.height - edge),
-  };
+/**
+ * Places the card beside the row when the viewport has room to its right, else just above it, else
+ * nowhere: a preview that sits on top of a row's text, this one's or the next one's, is worse than
+ * no preview. The cursor only picks which row; it never drags the card.
+ */
+export function previewPosition(row: { left: number; top: number; right: number; bottom: number }, viewport: { width: number; height: number },
+  size: { width: number; height: number } = previewSize): { left: number; top: number } | null {
+  if (row.right + gap + size.width <= viewport.width - edge) {
+    return { left: row.right + gap, top: clamp(row.top, edge, viewport.height - size.height - edge) };
+  }
+  const above = row.top - gap - size.height;
+  if (above >= edge) return { left: clamp(row.right - size.width, edge, viewport.width - size.width - edge), top: above };
+  return null;
 }
 
-type Cover = { src: string; alt: string };
+type Cover = { src: string; alt: string; row: HTMLElement };
 function readCover(target: EventTarget | null): Cover | null {
   const row = target instanceof Element ? target.closest<HTMLElement>('[data-cover-src]') : null;
-  return row?.dataset.coverSrc ? { src: row.dataset.coverSrc, alt: row.dataset.coverAlt || '' } : null;
+  return row?.dataset.coverSrc ? { src: row.dataset.coverSrc, alt: row.dataset.coverAlt || '', row } : null;
 }
 
 /** Wraps a list of rows; any row carrying data-cover-src previews its cover next to the cursor. */
@@ -46,8 +51,9 @@ export function CoverPreview({ className, children }: { className?: string; chil
       const next = readCover(event.target);
       setCover(current => (current?.src === next?.src ? current : next));
       if (!next || !card.current) return;
-      const { left, top } = previewPosition(event.clientX, event.clientY, { width: window.innerWidth, height: window.innerHeight });
-      card.current.style.transform = `translate3d(${left}px, ${top}px, 0)`;
+      const spot = previewPosition(next.row.getBoundingClientRect(), { width: window.innerWidth, height: window.innerHeight });
+      if (!spot) { setCover(null); return; }
+      card.current.style.transform = `translate3d(${spot.left}px, ${spot.top}px, 0)`;
     }
     list.addEventListener('pointermove', move);
     list.addEventListener('pointerleave', hide);

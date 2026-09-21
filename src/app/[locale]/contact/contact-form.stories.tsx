@@ -65,7 +65,6 @@ export const RestoredDraft: Story = {
         JSON.stringify({
           name: '冼冠宇',
           email: 'hello@example.com',
-          subject: '',
           message: '上次寫到一半的訊息。',
         }),
       );

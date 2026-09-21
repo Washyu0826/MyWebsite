@@ -71,8 +71,14 @@ function handleFrom(href: string, kind: ContactLinkKind): string | null {
       const match = path.match(/\/ti\/p\/[~@]?([^/]+)$/);
       return match ? match[1] : null;
     }
-    if (kind === 'instagram' || kind === 'x') {
+    if (kind === 'instagram' || kind === 'x' || kind === 'github') {
       const match = path.match(/^\/@?([^/]+)$/);
+      return match ? match[1] : null;
+    }
+    if (kind === 'linkedin') {
+      // /in/<slug> for a person, /company/<slug> for an organisation. The slug carries LinkedIn's
+      // disambiguating suffix and is shown whole: trimming it would name an account that is not this one.
+      const match = path.match(/^\/(?:in|company|pub)\/([^/]+)/);
       return match ? match[1] : null;
     }
   } catch { /* ignore */ }

@@ -58,8 +58,19 @@ test('contact links: tel, mailto, LINE and Instagram rows resolve to href, displ
   assert.equal(line?.kind, 'line'); assert.equal(line?.display, 'zenobia0826'); assert.equal(line?.copyValue, 'zenobia0826');
   const ig = describeSocialLink({ id: '3', platform: '', label: '', url: 'https://www.instagram.com/ryan.hsien_ky0826/' });
   assert.equal(ig?.kind, 'instagram'); assert.equal(ig?.display, 'ryan.hsien_ky0826');
+  // GitHub and LinkedIn show the account, not the host: 'github.com' and 'linkedin.com/in' told the
+  // reader nothing about whose profile they were looking at.
   const github = describeSocialLink({ id: '4', platform: 'github', label: 'GitHub', url: 'https://github.com/someone' });
-  assert.equal(github?.display, 'github.com/someone'); assert.equal(github?.copyValue, 'https://github.com/someone');
+  assert.equal(github?.display, 'someone'); assert.equal(github?.copyValue, 'https://github.com/someone');
+  const linkedin = describeSocialLink({ id: '6', platform: 'linkedin', label: 'LinkedIn', url: 'https://www.linkedin.com/in/kuan-yu-hsien-780123304/' });
+  // The slug keeps LinkedIn's disambiguating suffix: trimming it would name an account that is not this one.
+  assert.equal(linkedin?.display, 'kuan-yu-hsien-780123304');
+  assert.equal(linkedin?.copyValue, 'https://www.linkedin.com/in/kuan-yu-hsien-780123304/');
+  const company = describeSocialLink({ id: '7', platform: 'linkedin', label: '', url: 'https://linkedin.com/company/acme' });
+  assert.equal(company?.display, 'acme');
+  // A repository, not a profile: two path segments, so there is no handle to lift and the host stays.
+  const repo = describeSocialLink({ id: '8', platform: 'github', label: '', url: 'https://github.com/someone/project' });
+  assert.equal(repo?.display, 'github.com/someone/project');
   assert.equal(describeSocialLink({ id: '5', platform: 'x', label: '', url: 'ftp://nope' }), null);
 });
 

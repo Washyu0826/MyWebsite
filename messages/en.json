@@ -33,7 +33,7 @@
   "Home": {
     "title": "About Kuan-Yu Hsien", "description": "Full-stack and data engineering projects, case studies and learning experiences by Kuan-Yu Hsien.",
     "now": "Currently", "featured": "Project", "allProjects": "All projects ({count})",
-    "experience": "Experience", "research": "Research", "present": "Present", "hashtags": "Focus areas",
+    "experience": "Experience", "education": "Education", "research": "Research", "present": "Present", "hashtags": "Focus areas",
     "principles": {
       "show": "Show item {index}",
       "label": "Design principles",
@@ -75,12 +75,12 @@
     "intro": "A good conversation starts with an email.", "body": "Introduce yourself and what you have in mind. I'd love to hear about it.",
     "copy": "Copy email", "copyValue": "Copy", "copyEmail": "Copy email", "copyPhone": "Copy phone", "copyLink": "Copy link",
     "copied": "Copied", "copyFailed": "Couldn't copy. Please select and copy the value above.",
-    "region": "Location", "phone": "Phone",
+    "region": "Location",
+    "detailsTitle": "Where to find me", "phone": "Phone",
     "resumeTitle": "Want to know more about my experience?",
     "form": {
       "title": "Or send a message here", "intro": "Leave your name and email and I'll reply within a few days.",
-      "name": "Name", "email": "Email", "subject": "Subject", "message": "Message",
-      "optional": "optional", "required": "required",
+      "name": "Name", "email": "Email", "message": "Message", "required": "required",
       "send": "Send message", "sending": "Sending…",
       "success": "Thanks, your message is on its way. I'll reply to your email soon.",
       "successStored": "Thanks, your message has been received. I'll reply to your email soon.",

@@ -6,8 +6,8 @@ import { buttonVariants } from '@/components/ui/button';
 import { sendMessageAction, type ContactState } from './actions';
 
 const FIELD_ERROR: Record<ContactField, 'errorName' | 'errorEmail' | 'errorMessage'> = { name: 'errorName', email: 'errorEmail', message: 'errorMessage' };
-type Draft = { name: string; email: string; subject: string; message: string };
-const EMPTY: Draft = { name: '', email: '', subject: '', message: '' };
+type Draft = { name: string; email: string; message: string };
+const EMPTY: Draft = { name: '', email: '', message: '' };
 const DRAFT_KEY = 'hsien-contact-draft';
 
 // localStorage can throw outright (private windows, blocked site data) and can hold anything at
@@ -57,7 +57,7 @@ export function ContactForm({ startedAt: initialStartedAt }: { startedAt: string
     setValues(next);
     writeDraft(next);
     // Never nag mid-sentence: an error clears the moment the field becomes valid again.
-    if (field !== 'subject' && isContactFieldValid(field, value)) setTouched(list => list.filter(item => item !== field));
+    if (isContactFieldValid(field, value)) setTouched(list => list.filter(item => item !== field));
   };
   const blur = (field: ContactField) => setTouched(list =>
     isContactFieldValid(field, values[field]) ? list.filter(item => item !== field) : list.includes(field) ? list : [...list, field]);
@@ -105,11 +105,6 @@ export function ContactForm({ startedAt: initialStartedAt }: { startedAt: string
           aria-invalid={invalid('email') || undefined} aria-describedby={errorId('email')} disabled={pending} />
         {invalid('email') ? <p id={errorId('email')} className="contact-form-field-error">{t('errorEmail')}</p> : null}
       </div>
-    </div>
-    <div className="contact-form-field">
-      <label htmlFor={fieldId('subject')}>{t('subject')}<span className="contact-form-hint">{t('optional')}</span></label>
-      <input id={fieldId('subject')} name="subject" type="text" maxLength={CONTACT_LIMITS.subject} disabled={pending}
-        value={values.subject} onChange={event => update('subject', event.target.value)} />
     </div>
     <div className="contact-form-field">
       <label htmlFor={fieldId('message')}>{t('message')}<span className="contact-form-hint">{t('required')}</span></label>

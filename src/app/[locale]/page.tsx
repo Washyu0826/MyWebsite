@@ -12,6 +12,7 @@ import { pageMetadata } from '@/lib/metadata';
 import { personSchema } from '@/lib/structured-data';
 import { Container } from '@/components/container';
 import { SectionReveal } from '@/components/section-reveal';
+import { FacetHeading } from '@/components/facet-heading';
 import { PrincipleRotator } from '@/components/principle-rotator';
 import { ProjectList } from '@/components/project-list';
 import { HomeSections } from '@/components/home-sections';
@@ -125,16 +126,20 @@ export default async function Home({ params }: Props) {
     </section>
     <HomeSections locale={locale} />
     <SectionReveal className="section project-section" aria-labelledby="projects-heading">
-      <div className="section-heading"><h2 id="projects-heading">{t('featured')}</h2>
+      <div className="section-heading"><FacetHeading id="projects-heading" text={t('featured')} />
         <Link className="text-link text-meta" href="/projects">{t('allProjects', { count: projects.length })}</Link></div>
       {featured.length ? <ProjectList projects={featured} locale={locale} headingLevel={3} /> : <p className="enter-item">{t('noProjects')}</p>}
     </SectionReveal>
     <SectionReveal className="section research-section" aria-labelledby="research-heading">
-      <div className="section-heading"><h2 id="research-heading">{t('research')}</h2></div>
+      <div className="section-heading"><FacetHeading id="research-heading" text={t('research')} /></div>
       <p className="enter-item">{t('noResearch')}</p>
     </SectionReveal>
-    <section className="contact-invitation"><h2>{t('invitation')}</h2><p className="mt-3 text-graphite">{t('invitationBody')}</p>
+    <SectionReveal className="contact-invitation" aria-labelledby="invitation-heading">
+      <div className="contact-invitation-copy">
+        <FacetHeading id="invitation-heading" text={t('invitation')} />
+        <p className="text-graphite">{t('invitationBody')}</p>
+      </div>
       <div className="actions"><ResumeLink profile={profile} locale={locale} variant="default" /></div>
-    </section>
+    </SectionReveal>
   </Container></div>;
 }

@@ -37,7 +37,6 @@ function renderForm() {
 const field = {
   name: () => screen.getByLabelText(new RegExp(t('name'))),
   email: () => screen.getByLabelText(new RegExp(t('email'))),
-  subject: () => screen.getByLabelText(new RegExp(t('subject'))),
   message: () => screen.getByLabelText(new RegExp(t('message'))),
 };
 const submit = () => screen.getByRole('button', { name: t('send') });
@@ -83,12 +82,25 @@ describe('ContactForm', () => {
     expect(field.email()).not.toHaveAttribute('aria-describedby');
   });
 
-  it('leaves an untouched field alone and never flags the optional subject', async () => {
+  it('leaves an untouched field alone', async () => {
     const { user } = renderForm();
-    await user.click(field.subject());
-    await user.tab();
+    // Nothing is flagged before anyone has touched it, and leaving one field does not accuse the next.
     expect(field.name()).not.toHaveAttribute('aria-invalid');
-    expect(field.subject()).not.toHaveAttribute('aria-invalid');
+    expect(field.email()).not.toHaveAttribute('aria-invalid');
+    expect(field.message()).not.toHaveAttribute('aria-invalid');
+    await user.click(field.name());
+    await user.tab();
+    await waitFor(() => expect(field.name()).toHaveAttribute('aria-invalid', 'true'));
+    expect(field.email()).not.toHaveAttribute('aria-invalid');
+    expect(field.message()).not.toHaveAttribute('aria-invalid');
+  });
+
+  it('asks for three fields and no more', () => {
+    renderForm();
+    // The subject line was optional, rarely filled and one more thing between a reader and a
+    // message, so it is gone. The server still accepts the field; the form no longer offers it.
+    expect(screen.getAllByRole('textbox')).toHaveLength(3);
+    expect(screen.queryByLabelText(/主旨|Subject/)).toBeNull();
   });
 
   it('summarises a server rejection in an alert that takes focus and links to each field', async () => {
@@ -123,7 +135,6 @@ describe('ContactForm', () => {
   it('submits every field and swaps the whole form for a success message', async () => {
     const { user } = renderForm();
     await fillValid(user);
-    await user.type(field.subject(), 'Hello');
     await user.click(submit());
 
     expect(await screen.findByRole('status')).toHaveTextContent(t('success'));
@@ -131,7 +142,7 @@ describe('ContactForm', () => {
 
     const sent = action.submissions.at(-1)!;
     expect(sent.get('name')).toBe('Ada');
-    expect(sent.get('subject')).toBe('Hello');
+    expect(sent.get('subject')).toBeNull();
     expect(sent.get('locale')).toBe('zh');
     expect(sent.get('website')).toBe('');
   });
@@ -156,7 +167,7 @@ describe('ContactForm', () => {
   });
 
   it('restores a saved draft on mount and says so', async () => {
-    localStorage.setItem(DRAFT_KEY, JSON.stringify({ name: 'Ada', email: 'ada@example.com', subject: '', message: 'Half a thought.' }));
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ name: 'Ada', email: 'ada@example.com', message: 'Half a thought.' }));
     renderForm();
     await waitFor(() => expect(field.name()).toHaveValue('Ada'));
     expect(field.message()).toHaveValue('Half a thought.');
@@ -178,8 +189,6 @@ describe('ContactForm', () => {
     await user.tab();
     expect(field.email()).toHaveFocus();
     await user.tab();
-    expect(field.subject()).toHaveFocus();
-    await user.tab();
     expect(field.message()).toHaveFocus();
     await user.tab();
     expect(submit()).toHaveFocus();
@@ -190,6 +199,5 @@ describe('ContactForm', () => {
     expect(container.querySelector('form')).toHaveAttribute('novalidate');
     expect(field.name()).toBeRequired();
     expect(field.message()).toBeRequired();
-    expect(field.subject()).not.toBeRequired();
   });
 });

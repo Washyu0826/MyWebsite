@@ -19,7 +19,7 @@ export type Experience = Bilingual<'org' | 'role'> & {
   id: string; kind: 'work' | 'education' | 'award' | 'activity';
   description_zh: string | null; description_en: string | null;
   start_date: string; end_date: string | null; is_current: boolean;
-  url: string | null; sort_order: number; is_visible: boolean;
+  url: string | null; logo_url: string | null; sort_order: number; is_visible: boolean;
   created_at: string; updated_at: string;
 };
 export type Project = Bilingual<'title' | 'summary'> & {

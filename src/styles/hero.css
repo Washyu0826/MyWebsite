@@ -122,9 +122,6 @@ span.typewriter-line { display: inline-block; }
     justify-content: start;
     gap: clamp(32px, 4vw, 64px);
   }
-  .home-container .hero-grid:not(.hero-grid-text-only) > div:first-child {
-    margin-left: clamp(20px, 2vw, 44px);
-  }
   .home-container .hero-photo { justify-self: start; }
 }
 @media (min-width: 1280px) {

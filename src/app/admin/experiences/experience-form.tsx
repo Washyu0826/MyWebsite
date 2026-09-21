@@ -1,9 +1,11 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useActionState, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import type { Experience } from '@/types/content';
+import { AssetPicker } from '@/components/admin/asset-picker';
 import { experienceKindLabels, experienceKinds, type ExperienceKind } from '../profile/validation';
 import { DirtyBadge, useUnsavedChanges } from '../unsaved-changes';
 import { deleteExperienceAction, saveExperienceAction, type ExperienceEditorState } from './actions';
@@ -11,7 +13,7 @@ import { deleteExperienceAction, saveExperienceAction, type ExperienceEditorStat
 type FormValues = {
   kind: ExperienceKind; org_zh: string; org_en: string; role_zh: string; role_en: string;
   description_zh: string; description_en: string; start_date: string; end_date: string;
-  is_current: boolean; url: string; sort_order: string; is_visible: boolean;
+  is_current: boolean; url: string; logo_url: string; sort_order: string; is_visible: boolean;
 };
 
 const initialState: ExperienceEditorState = { ok: false, message: '' };
@@ -35,6 +37,7 @@ function valuesFromExperience(experience: Experience | null): FormValues {
     end_date: experience?.end_date || '',
     is_current: experience?.is_current || false,
     url: experience?.url || '',
+    logo_url: experience?.logo_url || '',
     sort_order: experience ? String(experience.sort_order) : '0',
     is_visible: experience ? experience.is_visible : true,
   };
@@ -113,6 +116,16 @@ export function ExperienceForm({ experience }: { experience: Experience | null }
         <span>相關連結（選填，http(s) 網址）</span>
         <input className={inputClass} name="url" type="url" value={values.url} onChange={event => update('url', event.target.value)} placeholder="https://..." autoComplete="off" />
       </label>
+      <div className={`${labelClass} md:col-span-2`}>
+        <label className="grid gap-2">
+          <span>Logo（選填，正方形圖片的公開網址；留空時顯示單位名稱的第一個字）</span>
+          <input className={inputClass} name="logo_url" type="url" value={values.logo_url} onChange={event => update('logo_url', event.target.value)} placeholder="https://..." autoComplete="off" />
+        </label>
+        <div className="flex flex-wrap items-center gap-3">
+          <AssetPicker onSelect={item => update('logo_url', item.public_url)} />
+          {values.logo_url ? <span className="admin-logo-preview" aria-hidden="true"><Image src={values.logo_url} alt="" width={56} height={56} unoptimized /></span> : null}
+        </div>
+      </div>
     </fieldset>
 
     <div className="grid gap-8 lg:grid-cols-2">

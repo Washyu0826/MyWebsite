@@ -46,6 +46,7 @@ export const demoExperiences: Experience[] = [{
   end_date: null,
   is_current: true,
   url: null,
+  logo_url: null,
   sort_order: 0,
   is_visible: true,
   created_at: timestamp,

@@ -45,7 +45,7 @@
 .hero-socials a { width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--rule); background: var(--surface); color: var(--graphite); transition: color 0.18s, border-color 0.18s, transform 0.18s, background-color 0.18s; }
 .hero-socials a:hover, .hero-socials a:focus-visible { color: var(--indigo); border-color: color-mix(in srgb, var(--indigo) 58%, var(--rule)); background: var(--ash); transform: translateY(-1px); }
 .hero-focus-list { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 14px; max-width: 560px; font-size: 0.875rem; color: var(--ink); }
-.hero-focus-list li { display: inline-flex; align-items: center; gap: 8px; min-height: 28px; white-space: nowrap; }
+.hero-focus-list li { display: inline-flex; align-items: center; gap: 8px; min-height: 28px; white-space: normal; }
 .hero-focus-list li::before { content: ''; width: 7px; height: 7px; border-radius: 999px; background: var(--ink); flex: 0 0 auto; }
 .signature-principles { display: grid; gap: 0; margin-top: 24px; max-width: 680px; border-block: 1px solid var(--rule); }
 .signature-principle { position: relative; display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 6px 14px; padding: 16px 0; border-bottom: 1px solid var(--rule); }
@@ -67,7 +67,9 @@
 .project-section > .enter-item,
 .project-section > .project-list,
 .project-list { border-top: 1px solid var(--rule); }
-.project-row { position: relative; border-bottom: 1px solid var(--rule); display: block; padding: 24px 0; }
+/* One faint rule between rows and none around them; the hover accent in interactions.css is the only other line. */
+.project-row { position: relative; display: block; padding: 26px 0; }
+.project-row + .project-row { border-top: 1px solid color-mix(in srgb, var(--rule) 70%, transparent); }
 .project-row::before { content: ''; position: absolute; left: -10px; top: 24px; bottom: 24px; width: 2px; background: var(--indigo); transform: scaleY(0); transform-origin: top; transition: transform 0.18s; }
 .project-row:hover::before, .project-row:focus-visible::before { transform: scaleY(1); }
 .project-row-content { display: grid; gap: 18px; transition: transform 0.18s; }
@@ -75,9 +77,9 @@
 .project-row-head { display: flex; justify-content: space-between; gap: 20px; align-items: baseline; }
 .project-row h2, .project-row h3 { font-size: var(--text-h3); }
 .project-row-summary { color: var(--graphite); margin-top: 8px; }
-.project-signal-grid { display: grid; gap: 0; margin-top: 18px; border: 1px solid var(--rule); background: color-mix(in srgb, var(--surface) 64%, transparent); }
-.project-signal-grid div { display: grid; gap: 5px; padding: 12px 14px; border-bottom: 1px solid var(--rule); min-width: 0; }
-.project-signal-grid div:last-child { border-bottom: 0; }
+/* The three signals sit in open columns: the mono label and the gap do the separating, not a box. */
+.project-signal-grid { display: grid; gap: 14px 28px; margin-top: 18px; }
+.project-signal-grid div { display: grid; gap: 5px; min-width: 0; padding-top: 10px; border-top: 1px solid color-mix(in srgb, var(--indigo) 28%, var(--rule)); }
 .project-signal-grid dt { color: var(--graphite); font-family: var(--font-mono); font-size: 0.6875rem; letter-spacing: 0.08em; text-transform: uppercase; }
 .project-signal-grid dd { color: var(--ink); font-size: 0.8125rem; line-height: 1.55; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .project-row-meta { display: flex; flex-wrap: wrap; gap: 12px 24px; margin-top: 18px; font-size: 0.875rem; color: var(--graphite); }
@@ -87,33 +89,72 @@
 .project-copy { min-width: 0; }
 .tech-list { display: flex; flex-wrap: wrap; gap: 8px 16px; }
 .tech-list li { color: var(--ink); }
-.experience-row { border-top: 1px solid var(--rule); padding-block: 24px; display: block; max-width: 920px; }
+/* A square mark, then the text; the date reaches the same right edge as everything else. The heading
+   above has no line under it, so the first row carries none either. */
+.experience-row { display: grid; grid-template-columns: 56px minmax(0, 1fr); column-gap: 18px; align-items: start; padding-block: 22px; }
+.experience-row + .experience-row { border-top: 1px solid color-mix(in srgb, var(--rule) 70%, transparent); }
 .experience-row-main { min-width: 0; }
+.experience-logo { width: 56px; aspect-ratio: 1; display: grid; place-items: center; overflow: hidden; border: 1px solid var(--rule); border-radius: 4px; background: var(--surface); }
+.experience-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.experience-logo.is-initial span { font-family: var(--font-mono); font-size: 1.125rem; font-weight: 600; color: var(--indigo); }
+.experience-description { max-width: 72ch; }
 .experience-row-heading { display: grid; gap: 8px; min-width: 0; }
 .experience-row-heading h3 { min-width: 0; line-height: 1.45; }
 .experience-row-heading h3 span { display: inline; }
 /* A closing call to action, not a second hero: it sits narrower than the text column and keeps
    its heading one step below a section heading. */
-.contact-invitation { border: 1px solid var(--rule); border-left-color: var(--indigo); padding: 22px 24px; margin-block: 56px; max-width: 640px; background: color-mix(in srgb, var(--surface) 72%, transparent); }
-.contact-invitation h2 { font-size: var(--text-h3); }
+/* A band, not a box: copy on the left, the one action on the right, the whole width of the column. */
+.contact-invitation { display: grid; gap: 18px; align-items: center; border: 1px solid var(--rule); border-left: 2px solid var(--indigo); padding: 20px 24px; margin-block: 56px 0; background: color-mix(in srgb, var(--surface) 72%, transparent); }
+.contact-invitation-copy { display: grid; gap: 6px; min-width: 0; }
+.contact-invitation h2 { font-size: var(--text-h3); line-height: 1.3; }
 .contact-invitation p { font-size: 0.9375rem; }
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 24px; }
-.contact-invitation .actions { margin-top: 18px; }
+.contact-invitation .actions { margin-top: 0; justify-self: start; }
+/* Room at the end of the page before the footer takes over. */
+.home-container { padding-bottom: clamp(56px, 9vh, 128px); }
+/* Contact: the five ways to reach a person on the left, the form on the right. Two columns because
+   stacked they made a 2000px page whose middle third was empty; side by side the whole thing is one
+   screen on a laptop. Below 900px they fall back into one column, details first. */
 .contact-page { max-width: none; }
-.contact-page-heading { max-width: 980px; }
-.contact-intro { display: grid; gap: 28px; align-items: end; margin-bottom: 40px; border-block: 1px solid var(--rule); padding-block: 32px; }
-.contact-intro > div:first-child { max-width: 68ch; }
-.contact-intro-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-.contact-direct-link { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; border: 1px solid var(--rule); background: var(--surface); color: var(--ink); padding: 8px 14px; font-size: 0.875rem; font-weight: 600; transition: border-color 0.18s, color 0.18s, transform 0.18s, background-color 0.18s; }
-.contact-direct-link:hover, .contact-direct-link:focus-visible { color: var(--indigo); border-color: color-mix(in srgb, var(--indigo) 58%, var(--rule)); background: var(--ash); transform: translateY(-1px); }
+.contact-page-heading { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 20px 32px; max-width: none; }
+.contact-page-heading > div { max-width: 60ch; }
+.contact-grid { display: grid; gap: 48px; margin-top: 44px; align-items: start; }
+.contact-column-heading { font-size: var(--text-h3); line-height: 1.3; margin-bottom: 20px; }
+.contact-form-intro { color: var(--graphite); max-width: 52ch; margin-top: -8px; margin-bottom: 24px; }
 .contact-list { border-top: 1px solid var(--rule); }
-.contact-list-row { display: grid; gap: 12px; border-bottom: 1px solid var(--rule); padding-block: 20px; }
-.contact-list-row dt { display: inline-flex; align-items: center; gap: 10px; min-width: 0; color: var(--graphite); font-size: 0.875rem; }
-.contact-list-row dt svg { color: var(--ink); flex: 0 0 auto; }
-.contact-list-row dd { display: grid; gap: 12px; min-width: 0; }
+/* Label, then value and its copy button on one line. The value column is minmax(0, 1fr) so a long
+   handle wraps inside the row instead of widening it. */
+.contact-list-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px 20px; border-bottom: 1px solid var(--rule); padding-block: 16px; }
+.contact-list-row dt { display: inline-flex; align-items: center; gap: 8px; min-width: 0; color: var(--graphite); font-size: 0.8125rem; }
+/* The icons are wayfinding, not decoration: small, the same grey as the label, brightening only with
+   the row itself. Anything louder competes with the value, which is the thing being read. */
+.contact-list-row dt svg { flex: 0 0 auto; opacity: 0.75; }
+.contact-list-row dd { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.contact-list-row:hover dt svg, .contact-list-row:focus-within dt svg { opacity: 1; color: var(--ink); }
 .contact-value { min-width: 0; color: var(--ink); font-size: var(--text-body); line-height: 1.5; overflow-wrap: anywhere; }
-.contact-value-link { color: var(--indigo); text-decoration: none; }
-.contact-value-link:hover { text-decoration: underline; }
+.contact-value-link { min-width: 0; color: var(--indigo); font-size: var(--text-body); line-height: 1.5; overflow-wrap: anywhere; text-decoration: none; }
+.contact-value-link:hover, .contact-value-link:focus-visible { text-decoration: underline; }
+/* Icon-only copy. It sits beside the value rather than at the far right of the row, which is what
+   used to open the gap across the middle of the page. 32px is under the 44px target size, so it is
+   only ever offered next to a value that is already a link or selectable text. */
+.copy-icon {
+  flex: 0 0 auto; display: inline-grid; place-items: center; width: 32px; height: 32px;
+  border: 1px solid transparent; border-radius: var(--radius-sm);
+  color: var(--graphite); opacity: 0; transition: opacity 0.18s, color 0.18s, border-color 0.18s;
+}
+.contact-list-row:hover .copy-icon, .contact-list-row:focus-within .copy-icon, .copy-icon:focus-visible { opacity: 1; }
+.copy-icon:hover { color: var(--ink); border-color: var(--rule); }
+.copy-icon[data-state='copied'] { color: var(--success); opacity: 1; }
+/* A pointer can reveal the button by hovering; a touch screen cannot, so there it is always visible. */
+@media (hover: none) {
+  .copy-icon { opacity: 1; }
+}
+/* Two columns only when there is room for both: the details need about 340px before the labels and
+   values start fighting, and the form needs the rest. Below this they stack, details first, which is
+   the order someone scanning for an address wants anyway. */
+@media (min-width: 1024px) {
+  .contact-grid { grid-template-columns: minmax(340px, 0.8fr) minmax(0, 1fr); gap: 72px; }
+}
 .filter-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
 .filter-link { min-height: 44px; padding: 8px 14px; display: inline-flex; gap: 10px; align-items: center; border: 1px solid transparent; font-size: 0.875rem; color: var(--graphite); }
 .filter-link[aria-current="true"] { color: var(--indigo); border-color: var(--rule); background: var(--ash); border-radius: 4px; }
@@ -144,7 +185,7 @@
 .article-meta-line { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-bottom: 16px; font-size: 0.875rem; color: var(--graphite); }
 .article-cover { height: auto; width: 100%; border: 1px solid var(--rule); background: var(--ash); border-radius: var(--radius-lg); margin-bottom: 40px; }
 .pagination { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-top: 24px; margin-top: 8px; }
-.contact-page .contact-form { max-width: 820px; }
+.contact-page .contact-form { max-width: none; }
 .contact-form { display: grid; gap: 20px; max-width: 640px; }
 .contact-form-grid { display: grid; gap: 20px; }
 .contact-form-field { display: grid; gap: 8px; }
@@ -231,12 +272,12 @@
   .container { padding-inline: 32px; }
   .status-line { grid-template-columns: max-content minmax(0, 1fr); column-gap: 14px; }
   .experience-row-heading { grid-template-columns: minmax(0, 1fr) max-content; align-items: baseline; column-gap: 24px; }
+  .experience-period { text-align: right; white-space: nowrap; }
+  .contact-invitation { grid-template-columns: minmax(0, 1fr) auto; column-gap: 32px; }
+  .contact-invitation .actions { justify-self: end; }
   .article-row { grid-template-columns: 200px minmax(0, 1fr); gap: 24px; }
-  .contact-list-row { grid-template-columns: 190px minmax(0, 1fr); align-items: center; }
-  .contact-list-row dd { grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 20px; }
+  .contact-list-row { grid-template-columns: 150px minmax(0, 1fr); align-items: center; gap: 20px; }
   .project-signal-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .project-signal-grid div { border-bottom: 0; border-right: 1px solid var(--rule); }
-  .project-signal-grid div:last-child { border-right: 0; }
   .contact-form-grid { grid-template-columns: 1fr 1fr; }
   .admin-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .admin-filter-form { grid-template-columns: 160px minmax(220px, 1fr) auto; align-items: end; }
@@ -259,7 +300,7 @@
   .page { padding-block: 80px 96px; }
   .case-grid { grid-template-columns: 200px minmax(0, 1fr); gap: 48px; }
   .case-meta { position: sticky; top: 32px; align-self: start; grid-template-columns: 1fr; border-top: 0; border-bottom: 0; padding: 0 24px 0 0; border-right: 1px solid var(--rule); }
-  .contact-invitation { padding: 28px 32px; }
+  .contact-invitation { padding: 22px 32px; }
   .article-heading { margin-bottom: 48px; }
 }
 @media (min-width: 1024px) { .container { padding-inline: 48px; } }

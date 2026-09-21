@@ -55,6 +55,7 @@ export async function saveExperienceAction(_: ExperienceEditorState, formData: F
   const isCurrent = formData.get('is_current') === 'on';
   const isVisible = formData.get('is_visible') === 'on';
   const url = cleanText(formData.get('url'));
+  const logoUrl = cleanText(formData.get('logo_url'));
 
   if (!orgZh && !orgEn) return { ok: false, message: '請至少填寫一種語言的單位名稱。' };
   const checks: [string, number, string][] = [
@@ -80,6 +81,7 @@ export async function saveExperienceAction(_: ExperienceEditorState, formData: F
   }
 
   if (url && !isValidHttpUrl(url)) return { ok: false, message: '連結必須是 http(s) 開頭的完整網址。' };
+  if (logoUrl && (!isValidHttpUrl(logoUrl) || logoUrl.length > 2048)) return { ok: false, message: 'Logo 必須是 http(s) 開頭的圖片網址。' };
 
   const payload = {
     kind,
@@ -93,6 +95,7 @@ export async function saveExperienceAction(_: ExperienceEditorState, formData: F
     end_date: endDate,
     is_current: isCurrent,
     url: url || null,
+    logo_url: logoUrl || null,
     sort_order: parseSortOrder(cleanText(formData.get('sort_order'))),
     is_visible: isVisible,
     updated_at: new Date().toISOString(),

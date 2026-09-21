@@ -704,3 +704,62 @@ Verification: `npx tsc --noEmit`, Prettier and ESLint clean (0 errors, 16 pre-ex
 `npm test` 111 passed; `npx vitest run` 65 passed; `npm run test:e2e` 26 passed; `npm run test:visual`
 16 passed after updating 14 Windows baselines for the missing footer line and the missing badges. **The
 Linux set still has to be committed from a CI run.**
+
+### Homepage Below The Fold: Alignment, Rows, Rules, Band, Facets (2026-09-21)
+
+Twelve items the user collected from the live site, done as one pass and verified on a production build.
+
+- **One left edge.** The hero column carried an extra `margin-left` of up to 44px that nothing below it had; removed, so the headline, the principles, every section heading and the closing band now start at the same x (measured 32px at 1900, 700 and 390 wide). The focus-area row may wrap instead of running off narrow screens; no horizontal overflow at any of the three widths. The page ends with `clamp(56px, 9vh, 128px)` before the footer.
+- **Education and Experience** are two sections from the same table, split on `kind`; an empty education list leaves no heading behind. Each row starts with a 56px square mark: the organisation's logo from the new `experiences.logo_url` (`supabase/migrations/20260921000100_experience_logo.sql`, additive, optional), or its initial in the same square. The admin editor gains the field with the asset-library picker. No rule under the heading; the first row carries none; dates sit on the content's right edge.
+- **Projects** lose most of their lines: no box or dividers around Problem/System/Outcome (a thin gold-tinted top rule per column instead), one faint rule between rows, no underline on the title on hover (the colour still changes). The cursor-following cover preview now sits beside the row, or above it, or not at all; it never covers a row's text.
+- **The closing call to action** is a band the width of the column: copy on the left, the download button on the right, 104px tall on desktop; stacked below 640px.
+- **Facet headings.** `FacetHeading` cuts each section title into seven diagonal slices that slide into place as the page scrolls it up, with the gold rule and the first row on the same beat (`animation-timeline: view()`, compositor-driven, like depth.css). The range is a scroll distance rather than a share of the viewport, because headings near the end of the page can never reach mid-viewport; Research and the band get shorter distances and still finish. Firefox gets a one-shot entrance; reduced motion gets finished headings. Measured mid-scroll: facet opacities 0.94 to 0 across the seven slices; at the page bottom every slice of the last two headings is at 1.
+- **The hero's language carried down** with restraint: page-wide paper grain, a small gold facet at the start of each heading rule, and two large very faint planes behind the lower sections, clipped so they cannot lengthen the page.
+
+Verification:
+
+- `npx tsc --noEmit`: passed. ESLint on the touched files: 0 errors. `npm run format:check`: passed.
+- Unit tests, including the rewritten preview-placement cases: passed.
+- Production build served locally (real database, then `DEMO_MODE=true` for project rows): alignment, overflow, first-row border, logo squares, date edge, band layout, signal-grid borders, title underline, hover state, preview overlap and page-tail heading opacities all measured with Playwright; screenshots reviewed.
+- `20260921000100_experience_logo.sql` is not applied to production yet; rows show initials until it is.
+
+### Contact Redesigned (2026-09-21)
+
+The old page stacked everything in one column: a two-layer heading, a seven-row definition list whose
+values sat at a third of the width with the copy buttons pinned to the far right, then a half-width
+form. Two thousand pixels tall on a laptop, with an empty band down the middle of every row. The owner
+asked for a redesign and supplied the five things worth showing.
+
+- **Two columns from 1024px.** Contact details on the left, the message form on the right; below that
+  they stack, details first. The page is now **1013px on desktop against 2034px**, one screen on a
+  laptop, and 1712px on a phone.
+- **One heading layer.** The `contact-intro` block, its second headline and its duplicate Email button
+  are gone — the first row of the list is the address, so a button above it was saying the same thing
+  twice. The résumé download moves up beside the title.
+- **The copy buttons became icons beside their values.** Five labelled buttons in a column read as the
+  loudest thing on the page, and pinning them right is what opened the gap across the middle. They are
+  revealed on hover or focus, always visible where there is no hover, and the label survives as the
+  accessible name.
+- **The values say who, not where.** `describeSocialLink` now lifts the handle out of a GitHub or
+  LinkedIn profile URL, so the rows read `Washyu0826` and `kuan-yu-hsien-780123304` rather than
+  `github.com` and `linkedin.com/in`. The LinkedIn slug keeps its disambiguating suffix: trimming it
+  would name an account that is not this one. A repository URL has two path segments and no handle to
+  lift, so it keeps the host.
+- **Order and count.** Email, LinkedIn, GitHub, phone, then location — the address last, because it is
+  the one row nobody is here to act on. LINE and Instagram are hidden rather than deleted, so they can
+  be switched back on in `/admin` without retyping them.
+- **The form asks three questions.** The optional subject line is gone: rarely filled, and one more
+  thing between a reader and a message. The server still accepts the field and the schema still parses
+  it, so nothing behind the form had to change and old drafts still load.
+
+Content, not code: the phone was stored as `tel:+886 0961160826`, which is not a number — `+886`
+replaces the trunk `0`, and `contactHref` was stripping the space to produce `+8860961160826`. It is
+now `tel:+886 961 160 826`, which displays as written and dials correctly. Location was narrowed to
+`台北，台灣` / `Taipei, Taiwan` to match what the owner asked to publish.
+
+Verification: `npx tsc --noEmit`, Prettier and ESLint clean (0 errors, 16 pre-existing warnings);
+`npm test` 112 passed, with new cases covering the GitHub, LinkedIn, company and repository display
+values; `npx vitest run` 66 passed, the contact-form suite rewritten for three fields; `npm run
+test:e2e` 26 passed, including the axe sweep that the hover-revealed copy buttons had to survive;
+`npm run test:visual` 16 passed after updating the Windows baselines. **The Linux set still has to be
+committed from a CI run.**

@@ -3,7 +3,10 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Copy, Check } from 'lucide-react';
 import { Button } from './ui/button';
-export function CopyValue({ value, label, copiedLabel }: { value: string; label: string; copiedLabel?: string }) {
+type CopyProps = { value: string; label: string; copiedLabel?: string; compact?: boolean };
+/** `compact` is the icon-only shape the contact rows use, where the label is the accessible name
+ *  rather than visible text: five labelled buttons in a column read as the loudest thing on the page. */
+export function CopyValue({ value, label, copiedLabel, compact = false }: CopyProps) {
   const [status, setStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
   // Bumped on every success so the tick remounts and draws itself again on a repeat copy.
   const [run, setRun] = useState(0);
@@ -21,8 +24,15 @@ export function CopyValue({ value, label, copiedLabel }: { value: string; label:
     }
     catch { window.clearTimeout(timer.current); setStatus('failed'); }
   }
+  const icon = copied ? <Check key={run} size={16} className="copy-check" /> : <Copy size={16} />;
+  if (compact) {
+    return <>
+      <button type="button" className="copy-icon" onClick={copy} aria-label={label} title={label} data-state={status}>{icon}</button>
+      <span role="status" className="sr-only">{status === 'failed' ? t('copyFailed') : copied ? confirmation : ''}</span>
+    </>;
+  }
   return <div><div className="copy-field">
-    <Button variant="outline" onClick={copy}>{copied ? <Check key={run} size={16} className="copy-check" /> : <Copy size={16} />}{label}</Button>
+    <Button variant="outline" onClick={copy}>{icon}{label}</Button>
     {/* Visual echo only: the live region below is what assistive technology announces. */}
     <span className="copy-confirm" data-state={status} aria-hidden="true">{confirmation}</span>
   </div>
