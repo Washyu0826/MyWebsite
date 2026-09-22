@@ -170,7 +170,12 @@ export function buildPlate(seed: number): Plate {
   }
 
   const facets: PlateFacet[] = polys.map(pts => {
-    const key = rand() < 0.24;
+    // The plate is pinned to the viewport, so its top band is always the one beside the page's
+    // heading - the emptiest part of the screen and the first thing seen. The composition is
+    // weighted into it: a facet up there is likelier to be a foreground plane and carries more
+    // pigment either way, and the drawing thins out towards the foot.
+    const high = 1 - centroid(pts)[1] / PLATE_H;
+    const key = rand() < 0.17 + 0.22 * high;
     const layer: 0 | 1 | 2 = key ? 2 : rand() < 0.5 ? 0 : 1;
     const pigment = key
       ? KEY_PIGMENTS[Math.floor(rand() * KEY_PIGMENTS.length)]
@@ -180,7 +185,7 @@ export function buildPlate(seed: number): Plate {
       pigment,
       // The foreground planes carry real pigment and the rest are barely there, so the plate reads
       // as a few shapes in front of a haze rather than a patchwork of equals.
-      alpha: round(key ? 0.16 + rand() * 0.1 : 0.05 + rand() * 0.08),
+      alpha: round(Math.min(0.3, (key ? 0.16 + rand() * 0.1 : 0.05 + rand() * 0.08) * (0.72 + 0.62 * high))),
       layer,
       hatch: !key && rand() < 0.34,
       sway: round(16 + rand() * 14),
@@ -221,4 +226,52 @@ export function buildPlate(seed: number): Plate {
   // cuts made, which is what interlocks them.
   facets.sort((a, b) => a.layer - b.layer);
   return { facets, lines, arcs };
+}
+
+/* --- the line work that crosses the middle ---------------------------------- */
+/* Only lines and arcs, never a filled plane: they are a pixel wide, so they can run behind a column
+   of text without any row being read through a tint. Drawn in the listing's own proportions, at the
+   same angles the plates are cut on, so the two gutters read as one picture with the page between
+   them rather than as two pictures with a gap. Nothing here moves. */
+export const SPAN_W = 1200;
+export const SPAN_H = 900;
+const SPAN_GUIDES: [number, number, number][] = [
+  [0.06, 0.08, 0.46],
+  [0.52, 0.02, -0.38],
+  [0.88, 0.18, 1.18],
+  [0.2, 0.52, -0.92],
+  [0.74, 0.58, 0.78],
+  [0.34, 0.86, 0.46],
+  [0.94, 0.78, -1.28],
+];
+const SPAN_ARCS: [number, number, number, number, number][] = [
+  [0.3, -0.12, 0.42, 0.4, 2.6],
+  [0.82, 0.64, 0.5, 2.6, 5.2],
+  [-0.05, 0.4, 0.36, -0.8, 1.4],
+];
+
+export function buildSpan(seed: number): { lines: PlateLine[]; arcs: PlateArc[] } {
+  const rand = mulberry32(seed);
+  const lines: PlateLine[] = [];
+  SPAN_GUIDES.forEach(([x, y, angle], i) => {
+    const span = clipLine(x * SPAN_W, y * SPAN_H, angle, SPAN_W, SPAN_H);
+    if (!span) return;
+    const [[x0, y0], [x1, y1]] = span;
+    lines.push({
+      d: `M${round(x0)},${round(y0)}L${round(x1)},${round(y1)}`,
+      length: Math.ceil(Math.hypot(x1 - x0, y1 - y0)),
+      layer: (i % 3) as 0 | 1 | 2,
+      period: 0,
+      lag: 0,
+    });
+  });
+  const arcs: PlateArc[] = SPAN_ARCS.map(([x, y, r, from, to]) => {
+    const cx = x * SPAN_W;
+    const cy = y * SPAN_H;
+    const radius = r * SPAN_W;
+    const p0 = `${round(cx + radius * Math.cos(from))},${round(cy + radius * Math.sin(from))}`;
+    const p1 = `${round(cx + radius * Math.cos(to))},${round(cy + radius * Math.sin(to))}`;
+    return { d: `M${p0}A${round(radius)},${round(radius)} 0 ${to - from > Math.PI ? 1 : 0} 1 ${p1}`, layer: 0, alpha: round(0.5 + rand() * 0.4) };
+  });
+  return { lines, arcs };
 }

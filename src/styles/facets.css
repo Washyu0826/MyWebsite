@@ -199,25 +199,42 @@ body:has(.admin-shell)::before { display: none; }
   flex: 0 0 auto;
   width: var(--listing-gutter);
   height: 100svh;
-  /* Two fades at once: out towards the column, so no row is ever read against the drawing, and out
-     at the top and bottom, so the plate has no edge of its own where the viewport ends. */
+  /* Two fades at once. Across: the drawing loses strength the whole way in and reaches nothing
+     exactly at the column's edge, so there is no line anywhere for the eye to read as a seam - the
+     earlier version held full strength to 52% and then dropped, and that step was the seam. Down:
+     the plate starts at full strength under the page's heading, which is the emptiest band on the
+     screen and the first one seen, and gives up its bottom edge so it has none of its own. */
   -webkit-mask-composite: source-in;
   mask-composite: intersect;
-  -webkit-mask-image: linear-gradient(180deg, transparent, #000 9%, #000 86%, transparent);
-  mask-image: linear-gradient(180deg, transparent, #000 9%, #000 86%, transparent);
+  -webkit-mask-image: linear-gradient(180deg, #000 0 88%, transparent);
+  mask-image: linear-gradient(180deg, #000 0 88%, transparent);
 }
 .listing-plate-left {
-  -webkit-mask-image: linear-gradient(90deg, #000 0 52%, rgba(0, 0, 0, 0.18) 100%),
-    linear-gradient(180deg, transparent, #000 9%, #000 86%, transparent);
-  mask-image: linear-gradient(90deg, #000 0 52%, rgba(0, 0, 0, 0.18) 100%),
-    linear-gradient(180deg, transparent, #000 9%, #000 86%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, #000 0, rgba(0, 0, 0, 0.74) 34%, rgba(0, 0, 0, 0.3) 68%, transparent 100%),
+    linear-gradient(180deg, #000 0 88%, transparent);
+  mask-image: linear-gradient(90deg, #000 0, rgba(0, 0, 0, 0.74) 34%, rgba(0, 0, 0, 0.3) 68%, transparent 100%),
+    linear-gradient(180deg, #000 0 88%, transparent);
 }
 .listing-plate-right {
-  -webkit-mask-image: linear-gradient(270deg, #000 0 52%, rgba(0, 0, 0, 0.18) 100%),
-    linear-gradient(180deg, transparent, #000 9%, #000 86%, transparent);
-  mask-image: linear-gradient(270deg, #000 0 52%, rgba(0, 0, 0, 0.18) 100%),
-    linear-gradient(180deg, transparent, #000 9%, #000 86%, transparent);
+  -webkit-mask-image: linear-gradient(270deg, #000 0, rgba(0, 0, 0, 0.74) 34%, rgba(0, 0, 0, 0.3) 68%, transparent 100%),
+    linear-gradient(180deg, #000 0 88%, transparent);
+  mask-image: linear-gradient(270deg, #000 0, rgba(0, 0, 0, 0.74) 34%, rgba(0, 0, 0, 0.3) 68%, transparent 100%),
+    linear-gradient(180deg, #000 0 88%, transparent);
 }
+/* The middle: the same picture at a whisper, and still, so nothing moves behind a line being read. */
+.listing-span {
+  position: sticky;
+  top: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100svh;
+  -webkit-mask-image: linear-gradient(180deg, #000 0 88%, transparent);
+  mask-image: linear-gradient(180deg, #000 0 88%, transparent);
+}
+.listing-span .plate-line { stroke-opacity: 0.11; }
+.listing-span .plate-arc { stroke-opacity: 0.07; }
+.light .listing-span .plate-line { stroke-opacity: 0.08; }
+.light .listing-span .plate-arc { stroke-opacity: 0.05; }
 /* Hairlines stay hairlines however wide the gutter stretches the plate. */
 .plate-edge,
 .plate-line,

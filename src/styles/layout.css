@@ -34,7 +34,11 @@
 .hero { padding-block: 64px 48px; }
 .hero-grid { display: grid; gap: 32px; align-items: center; }
 .hero-grid > div:first-child { min-width: 0; }
-.hero h1 { font-size: clamp(3rem, 8vw, var(--text-display)); line-height: 1.08; letter-spacing: 0; white-space: normal; max-width: min(100%, 14ch); }
+/* A shade larger than the display token everywhere else uses it: this is the one line on the site
+   that has to carry a whole screen on its own. The negative margin is its side bearing: at this
+   size the blank the font leaves to the left of an S is wide enough to read as an indent against
+   the small type under it, which all starts 2px further out. Measured on the glyphs, not the boxes. */
+.hero h1 { font-size: clamp(3rem, 8vw, calc(var(--text-display) * 1.06)); line-height: 1.08; letter-spacing: 0; white-space: normal; max-width: min(100%, 14ch); margin-left: -0.035em; }
 .hero .positioning { margin-top: 24px; margin-bottom: 0; font-size: var(--text-body-lg); }
 .hero .positioning p { margin-bottom: 0; }
 .hero-photo { position: relative; isolation: isolate; width: min(100%, 420px); aspect-ratio: 4 / 5; justify-self: start; border: 1px solid color-mix(in srgb, var(--indigo) 32%, var(--rule)); background: var(--ash); box-shadow: 0 24px 80px color-mix(in srgb, #000 45%, transparent); }
@@ -125,7 +129,7 @@
    section below starts on the same line as its headline rather than the other way round. */
 .home-container { --column-indent: 0px; }
 @media (min-width: 768px) {
-  .home-container { --column-indent: clamp(20px, 2vw, 44px); --hero-lift: 18px; }
+  .home-container { --column-indent: clamp(20px, 2vw, 44px); --hero-lift: 22px; }
   /* The indent is symmetric: the margin the hero column takes on the left, the page keeps on the right. */
   .home-container .section, .home-container .contact-invitation { margin-left: var(--column-indent); margin-right: var(--column-indent); }
 }

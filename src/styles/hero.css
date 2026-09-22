@@ -170,7 +170,9 @@ span.typewriter-line { display: inline-block; }
 /* The rule draws left to right, then the heading and the items follow ~60ms apart.
    Only [data-enter="out"] hides anything, and that value is set by JS alone. */
 .enter-rule { height: 1px; transform-origin: left center; background: linear-gradient(90deg, color-mix(in srgb, var(--ink) 46%, var(--rule)), transparent); }
-.signature-block { margin-top: 28px; max-width: 680px; }
+/* The focus list sits the same distance over the rule that opens this block as the status line
+   sits under the rule above it. Measured on the glyphs: 23px under that rule, 23px over this one. */
+.signature-block { margin-top: 15px; max-width: 680px; }
 .signature-block .signature-principles { margin-top: 0; border-top: 0; }
 [data-enter] .section-heading::after { transform-origin: left center; }
 [data-enter="out"] .enter-rule { transform: scaleX(0); }
@@ -312,7 +314,10 @@ span.typewriter-line { display: inline-block; }
   transition-delay: 120ms;
 }
 .signature-block[data-enter] .principle-rotator[data-rotating='true'] .signature-principle p {
-  max-width: 46ch;
+  /* Wide enough that the longest of the three principles still reads in two lines: at 46ch it broke
+     onto a third, which made that panel taller than the other two and left the block with slack to
+     absorb on every other turn. */
+  max-width: 54ch;
   font-size: 0.9375rem;
   line-height: 1.7;
   opacity: 0;
@@ -366,7 +371,7 @@ span.typewriter-line { display: inline-block; }
 }
 
 /* The block closes on the same hairline it opens with. Measured on the rendered glyphs rather than
-   on the boxes: 39px of air above the words, 34px below. Equal measures read as bottom-heavy under
+   on the boxes: 26px of air above the words, 21px below. Equal measures read as bottom-heavy under
    a line with descenders in it, so the closing rule sits a little closer than the opening one. */
 .enter-rule-foot { margin-top: 16px; }
 @media (prefers-reduced-motion: reduce) {

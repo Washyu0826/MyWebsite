@@ -848,3 +848,46 @@ exactly and the split-name rules), `npx tsc --noEmit`, ESLint and `npm run forma
 measured and screenshotted on a production build in both themes. A stale assertion in
 `tests/motion.test.ts`, left behind when `SectionReveal` gained `replay`, was updated to the current
 contract rather than deleted.
+
+### The Gutters Lose Their Seam, The Middle Gains A Line, The Hero Is Measured Again (2026-09-23)
+
+The plates in the listing gutters were read as two panels bolted onto the page rather than as one
+picture. Five decisions, taken with the owner one at a time:
+
+- **The fade has no edge in it.** It used to hold full strength to 52% of the plate and then drop,
+  and that step was the seam. It now loses strength the whole way in and reaches nothing exactly at
+  the column's edge, so there is no line anywhere for the eye to catch.
+- **Line work crosses the middle.** Lines and arcs only, never a filled plane: a pixel-wide stroke
+  can run behind a column of text without any row being read through a tint. Cut on the same angles
+  as the plates, so the two gutters read as one picture with the page in the middle of it. Static,
+  by choice - nothing moves behind a line being read.
+- **The drawing starts above the heading.** The plate is pinned to the viewport, so its top band is
+  always the one beside the page's title. The top fade that used to eat it is gone and the
+  composition is weighted into it: a facet up there is likelier to be a foreground plane and carries
+  more pigment either way, thinning out towards the foot.
+- Scope is unchanged: Projects and Notes, nothing else.
+
+On the homepage, four measurements rather than four guesses:
+
+- **The rotator sits between its two rules.** The block is as tall as the longest principle so it
+  never resizes as they turn, and all of that slack used to sit at the foot: 22px of air over the
+  words, 50 under them. The slack is split above and below now, the number is centred with the text,
+  and the marker stopped spanning a second row that has been empty since the beads were removed and
+  whose row-gap was still being counted. The body column also widened to 54ch, which puts the
+  longest principle back on two lines, so all three panels are the same height and there is no slack
+  left to split. Measured on the rendered glyphs: 26px above, 21px below, the same on every panel.
+  The closing rule sits a little closer on purpose - equal measures read as bottom-heavy under a line
+  with descenders in it.
+- **The focus list sits the same distance over its rule as the status line sits under the one above**
+  it: 23px and 23px, measured the same way. It was 36.
+- **The headline is a shade larger and its left edge is where the small type's is.** At this size the
+  blank the font leaves to the left of an S is 2px wide, enough to read as an indent against
+  everything under it; a negative margin of its own side bearing takes it out. It still opens below
+  the top of the head in the portrait beside it, with 36px to spare.
+- The empty-list sentence lost the rule above it, and the résumé button is title case.
+
+Verification: 118 unit tests including the new line-work assertions, `npx tsc --noEmit`, ESLint and
+`npm run format:check` pass. Every number above was read off a pixel scan of a production build,
+not off the boxes: font metrics put the bottom of a line of text about 10px lower than the ink
+actually reaches, which is exactly the size of the error being chased here. No horizontal overflow
+at 1920, 1600, 1440, 1280, 1024, 768 or 390 on the homepage or either listing.

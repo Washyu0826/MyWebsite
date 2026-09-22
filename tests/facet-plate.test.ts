@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildPlate, clipLine, mulberry32, PLATE_H, PLATE_W } from '../src/lib/facet-plate';
+import { buildPlate, buildSpan, clipLine, mulberry32, PLATE_H, PLATE_W, SPAN_H, SPAN_W } from '../src/lib/facet-plate';
 import { splitName } from '../src/lib/format';
 
 const numbers = (d: string) => d.slice(1).replace(/[A-Za-z]/g, ' ').trim().split(/[\s,]+/).map(Number);
@@ -40,7 +40,8 @@ test('every facet is paintable and every layer is used', () => {
   const { facets, lines, arcs } = buildPlate(9137);
   for (const facet of facets) {
     assert.ok(facet.pigment >= 0 && facet.pigment <= 5);
-    assert.ok(facet.alpha > 0 && facet.alpha <= 0.26);
+    // Weighted towards the top of the plate, and capped there so no single plane ever shouts.
+    assert.ok(facet.alpha > 0 && facet.alpha <= 0.3);
     assert.ok(facet.sway >= 16 && facet.sway <= 30);
     assert.ok(facet.lag >= 0 && facet.lag <= 0.7);
   }
@@ -74,4 +75,26 @@ test('a name splits into the one a document carries and the one people use', () 
   assert.deepEqual(splitName(null), { name: '', nickname: '' });
   // A bracket that is not a trailing alias is left where it is.
   assert.deepEqual(splitName('Hsien (Kuan-Yu) Zenobia'), { name: 'Hsien (Kuan-Yu) Zenobia', nickname: '' });
+});
+
+test('what crosses the middle of the page is line work and nothing else', () => {
+  const span = buildSpan(2608);
+  assert.deepEqual(span, buildSpan(2608));
+  assert.equal(span.lines.length, 7);
+  assert.equal(span.arcs.length, 3);
+  // Every line reaches both edges of the box and stays inside it: a filled plane would put a tint
+  // behind a column of text, which is the one thing this layer must never do.
+  for (const line of span.lines) {
+    const pts = numbers(line.d);
+    assert.equal(pts.length, 4);
+    for (let i = 0; i < 4; i += 2) {
+      assert.ok(pts[i] >= -0.01 && pts[i] <= SPAN_W + 0.01, `x ${pts[i]}`);
+      assert.ok(pts[i + 1] >= -0.01 && pts[i + 1] <= SPAN_H + 0.01, `y ${pts[i + 1]}`);
+    }
+    assert.ok(line.length > SPAN_H * 0.3);
+    // Nothing on this layer is animated, so it carries no clock.
+    assert.equal(line.period, 0);
+    assert.equal(line.lag, 0);
+  }
+  for (const arc of span.arcs) assert.ok(arc.d.includes('A') && arc.alpha > 0 && arc.alpha <= 0.9);
 });

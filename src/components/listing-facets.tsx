@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { buildPlate, PLATE_H, PLATE_W, type Plate } from '@/lib/facet-plate';
+import { buildPlate, buildSpan, PLATE_H, PLATE_W, SPAN_H, SPAN_W, type Plate } from '@/lib/facet-plate';
 
 /**
  * The cubist plates that stand in the gutters of the listing pages.
@@ -19,6 +19,7 @@ import { buildPlate, PLATE_H, PLATE_W, type Plate } from '@/lib/facet-plate';
  * and every visitor sees the same drawing.
  */
 const PLATES: Record<Side, Plate> = { left: buildPlate(4211), right: buildPlate(9137) };
+const SPAN = buildSpan(2608);
 const LAYERS = [0, 1, 2] as const;
 type Side = 'left' | 'right';
 
@@ -98,11 +99,37 @@ function FacetPlate({ side }: { side: Side }) {
   );
 }
 
+/**
+ * The line work that crosses the page between the two plates: lines and arcs only, never a filled
+ * plane, so it can run behind a column of text without any row being read through a tint. It is
+ * cut on the same angles as the plates, which is what makes the two gutters read as one picture
+ * with the page in the middle of it rather than as two pictures with a gap. Nothing here moves.
+ */
+function SpanLines() {
+  return (
+    <svg
+      className="listing-span"
+      viewBox={`0 0 ${SPAN_W} ${SPAN_H}`}
+      preserveAspectRatio="none"
+      aria-hidden="true"
+      focusable="false"
+    >
+      {SPAN.arcs.map((arc, i) => (
+        <path key={`a${i}`} d={arc.d} className="plate-arc" fill="none" strokeOpacity={arc.alpha} />
+      ))}
+      {SPAN.lines.map((line, i) => (
+        <path key={`l${i}`} d={line.d} className="plate-line" fill="none" />
+      ))}
+    </svg>
+  );
+}
+
 /** Sits inside `.listing-page`, which is the positioned box the two gutters are measured from. */
 export function ListingFacets() {
   return (
     <div className="listing-facets" aria-hidden="true">
       <FacetPlate side="left" />
+      <SpanLines />
       <FacetPlate side="right" />
     </div>
   );
