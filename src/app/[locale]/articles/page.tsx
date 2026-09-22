@@ -43,7 +43,7 @@ export default async function Articles({ params, searchParams }: Props) {
   if (page > totalPages && totalPages > 0) notFound();
   const pageHref = (target: number) => ({ pathname: '/articles' as const, query: { ...(tag ? { tag } : {}), ...(target > 1 ? { page: String(target) } : {}) } });
 
-  return <Container className="page">
+  return <Container className="page listing-page">
     <header className="page-heading">
       <h1>{t('title')}</h1>
       <p>{t('description')}</p>

@@ -130,3 +130,43 @@ body:has(.admin-shell)::before { display: none; }
 @media (max-width: 767px) {
   .home-stage::before, .home-stage::after { display: none; }
 }
+
+/* --- the listing pages: a little wider, with the gutters put to work ---------- */
+/* Projects and Notes are lists of wide rows, so they read better with more room than the reading
+   column the other pages use. The gutters that opens up carry the hero's vocabulary without
+   repeating it: the hero has large overlapping planes behind the content, these are two tall,
+   narrow slivers outside it, one leaning each way, plus the same paper grain the page already has.
+   They are decoration only, clipped and behind everything, and they stop existing on narrow
+   screens where there is no gutter to fill. */
+.listing-page { max-width: 1320px; }
+/* Only where the gutter is genuinely wide enough to hold them. `overflow-x: clip` on body is not a
+   safety net here: when html has visible overflow the browser propagates body's to the viewport, so
+   body stops clipping anything. The slivers are sized to fit instead. */
+@media (min-width: 1560px) {
+  .listing-page { position: relative; }
+  .listing-page::before,
+  .listing-page::after {
+    content: '';
+    position: absolute;
+    top: 8%;
+    width: clamp(70px, 6vw, 130px);
+    height: 62%;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.5;
+  }
+  /* Outside the column, so they never sit under the rows themselves. */
+  .listing-page::before {
+    right: calc(100% + 8px);
+    clip-path: polygon(22% 0, 100% 9%, 78% 100%, 0 86%);
+    background: linear-gradient(200deg, color-mix(in srgb, var(--indigo) 13%, transparent), transparent 74%);
+  }
+  .listing-page::after {
+    left: calc(100% + 8px);
+    top: 26%;
+    height: 54%;
+    clip-path: polygon(0 12%, 74% 0, 100% 88%, 30% 100%);
+    background: linear-gradient(340deg, color-mix(in srgb, var(--indigo) 10%, transparent), transparent 70%);
+  }
+  .light .listing-page::before, .light .listing-page::after { opacity: 0.34; }
+}

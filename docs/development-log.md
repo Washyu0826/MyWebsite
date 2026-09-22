@@ -791,3 +791,11 @@ Verification:
 Verification: `npx tsc --noEmit`, ESLint on the touched files, `npm run format:check` and the unit tests all pass. Everything above was measured on a production build served locally with Playwright, and the screenshots reviewed.
 
 Outstanding: the school crests. `experiences.logo_url` and the admin field are ready, but `20260921000100_experience_logo.sql` is not applied to production, so the squares still show initials.
+
+### Listing Pages: Wider, With The Gutters Put To Work (2026-09-22)
+
+Projects and Notes are lists of wide rows, so they now use a 1320px column instead of the 1120px reading width the other pages keep, and the gutter that opens up carries the hero's vocabulary without repeating it: two tall narrow facets, one leaning each way, outside the column and behind everything.
+
+They appear only from 1560px, where the gutter is genuinely wide enough to hold them. `overflow-x: clip` on `body` is not a safety net for this: with `html` at visible overflow the browser propagates body's overflow to the viewport, so body stops clipping, which is how the first attempt leaked 44px of horizontal scroll at 1440. Measured after the fix: no horizontal overflow at 1920, 1680, 1440 or 1280, and the facets are absent below 1560.
+
+Verification: `npm run format:check`, ESLint and `npx tsc --noEmit` pass; measured and screenshotted on a production build with demo content.
