@@ -7,6 +7,7 @@ import { getProfile } from '@/lib/db/profile';
 import { listProjects } from '@/lib/db/projects';
 import { listExperiences } from '@/lib/db/profile';
 import { pickLocale } from '@/lib/locale';
+import { splitName } from '@/lib/format';
 import { gmailComposeUrl, safeUrl } from '@/lib/urls';
 import { pageMetadata } from '@/lib/metadata';
 import { personSchema } from '@/lib/structured-data';
@@ -84,7 +85,7 @@ export default async function Home({ params }: Props) {
   const featured = projects.filter(project => project.is_featured).slice(0, 3);
   // Same @id as the contact page: one person described in two places, which crawlers merge.
   const person = personSchema({
-    name: p.name, locale, jobTitle: heroHeadline, description: p.bio, email: profile.email, image: profile.avatar_url,
+    ...splitName(p.name), locale, jobTitle: heroHeadline, description: p.bio, email: profile.email, image: profile.avatar_url,
     sameAs: profile.social_links.map(link => safeUrl(link.url)),
     alumniOf: experiences.filter(row => row.kind === 'education').map(row => pickLocale(row, locale).org),
   });

@@ -6,6 +6,7 @@ import { countPosts, listPosts, listPostTags } from '@/lib/db/posts';
 import { pageMetadata } from '@/lib/metadata';
 import { ArticleList } from '@/components/article-list';
 import { Container } from '@/components/container';
+import { ListingFacets } from '@/components/listing-facets';
 
 const PAGE_SIZE = 12;
 
@@ -44,7 +45,7 @@ export default async function Articles({ params, searchParams }: Props) {
   const pageHref = (target: number) => ({ pathname: '/articles' as const, query: { ...(tag ? { tag } : {}), ...(target > 1 ? { page: String(target) } : {}) } });
 
   return <Container className="page listing-page">
-    <div className="listing-backdrop" aria-hidden="true"><span /><span /><span /><span /><span /><span /></div>
+    <ListingFacets />
     <header className="page-heading">
       <h1>{t('title')}</h1>
       <p>{t('description')}</p>

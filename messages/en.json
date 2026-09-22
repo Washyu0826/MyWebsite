@@ -76,7 +76,7 @@
     "intro": "A good conversation starts with an email.", "body": "Introduce yourself and what you have in mind. I'd love to hear about it.",
     "copy": "Copy email", "copyValue": "Copy", "copyEmail": "Copy email", "copyPhone": "Copy phone", "copyLink": "Copy link",
     "copied": "Copied", "copyFailed": "Couldn't copy. Please select and copy the value above.",
-    "region": "Location",
+    "nameRow": "Name", "region": "Location",
     "detailsTitle": "Where to find me", "phone": "Phone",
     "resumeTitle": "Want to know more about my experience?",
     "form": {

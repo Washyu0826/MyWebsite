@@ -24,13 +24,14 @@ function language(locale: 'zh' | 'en') { return locale === 'zh' ? 'zh-TW' : 'en'
 export const PERSON_ID = '/#person';
 
 export function personSchema(input: {
-  name: string; locale: 'zh' | 'en'; jobTitle?: Maybe; description?: Maybe; email?: Maybe;
+  name: string; alternateName?: Maybe; locale: 'zh' | 'en'; jobTitle?: Maybe; description?: Maybe; email?: Maybe;
   image?: Maybe; sameAs?: Maybe[]; alumniOf?: Maybe[]; base?: Maybe;
 }): JsonLdNode {
   return compact({
     '@type': 'Person',
     '@id': absoluteUrl(PERSON_ID, input.base),
     name: input.name,
+    alternateName: input.alternateName || undefined,
     url: absoluteUrl(`/${input.locale}`, input.base),
     jobTitle: input.jobTitle ?? undefined,
     description: input.description ?? undefined,

@@ -125,7 +125,10 @@ test('the section observer asks for one callback and writes one attribute', () =
   assert.doesNotMatch(code, /threshold:/);
   assert.doesNotMatch(code, /dataset\.active/);
   assert.doesNotMatch(code, /intersectionRatio|intersectionRect|rootBounds/);
-  // And the entrance is written once, then the observer stops watching.
-  assert.match(code, /const show = \(\) => \{ if \(shown\) return; shown = true; element\.dataset\.enter = 'in'; \};/);
-  assert.match(code, /show\(\); observer\.disconnect\(\);/);
+  // The attribute is written only when it actually changes, so a section that is already in does no
+  // style invalidation on every callback.
+  assert.match(code, /const set = \(next: 'in' \| 'out'\) => \{ if \(state === next\) return;/);
+  // And the observer stops watching as soon as it has fired, unless the section replays its
+  // entrance each time it is scrolled back to, which is the homepage's one-section-per-stop beat.
+  assert.match(code, /if \(visible\) \{ show\(\); if \(!replay\) observer\.disconnect\(\); \}/);
 });

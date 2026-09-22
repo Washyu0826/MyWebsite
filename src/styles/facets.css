@@ -130,62 +130,160 @@ body:has(.admin-shell)::before { display: none; }
 @media (max-width: 767px) {
   .home-stage::before, .home-stage::after { display: none; }
 }
+/* --- the listing pages: a wider column, and a cubist plate in each gutter ---- */
+/* Projects and Notes are a narrow column of wide rows with a lot of room left over on both sides,
+   and the room was doing nothing. Each gutter now holds a tall plate built the way the hero's
+   backdrop is - a rectangle cut into interlocking facets, construction lines running past the
+   shapes they describe, arcs, hatching - but drawn as SVG on the server rather than painted on a
+   canvas, because two more canvases would double the most expensive thing the site does per frame.
+   components/listing-facets.tsx has the markup; lib/facet-plate.ts has the geometry.
 
-/* --- the listing pages: a little wider, with a backdrop of their own --------- */
-/* Projects and Notes are lists of wide rows, so they read better with more room than the reading
-   column the other pages use. The gutter that opens up carries the hero's vocabulary without
-   repeating it: a set of leaning planes drawn in CSS rather than on a canvas, clear at both edges
-   and faded out across the middle so no row is ever read through them. They drift with the scroll,
-   more slowly than the page, which is what reads as depth; it costs one compositor-driven
-   animation and no main-thread work. Static under reduced motion, and absent on narrow screens
-   where the gutters close up. */
-.listing-page { max-width: 1320px; position: relative; }
-.listing-backdrop {
+   The plate is pinned to the viewport and the page scrolls past it, so its proportions never depend
+   on how long the list is. Four things move, all of them on the compositor or close to it: three
+   depth layers slide at different rates on a view timeline, each facet breathes on its own long
+   cycle, the construction lines draw themselves in and out, and a band of light crosses once a
+   minute. Under reduced motion the whole composition still renders, still. */
+.listing-page {
+  --listing-width: 1320px;
+  /* The gutter, measured from the viewport rather than from the column: a percentage inside a
+     custom property resolves against whichever element uses it, which would be the wrong box by
+     the time the plate reads it. 12px comes off for the classic scrollbar, which 100vw counts and
+     the column's centring does not. */
+  --listing-gutter: max(0px, min(320px, calc((100vw - var(--listing-width)) / 2 - 12px)));
+  max-width: var(--listing-width);
+  position: relative;
+}
+.listing-facets {
   position: absolute;
-  inset: -80px 0 -120px;
+  top: -80px;
+  bottom: 0;
+  left: calc(-1 * var(--listing-gutter));
+  right: calc(-1 * var(--listing-gutter));
   z-index: -1;
-  overflow: clip;
   pointer-events: none;
-  /* Clear at the two edges, gone across the middle third where the rows sit. */
-  -webkit-mask-image: linear-gradient(90deg, #000 0 14%, transparent 34%, transparent 66%, #000 86% 100%);
-  mask-image: linear-gradient(90deg, #000 0 14%, transparent 34%, transparent 66%, #000 86% 100%);
+  /* The plate is stuck to the viewport and is taller than a short listing, so without this it would
+     go on past the end of the page and reappear under the footer. `clip` rather than `hidden`: it
+     is not a scroll container, so the plate inside still sticks to the viewport. */
+  overflow: clip;
+  /* The drawing resolves before the page ends. Without this the clip above would leave a straight
+     horizontal cut across both gutters wherever the listing stops. */
+  -webkit-mask-image: linear-gradient(180deg, #000 0 calc(100% - 120px), transparent);
+  mask-image: linear-gradient(180deg, #000 0 calc(100% - 120px), transparent);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  /* The backdrop's pigments, named rather than mixed, so the plate carries the same palette the
+     hero is painted in and each theme gets its own weight of it. */
+  --plate-0: #cb9743;
+  --plate-1: #2a4e71;
+  --plate-2: #734b29;
+  --plate-3: #7e3129;
+  --plate-4: #605e32;
+  --plate-5: #ad9463;
+  --plate-line: #e9e1cb;
+  --plate-sweep: #f6e9c8;
 }
-.listing-backdrop span {
-  position: absolute;
-  display: block;
-  background: linear-gradient(var(--tilt, 200deg), color-mix(in srgb, var(--indigo) var(--ink-share, 16%), transparent), transparent 76%);
-  will-change: transform;
+.light .listing-facets {
+  --plate-0: #c4881b;
+  --plate-1: #1b3a5b;
+  --plate-2: #6e3b12;
+  --plate-3: #7e2614;
+  --plate-4: #6b6a28;
+  --plate-5: #d8b678;
+  --plate-line: #2e2318;
+  --plate-sweep: #fffdf3;
 }
-.light .listing-backdrop span { opacity: 0.5; }
-/* Six planes: three down each side, different sizes and leans so the edge does not look tiled. */
-.listing-backdrop span:nth-child(1) { left: -6%; top: 2%;  width: 30%; height: 34%; --tilt: 200deg; clip-path: polygon(24% 0, 100% 10%, 78% 100%, 0 84%); }
-.listing-backdrop span:nth-child(2) { left: -10%; top: 38%; width: 26%; height: 30%; --tilt: 160deg; --ink-share: 11%; clip-path: polygon(0 14%, 68% 0, 100% 82%, 26% 100%); }
-.listing-backdrop span:nth-child(3) { left: -4%; top: 72%; width: 22%; height: 28%; --tilt: 220deg; --ink-share: 9%;  clip-path: polygon(18% 0, 100% 22%, 72% 100%, 0 72%); }
-.listing-backdrop span:nth-child(4) { right: -8%; top: 6%;  width: 27%; height: 32%; --tilt: 340deg; --ink-share: 12%; clip-path: polygon(0 10%, 76% 0, 100% 86%, 28% 100%); }
-.listing-backdrop span:nth-child(5) { right: -5%; top: 42%; width: 31%; height: 36%; --tilt: 20deg;  --ink-share: 15%; clip-path: polygon(22% 0, 100% 16%, 80% 100%, 0 80%); }
-.listing-backdrop span:nth-child(6) { right: -12%; top: 78%; width: 24%; height: 26%; --tilt: 300deg; --ink-share: 10%; clip-path: polygon(0 20%, 70% 0, 100% 78%, 30% 100%); }
+.listing-plate {
+  position: sticky;
+  top: 0;
+  flex: 0 0 auto;
+  width: var(--listing-gutter);
+  height: 100svh;
+  /* Two fades at once: out towards the column, so no row is ever read against the drawing, and out
+     at the top and bottom, so the plate has no edge of its own where the viewport ends. */
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 9%, #000 86%, transparent);
+  mask-image: linear-gradient(180deg, transparent, #000 9%, #000 86%, transparent);
+}
+.listing-plate-left {
+  -webkit-mask-image: linear-gradient(90deg, #000 0 52%, rgba(0, 0, 0, 0.18) 100%),
+    linear-gradient(180deg, transparent, #000 9%, #000 86%, transparent);
+  mask-image: linear-gradient(90deg, #000 0 52%, rgba(0, 0, 0, 0.18) 100%),
+    linear-gradient(180deg, transparent, #000 9%, #000 86%, transparent);
+}
+.listing-plate-right {
+  -webkit-mask-image: linear-gradient(270deg, #000 0 52%, rgba(0, 0, 0, 0.18) 100%),
+    linear-gradient(180deg, transparent, #000 9%, #000 86%, transparent);
+  mask-image: linear-gradient(270deg, #000 0 52%, rgba(0, 0, 0, 0.18) 100%),
+    linear-gradient(180deg, transparent, #000 9%, #000 86%, transparent);
+}
+/* Hairlines stay hairlines however wide the gutter stretches the plate. */
+.plate-edge,
+.plate-line,
+.plate-arc {
+  stroke: var(--plate-line);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.plate-edge { stroke-opacity: 0.17; }
+.plate-line { stroke-opacity: 0.32; }
+.light .plate-edge { stroke-opacity: 0.13; }
+.light .plate-line { stroke-opacity: 0.24; }
+.plate-sweep { opacity: 0.5; }
+.light .plate-sweep { opacity: 0.75; }
 
 @media (prefers-reduced-motion: no-preference) {
+  /* One timeline for both plates, taken from the box that spans the whole listing. The plates
+     themselves are stuck to the viewport, so a timeline read off them would barely advance. */
   @supports (animation-timeline: view()) {
-    /* Each plane travels a different distance over the page, so they separate as it scrolls.
-       `view()` on the backdrop itself: the whole listing is one long element, so the range is the
-       page, not a row. */
-    .listing-backdrop span {
-      animation: listing-drift linear both;
-      animation-timeline: view();
+    .listing-facets { view-timeline: --listing-plate block; }
+    .plate-layer {
+      animation: plate-parallax linear both;
+      animation-timeline: --listing-plate;
       animation-range: cover 0% cover 100%;
     }
-    .listing-backdrop span:nth-child(2) { --drift: -70px; }
-    .listing-backdrop span:nth-child(3) { --drift: -130px; }
-    .listing-backdrop span:nth-child(4) { --drift: 60px; }
-    .listing-backdrop span:nth-child(5) { --drift: -100px; }
-    .listing-backdrop span:nth-child(6) { --drift: 40px; }
+    .plate-layer[data-layer='0'] { --parallax: -120px; }
+    .plate-layer[data-layer='1'] { --parallax: 74px; }
+    .plate-layer[data-layer='2'] { --parallax: -240px; }
   }
+  /* Two animations on one element, one per property: the entrance fades the facet up, the breath
+     moves it. They never contend, so neither has to know about the other. */
+  .plate-facet {
+    animation: plate-open 1.1s var(--lag) both, plate-breathe var(--sway) var(--lag) ease-in-out infinite alternate;
+  }
+  .plate-line {
+    stroke-dasharray: var(--len);
+    animation: plate-draw var(--period) var(--lag) ease-in-out infinite;
+  }
+  .plate-sweep { animation: plate-sweep 62s linear infinite; }
 }
-@keyframes listing-drift {
-  from { transform: translate3d(0, 0, 0); }
-  to { transform: translate3d(0, var(--drift, -90px), 0); }
+@keyframes plate-parallax {
+  from { transform: translateY(0); }
+  to { transform: translateY(var(--parallax, -100px)); }
 }
-@media (max-width: 1099px) {
-  .listing-backdrop { display: none; }
+@keyframes plate-breathe {
+  from { transform: translate(0, 0); }
+  to { transform: translate(var(--sx, 0), var(--sy, 0)); }
+}
+@keyframes plate-open {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+/* A construction line draws itself in, holds, and is drawn out the far end. */
+@keyframes plate-draw {
+  0% { stroke-dashoffset: var(--len); opacity: 0; }
+  10% { opacity: 1; }
+  40%, 62% { stroke-dashoffset: 0; opacity: 1; }
+  94% { opacity: 0; }
+  100% { stroke-dashoffset: calc(-1 * var(--len)); opacity: 0; }
+}
+@keyframes plate-sweep {
+  from { transform: translateY(0); }
+  to { transform: translateY(1420px); }
+}
+
+/* Below this the gutter is too narrow for the drawing to be anything but a stripe at the edge. */
+@media (max-width: 1479px) {
+  .listing-facets { display: none; }
 }

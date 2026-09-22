@@ -72,3 +72,14 @@ export function publishedLabel(value: string | Date | null | undefined, locale: 
 export function numberLabel(value: number, locale: Locale, options?: Intl.NumberFormatOptions) {
   return Number.isFinite(value) ? new Intl.NumberFormat(intlLocale(locale), options).format(value) : '';
 }
+
+/**
+ * Splits a name written as "Kuan-Yu Hsien (Zenobia)" into the name a document should carry and the
+ * one people actually use. Accepts the full-width brackets a Chinese keyboard produces as well as
+ * the ASCII pair, and returns the whole string as the name when there is no parenthetical.
+ */
+export function splitName(value: string | null | undefined): { name: string; nickname: string } {
+  const trimmed = (value ?? '').trim();
+  const match = trimmed.match(/^(.*?)\s*[(\uff08]([^()\uff08\uff09]+)[)\uff09]$/);
+  return match ? { name: match[1].trim(), nickname: match[2].trim() } : { name: trimmed, nickname: '' };
+}

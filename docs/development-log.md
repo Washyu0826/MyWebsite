@@ -809,3 +809,42 @@ Verification: `npm run format:check`, ESLint and `npx tsc --noEmit` pass; measur
 - **Projects and Notes have a backdrop of their own**: six leaning planes drawn in CSS, clear at both gutters and masked out across the middle third so no row is read through them, drifting with the scroll at different rates on `animation-timeline: view()`. Static under reduced motion, absent below 1100px. Measured: six planes, no horizontal overflow at 1920, 1440 or 1024.
 
 Verification: `npx tsc --noEmit`, ESLint, `npm run format:check` pass; measured and screenshotted on a production build with demo content, and the theme switch checked in both themes.
+
+### A Cubist Plate In Each Gutter, And A Contact Card That Leads With A Person (2026-09-23)
+
+- **The listing gutters are drawn on now.** The six gradient planes that stood there were so faint
+  they read as nothing, which is what the sides looked like: empty. Each gutter holds a tall plate
+  built the way the hero's backdrop is - a rectangle cut seventeen times from a fixed seed into
+  interlocking facets, construction lines running past the shapes they describe, four arcs swung
+  from centres off the plate, hatching across some of the receding planes - but emitted as SVG from
+  the server rather than painted on a canvas, because two more canvases would double the most
+  expensive thing the site does per frame. Four things move and none of them touch the main thread
+  for long: three depth layers slide at different rates on a view timeline, each facet breathes on
+  its own 16 to 30 second cycle, the construction lines draw themselves in and out, and a band of
+  light crosses once a minute. `lib/facet-plate.ts` is the geometry, `components/listing-facets.tsx`
+  the markup, and both are pure, so the drawing is identical on the server and the client.
+- Three things had to be got right to keep it out of the way. The timeline is read off the container
+  that spans the listing, not off the plate, because the plate is stuck to the viewport and a
+  timeline taken from it would barely advance. The gutter is computed from `100vw` and the column's
+  own width rather than a percentage, because a percentage inside a custom property resolves against
+  whichever element reads it, which by then is the wrong box. And the container clips and fades at
+  its foot: the plate is a viewport tall, so without that it ran on past the end of the page and
+  reappeared under the footer. Measured: no horizontal overflow at 1920, 1600, 1440, 1280 or 1100,
+  288px of plate at 1920 and 128px at 1600, and nothing at all below 1480 where the gutter closes up.
+- **The contact card leads with a person.** Name first, then where that person is, then how to reach
+  them: a stranger wants to know whose page this is before any of the rest is worth acting on. The
+  labels are gone and the icons that carried them are half again as large, with the label kept as the
+  tooltip and as text for a screen reader, so the column of words the eye had to read past is now one
+  icon wide at every screen size. A name written as "Kuan-Yu Hsien (Zenobia)" splits: the page shows
+  both, the JSON-LD carries the first as `name` and the second as `alternateName`.
+- **LINE has its own mark.** The speech bubble standing in for it was lucide's generic one, which
+  named no service in particular; it is now LINE's balloon, drawn in the same outline weight as the
+  icons beside it.
+- **No rule above an empty list.** The sentence that stands in for an empty Experience or Project
+  list carried the border that belongs to the top of a list, which read as a table with nothing in it.
+
+Verification: the unit suite (117 tests, including a new one asserting the facets tile the plate
+exactly and the split-name rules), `npx tsc --noEmit`, ESLint and `npm run format:check` all pass;
+measured and screenshotted on a production build in both themes. A stale assertion in
+`tests/motion.test.ts`, left behind when `SectionReveal` gained `replay`, was updated to the current
+contract rather than deleted.
