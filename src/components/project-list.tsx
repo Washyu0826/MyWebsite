@@ -8,7 +8,7 @@ import { CoverPreview } from './cover-preview';
 export async function ProjectList({ projects, locale, headingLevel = 2 }: { projects: Project[]; locale: Locale; headingLevel?: 2 | 3 }) {
   const t = await getTranslations('Projects');
   const Heading = headingLevel === 2 ? 'h2' : 'h3';
-  return <CoverPreview className="project-list">{projects.map(project => {
+  return <CoverPreview className="project-list">{projects.map((project, index) => {
     const p = pickLocale(project, locale);
     const signals = [
       { label: t('problem'), value: p.problem || p.summary },
@@ -16,6 +16,7 @@ export async function ProjectList({ projects, locale, headingLevel = 2 }: { proj
       { label: t('outcome'), value: p.outcome || project.tech_stack.join(' / ') },
     ].filter(signal => signal.value);
     return <Link href={`/projects/${project.slug}`} className="project-row" key={project.id}
+      style={{ '--enter-index': index } as React.CSSProperties}
       data-cover-src={project.cover_url || undefined} data-cover-alt={p.cover_alt || p.title}>
       <div className="project-row-content">
         {project.cover_url ? <div className="project-thumb">

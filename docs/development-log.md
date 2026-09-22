@@ -776,3 +776,18 @@ Verification:
 
 - `npx tsc --noEmit`, ESLint on the touched files and `npm run format:check`: clean.
 - Production build served with demo content; Playwright wheel events and scroll traces for the stops, the title replay (out at 0, in at 718 with opacity 0 to 1, out again after leaving, mid-fade 0.44 on return) and the left edges; screenshot of a stop reviewed.
+
+### Homepage: Symmetric Gutters, One Arrival Beat, A Visible Mark (2026-09-22)
+
+- **Symmetric gutters.** The indent that aligns the page with the hero column was on the left only, so the right gutter was 26 to 44px narrower. Both sides now take `--column-indent`: measured 70/70 at 1920, 64/64 at 1600, 59/59 at 1366.
+- **The headline sits a little higher**, lifted off the centre line by `--hero-lift`, and still below the top of the head in the portrait beside it at every width (1600: headline top 186, head top 162, measured by diffing a screenshot against one with the portrait hidden).
+- **The rotator loses its 01 02 03 row and the rule under the body** (that rule was the stacked panels' inherited hover hairline). Three small facets carry the foot of the block instead, and the number became the button: it pauses and resumes, which is the stop that auto-advancing content owes a keyboard user now that the step buttons are gone.
+- **The four section headings are one layout again.** The gold facet added last pass was auto-placed into column 2, which pushed the rule onto a second row under the title in Education and Experience while Project, which names its columns, kept it alongside. All four now name the same four columns: title, facet, rule, optional link. Project's link is `More` with no count, right-aligned to the same gutter.
+- **One arrival beat per section**, replacing the scroll-driven row tilt on the homepage: the title turns up 70 degrees on its horizontal axis over 0.6s, each logo square turns after it 90ms apart, the gold rule and its facet draw out from the title at 360ms, and the rows fade up under them. Measured at Education: title 0.10 to 1.00 over 700ms, logos from 420ms, rule scaleX 0.37 to 1.00, rows 0.32 to 0.99. `depth.css` keeps the tilt for the articles list, which is an ordinary scrolling page.
+- **Research is its own stop.** Its stop used to clamp to the page end and merge with it; a `min-height: 62svh` gives it room. Traced with wheel events: Education, Experience, native scrolling through the tall list, Project, Research, then the end.
+- **The wheel no longer feels stuck.** The stepper released after a fixed 850ms, leaving dead time after the glide landed; it now releases on `scrollend` plus 140ms, with the fixed lock as the fallback where that event is missing.
+- **The brand mark is drawn inline** from the shared path with `currentColor`, so it is near-white on the dark theme instead of nearly invisible, near-black on the light one, and gold on hover, which the CSS had been asking for since it was a PNG. **Favicons are declared**: they existed on disk and in the web manifest but nothing declared them for the document, so tabs showed the browser's globe. Both SVGs are offered, dark and a new light one, by `prefers-color-scheme`.
+
+Verification: `npx tsc --noEmit`, ESLint on the touched files, `npm run format:check` and the unit tests all pass. Everything above was measured on a production build served locally with Playwright, and the screenshots reviewed.
+
+Outstanding: the school crests. `experiences.logo_url` and the admin field are ready, but `20260921000100_experience_logo.sql` is not applied to production, so the squares still show initials.

@@ -116,7 +116,8 @@ export default async function Home({ params }: Props) {
               }))}
               labels={{
                 group: t('principles.label'),
-                show: t('principles.show', { index: '{index}' }),
+                pause: t('principles.pause'),
+                play: t('principles.play'),
               }}
             />
           </SectionReveal>
@@ -130,7 +131,7 @@ export default async function Home({ params }: Props) {
     <HomeSections locale={locale} />
     <SectionReveal replay className="section project-section" aria-labelledby="projects-heading">
       <div className="section-heading"><h2 id="projects-heading" className="section-title">{t('featured')}</h2>
-        <Link className="text-link text-meta" href="/projects">{t('allProjects', { count: projects.length })}</Link></div>
+        <Link className="text-link text-meta" href="/projects">{t('moreProjects')}</Link></div>
       {featured.length ? <ProjectList projects={featured} locale={locale} headingLevel={3} /> : <p className="enter-item">{t('noProjects')}</p>}
     </SectionReveal>
     <SectionReveal replay className="section research-section" aria-labelledby="research-heading">

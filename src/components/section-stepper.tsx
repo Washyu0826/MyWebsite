@@ -1,8 +1,10 @@
 'use client';
 import { useEffect } from 'react';
 
-/** How long one step owns the wheel: long enough to swallow a trackpad's inertia tail. */
-const COOLDOWN = 850;
+/** Fallback lock, used only where `scrollend` is missing; the listener releases it sooner. */
+const COOLDOWN = 700;
+/** Kept after the glide lands, to swallow a trackpad's inertia tail without feeling frozen. */
+const SETTLE = 140;
 /** Smaller deltas are the tail of an earlier gesture, not a new intention. */
 const THRESHOLD = 8;
 
@@ -26,6 +28,11 @@ export function SectionStepper({ selector, offset }: { selector: string; offset:
     if (!media.matches) return;
 
     let busy = 0;
+    // Releasing on scrollend rather than waiting out a fixed lock is what stops the page feeling
+    // stuck: the wheel is free again the moment the glide finishes, not 400ms later.
+    const release = () => { busy = Math.min(busy, performance.now() + SETTLE); };
+    const hasScrollEnd = 'onscrollend' in window;
+    if (hasScrollEnd) window.addEventListener('scrollend', release);
     const stops = () => {
       const sections = [...document.querySelectorAll<HTMLElement>(selector)];
       const doc = document.documentElement;
@@ -73,7 +80,10 @@ export function SectionStepper({ selector, offset }: { selector: string; offset:
     }
 
     window.addEventListener('wheel', onWheel, { passive: false });
-    return () => window.removeEventListener('wheel', onWheel);
+    return () => {
+      window.removeEventListener('wheel', onWheel);
+      if (hasScrollEnd) window.removeEventListener('scrollend', release);
+    };
   }, [selector, offset]);
   return null;
 }

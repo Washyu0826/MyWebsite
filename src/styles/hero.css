@@ -124,6 +124,10 @@ span.typewriter-line { display: inline-block; }
   }
   .home-container .hero-grid:not(.hero-grid-text-only) > div:first-child {
     margin-left: var(--column-indent);
+    /* Lifted off the centre line so the headline opens higher, but not past the top of the head in
+       the portrait beside it; --hero-lift is tuned against that edge, not guessed. */
+    align-self: center;
+    margin-top: calc(var(--hero-lift, 0px) * -2);
   }
   .home-container .hero-photo { justify-self: start; }
 }
@@ -166,17 +170,13 @@ span.typewriter-line { display: inline-block; }
 .signature-block { margin-top: 28px; max-width: 680px; }
 .signature-block .signature-principles { margin-top: 0; border-top: 0; }
 [data-enter] .section-heading::after { transform-origin: left center; }
-[data-enter="out"] .enter-rule, [data-enter="out"] .section-heading::after { transform: scaleX(0); }
-[data-enter="in"] .enter-rule, [data-enter="in"] .section-heading::after { transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1); }
-[data-enter="out"] .enter-item,
-[data-enter="out"] .experience-row,
-[data-enter="out"] .project-row { opacity: 0; transform: translateY(10px); }
+[data-enter="out"] .enter-rule { transform: scaleX(0); }
+[data-enter="in"] .enter-rule { transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1); }
+[data-enter="out"] .enter-item { opacity: 0; transform: translateY(10px); }
 [data-enter="out"] .signature-principle > span,
 [data-enter="out"] .signature-principle p { opacity: 0; transform: translateY(8px); }
 .signature-block[data-enter="out"] .signature-principle .typewriter-text { clip-path: inset(0 100% 0 0); }
-[data-enter="in"] .enter-item,
-[data-enter="in"] .experience-row,
-[data-enter="in"] .project-row { transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(300ms + var(--enter-index, 0) * 60ms); }
+[data-enter="in"] .enter-item { transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(300ms + var(--enter-index, 0) * 60ms); }
 .signature-block[data-enter="in"] .signature-principle > span,
 .signature-block[data-enter="in"] .signature-principle p {
   transition: opacity 0.86s ease, transform 0.86s cubic-bezier(0.16, 1, 0.3, 1);
@@ -283,8 +283,10 @@ span.typewriter-line { display: inline-block; }
   visibility: visible;
   transition: opacity 0.3s ease;
 }
-/* The marker on the left already carries the number. */
+/* The marker on the left already carries the number, and the hover hairline the stacked panels
+   inherit would sit under the body text as a stray rule. */
 .signature-block .principle-rotator[data-rotating='true'] .signature-principle > span { display: none; }
+.signature-block .principle-rotator[data-rotating='true'] .signature-principle::before { content: none; }
 .signature-block[data-enter] .principle-rotator[data-rotating='true'] .signature-principle strong {
   display: block;
   font-size: clamp(1.15rem, 0.95rem + 0.7vw, 1.5rem);
@@ -319,10 +321,13 @@ span.typewriter-line { display: inline-block; }
   position: relative;
   display: grid;
   place-items: center;
+  border-radius: 50%;
+  cursor: pointer;
   width: clamp(58px, 5vw, 76px);
   aspect-ratio: 1;
   animation: principle-flip 0.46s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
+.principle-number:hover .principle-ring-track { stroke: color-mix(in srgb, var(--indigo) 45%, transparent); }
 .principle-number > span {
   font-family: var(--font-mono);
   font-size: clamp(1.25rem, 1rem + 0.8vw, 1.6rem);
@@ -348,22 +353,17 @@ span.typewriter-line { display: inline-block; }
   to { transform: perspective(360px) rotateX(0deg); opacity: 1; }
 }
 
-.principle-steps { grid-column: 2; display: flex; align-items: center; gap: 2px; }
-.principle-steps button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 26px;
-  padding: 3px 7px;
-  border-radius: 3px;
-  color: color-mix(in srgb, var(--graphite) 80%, transparent);
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  line-height: 1;
-  transition: color 0.2s ease, background-color 0.2s ease;
+/* Three small facets at the foot of the block: enough weight to balance the number above it,
+   without a second set of controls or another rule across the column. */
+.principle-beads { grid-column: 2; display: flex; align-items: center; gap: 9px; }
+.principle-beads span {
+  width: 7px;
+  height: 7px;
+  background: color-mix(in srgb, var(--graphite) 45%, transparent);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  transition: background-color 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.principle-steps button[aria-pressed='true'] { color: var(--indigo); }
-.principle-steps button:hover { color: var(--ink); background: var(--ash); }
+.principle-beads span[data-on] { background: var(--indigo); transform: scale(1.35); }
 @media (prefers-reduced-motion: reduce) {
   .principle-number, .principle-ring-progress { animation: none; }
   .principle-ring-progress { stroke-dashoffset: 0; }

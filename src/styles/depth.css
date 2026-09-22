@@ -45,8 +45,9 @@
 
 @media (prefers-reduced-motion: no-preference) {
   @supports (animation-timeline: view()) {
-    .experience-row,
-    .project-row,
+    /* Not .experience-row or .project-row any more: the homepage stops one section at a time and
+       plays a single arrival beat per section (facets.css), and a row that also tips as it travels
+       fights that. The articles list, which is an ordinary scrolling page, keeps it. */
     .article-row {
       /* `forwards`, not `both`, and the difference is an accessibility one. With `both`, every row
          further down the page sits at the tipped-back pose with its text at 0.35 opacity, and a
@@ -65,18 +66,8 @@
       transform-origin: 50% 100%;
     }
 
-    /* The per-row entrance in hero.css is replaced, not layered. Both write `transform`, so keeping
-       both would mean whichever lands last silently erases the other. The rule that draws itself in
-       across the width of each heading is untouched: different element, different idea, still wanted. */
-    [data-enter='out'] .experience-row,
-    [data-enter='out'] .project-row {
-      opacity: 1;
-      transform: none;
-    }
-    [data-enter='in'] .experience-row,
-    [data-enter='in'] .project-row {
-      transition: none;
-    }
+    [data-enter='out'] .article-row { opacity: 1; transform: none; }
+    [data-enter='in'] .article-row { transition: none; }
   }
 }
 

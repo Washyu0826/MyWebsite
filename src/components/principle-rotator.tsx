@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export type Principle = { code: string; title: string; body: string };
-type Labels = { group: string; show: string };
+type Labels = { group: string; pause: string; play: string };
 
 /** One full turn: the number flips in, the title slides up, the body follows, then it holds. */
 const CYCLE = 4500;
@@ -60,11 +60,8 @@ export function PrincipleRotator({ items, labels }: { items: Principle[]; labels
     return () => window.clearTimeout(timer);
   }, [running, index, items.length]);
 
-  // Picking a number is taking over: it stops there until the reader picks another one.
-  const select = useCallback((next: number) => {
-    setIndex(next);
-    setParked(true);
-  }, []);
+  // The number is the one control: pressing it stops the turn where it is, and starts it again.
+  const toggle = useCallback(() => setParked(value => !value), []);
 
   const current = items[index];
 
@@ -79,15 +76,23 @@ export function PrincipleRotator({ items, labels }: { items: Principle[]; labels
     onFocusCapture={() => setHeld(true)}
     onBlurCapture={() => setHeld(false)}
   >
-    {rotating && current && <div className="principle-marker" aria-hidden="true">
-      {/* Keyed on the index so the flip and the ring start again on every turn. */}
-      <div className="principle-number" key={`${index}-${parked}`}>
-        <svg className="principle-ring" viewBox="0 0 100 100">
+    {rotating && current && <div className="principle-marker">
+      {/* Content that turns on its own owes the reader a way to stop it, and the number is already
+          the anchor of the block; making it the button avoids adding a second control. Keyed on the
+          index so the flip and the ring start again on every turn. */}
+      <button
+        type="button"
+        className="principle-number"
+        key={`${index}-${parked}`}
+        aria-label={parked ? labels.play : labels.pause}
+        onClick={toggle}
+      >
+        <svg className="principle-ring" viewBox="0 0 100 100" aria-hidden="true">
           <circle className="principle-ring-track" cx="50" cy="50" r="46" />
           <circle className="principle-ring-progress" cx="50" cy="50" r="46" />
         </svg>
-        <span>{current.code}</span>
-      </div>
+        <span aria-hidden="true">{current.code}</span>
+      </button>
     </div>}
 
     <div className="signature-principles" aria-label={labels.group}>
@@ -106,14 +111,10 @@ export function PrincipleRotator({ items, labels }: { items: Principle[]; labels
       })}
     </div>
 
-    {rotating && items.length > 1 && <div className="principle-steps">
-      {items.map((item, position) => <button
-        key={item.code}
-        type="button"
-        aria-pressed={position === index}
-        aria-label={labels.show.replace('{index}', item.code)}
-        onClick={() => select(position)}
-      >{item.code}</button>)}
+    {/* Three facets, the shape the backdrop is cut from, to carry the weight at the foot of the
+        block. Position only: the number above is what the reader operates. */}
+    {rotating && items.length > 1 && <div className="principle-beads" aria-hidden="true">
+      {items.map((item, position) => <span key={item.code} data-on={position === index ? 'true' : undefined} />)}
     </div>}
   </div>;
 }

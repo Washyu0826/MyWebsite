@@ -8,16 +8,56 @@
    whole page instead of stopping where the hero does. And two large, very faint facet shapes sit
    behind the lower sections so the page below the fold is not a flat black field. */
 
-/* --- section titles ---------------------------------------------------------- */
-.section-title { display: block; }
+/* --- arriving at a section --------------------------------------------------- */
+/* One beat, in order: the title turns up on its horizontal axis, each logo square turns with it a
+   moment later, the gold rule draws out from the title, and the rows fade up under it. Every step
+   is a transition keyed on data-enter, which section-reveal.tsx sets on arrival and clears again
+   once the section has left, so stepping back to a section plays it once more.
+   The perspective lives on the parent: applied per element, each one would get its own vanishing
+   point and the row of logos would fan out instead of turning together. */
+.section-heading, .experience-row { perspective: 900px; }
+.section-title { display: block; transform-origin: 50% 60%; }
+
 @media (prefers-reduced-motion: no-preference) {
-  [data-enter='out'] .section-title { opacity: 0; transform: translateY(12px); }
+  [data-enter='out'] .section-title { opacity: 0; transform: rotateX(70deg); }
   [data-enter='in'] .section-title {
     opacity: 1;
-    transform: none;
+    transform: rotateX(0deg);
+    transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  /* The squares turn a beat after the title, one after another down the list. */
+  [data-enter='out'] .experience-logo { opacity: 0; transform: rotateX(70deg); }
+  [data-enter='in'] .experience-logo {
+    opacity: 1;
+    transform: rotateX(0deg);
     transition: opacity 0.55s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+    transition-delay: calc(240ms + var(--enter-index, 0) * 90ms);
+  }
+  /* The rule and its facet follow the title out to the right. */
+  [data-enter='out'] .section-heading::after,
+  [data-enter='out'] .section-heading::before { transform: scaleX(0); opacity: 0; }
+  [data-enter='in'] .section-heading::after,
+  [data-enter='in'] .section-heading::before {
+    transform: scaleX(1);
+    opacity: 1;
+    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.36s, opacity 0.3s ease 0.36s;
+  }
+  /* Rows fade up rather than turning: two sets of flips on one screen reads as noise. */
+  [data-enter='out'] .experience-row-main,
+  [data-enter='out'] .project-row,
+  [data-enter='out'] .enter-item { opacity: 0; transform: translateY(10px); }
+  [data-enter='in'] .experience-row-main,
+  [data-enter='in'] .project-row,
+  [data-enter='in'] .enter-item {
+    opacity: 1;
+    transform: none;
+    transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    transition-delay: calc(300ms + var(--enter-index, 0) * 70ms);
   }
 }
+
+.experience-logo { transform-origin: 50% 60%; }
+.section-heading::after, .section-heading::before { transform-origin: left center; }
 
 /* The rule beside each heading begins with one small gold facet, the shape the backdrop is made of. */
 .experience-section .section-heading::before,
@@ -26,7 +66,7 @@
   content: '';
   grid-column: 2;
   grid-row: 1;
-  justify-self: start;
+  justify-self: center;
   width: 9px;
   height: 9px;
   margin-left: -1px;

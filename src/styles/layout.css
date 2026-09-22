@@ -10,7 +10,7 @@
 .site-header { border-bottom: 1px solid var(--rule); background: color-mix(in srgb, var(--paper) 92%, transparent); backdrop-filter: blur(14px); position: sticky; top: 0; z-index: 20; }
 .header-inner { max-width: none; min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .brand { font-size: 1rem; font-weight: 650; min-height: 44px; display: inline-flex; gap: 12px; align-items: center; }
-.brand-mark { height: 32px; width: auto; flex: 0 0 auto; color: var(--ink); display: block; }
+.brand-mark { height: 32px; width: auto; aspect-ratio: 926 / 1205; flex: 0 0 auto; color: var(--ink); display: block; transition: color 0.18s; }
 .brand:hover .brand-mark { color: var(--indigo); }
 .nav-link { min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; padding-inline: 10px; font-size: 0.875rem; color: var(--graphite); transition: color 0.18s, background-color 0.18s; }
 .nav-link:hover, .nav-link[aria-current="page"] { color: var(--ink); }
@@ -57,12 +57,15 @@
 .signature-principle strong .typewriter-line { display: inline-block; }
 .signature-principle p { min-width: 0; max-width: 54ch; color: var(--graphite); font-size: 0.8125rem; line-height: 1.6; }
 .section { margin-block: 48px 64px; }
+/* Research is a stop of its own on the way down, so it has to be tall enough that its top can
+   reach the snap line while the closing band and the footer still make a separate last stop. */
+.research-section { min-height: 62svh; }
 .section-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 20px; }
 .section-heading h2 { font-size: var(--text-h2); line-height: 1.25; }
-.experience-section .section-heading, .project-section .section-heading, .research-section .section-heading { position: relative; display: grid; grid-template-columns: minmax(0, max-content) minmax(24px, 1fr); justify-content: stretch; align-items: center; column-gap: 14px; row-gap: 10px; margin-bottom: 24px; }
-.experience-section .section-heading::after, .project-section .section-heading::after, .research-section .section-heading::after { content: ''; height: 1px; background: linear-gradient(90deg, color-mix(in srgb, var(--ink) 46%, var(--rule)), transparent); align-self: center; }
+.experience-section .section-heading, .project-section .section-heading, .research-section .section-heading { position: relative; display: grid; grid-template-columns: minmax(0, max-content) auto minmax(24px, 1fr) auto; justify-content: stretch; align-items: center; column-gap: 14px; row-gap: 10px; margin-bottom: 24px; }
+.experience-section .section-heading::after, .project-section .section-heading::after, .research-section .section-heading::after { content: ''; grid-column: 3; grid-row: 1; height: 1px; background: linear-gradient(90deg, color-mix(in srgb, var(--ink) 46%, var(--rule)), transparent); align-self: center; }
 .experience-section .section-heading h2, .project-section .section-heading h2, .research-section .section-heading h2 { min-width: 0; color: var(--ink); font-size: clamp(1.9rem, 7vw, var(--text-h1)); font-weight: 760; line-height: 1.08; }
-.project-section .section-heading .text-link { grid-column: 1 / -1; justify-self: start; min-height: 32px; }
+.project-section .section-heading .text-link { grid-column: 4; grid-row: 1; justify-self: end; min-height: 32px; white-space: nowrap; }
 .experience-section > .enter-item,
 .project-section > .enter-item,
 .project-section > .project-list,
@@ -116,8 +119,9 @@
    section below starts on the same line as its headline rather than the other way round. */
 .home-container { --column-indent: 0px; }
 @media (min-width: 768px) {
-  .home-container { --column-indent: clamp(20px, 2vw, 44px); }
-  .home-container .section, .home-container .contact-invitation { margin-left: var(--column-indent); }
+  .home-container { --column-indent: clamp(20px, 2vw, 44px); --hero-lift: 18px; }
+  /* The indent is symmetric: the margin the hero column takes on the left, the page keeps on the right. */
+  .home-container .section, .home-container .contact-invitation { margin-left: var(--column-indent); margin-right: var(--column-indent); }
 }
 /* Contact: the five ways to reach a person on the left, the form on the right. Two columns because
    stacked they made a 2000px page whose middle third was empty; side by side the whole thing is one
@@ -299,9 +303,7 @@
   .hero-photo { justify-self: end; }
   .cubist-backdrop { opacity: 1; }
   .contact-intro { grid-template-columns: minmax(0, 1fr) auto; gap: 48px; }
-  .project-section .section-heading { grid-template-columns: minmax(0, max-content) minmax(40px, 1fr) auto; }
-  .project-section .section-heading::after { grid-column: 2; grid-row: 1; width: 100%; }
-  .project-section .section-heading .text-link { grid-column: 3; grid-row: 1; justify-self: end; min-height: 32px; }
+  .project-section .section-heading::after { width: 100%; }
   .project-row-content { grid-template-columns: 220px minmax(0, 1fr); align-items: start; gap: 28px; }
   .section { margin-block: 64px 96px; }
   .page { padding-block: 80px 96px; }

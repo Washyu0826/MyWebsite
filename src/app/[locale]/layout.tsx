@@ -39,6 +39,18 @@ export async function generateMetadata({ params }: Pick<Props, 'params'>): Promi
     metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
     title: { default: SITE_NAME, template: `%s | ${SITE_NAME}` },
     description: t('description'),
+    // Without this the tab shows the browser's placeholder globe: the icons were on disk and in the
+    // web manifest, but nothing declared them for the document itself. The SVG is offered first and
+    // comes in two, so a browser using the tab-strip colour scheme gets a mark it can see.
+    icons: {
+      icon: [
+        { url: '/icons/icon.svg', type: 'image/svg+xml', media: '(prefers-color-scheme: dark)' },
+        { url: '/icons/icon-light.svg', type: 'image/svg+xml', media: '(prefers-color-scheme: light)' },
+        { url: '/icons/icon-192.png', type: 'image/png', sizes: '192x192' },
+        { url: '/icons/icon-512.png', type: 'image/png', sizes: '512x512' },
+      ],
+      apple: '/apple-touch-icon.png',
+    },
   };
 }
 // viewport-fit=cover is required for env(safe-area-inset-*) to resolve to anything on iOS.
