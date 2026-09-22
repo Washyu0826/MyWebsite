@@ -102,11 +102,17 @@ export async function beginAssetUpload(actor: string, input: Record<string, unkn
     }
   }
   const version = checked(await db.rpc('asset_begin_upload', { p_actor: actor, p_request: value.requestId, p_name: value.name, p_mime: value.mime, p_size: value.size, p_asset: value.assetId })) as unknown as AssetVersion;
-  if (version.status !== 'pending') return { version, token: null, endpoint: '' };
-  const signed = checked(await db.storage.from(privateBucket).createSignedUploadUrl(version.object_path, { upsert: false }));
-  const url = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!);
-  if (url.hostname.endsWith('.supabase.co')) url.hostname = url.hostname.replace('.supabase.co', '.storage.supabase.co');
-  return { version, token: signed.token, endpoint: `${url.origin}/storage/v1/upload/resumable` };
+  if (version.status !== 'pending') return { version, uploadUrl: null };
+  // One signed URL, one PUT. Storage's resumable endpoint refuses the token a signed upload URL
+  // carries - it answers "Invalid Compact JWS" to `x-signature`, and a user's JWT instead only gets
+  // as far as a row-level policy on storage.objects that this bucket deliberately does not have,
+  // because nothing but the server is supposed to reach into it. Resumability bought little here
+  // anyway: an asset is 8 MiB at most, and a failed attempt is retried by handing out a fresh URL
+  // for the same version. `upsert` is true so that retry can overwrite whatever the last one left
+  // behind; the path carries the version's own id, so it can collide with nothing else, and
+  // finishAssetUpload re-reads and re-hashes the bytes afterwards whatever they are.
+  const signed = checked(await db.storage.from(privateBucket).createSignedUploadUrl(version.object_path, { upsert: true }));
+  return { version, uploadUrl: signed.signedUrl };
 }
 
 async function versionFor(actor: string, id: string) {

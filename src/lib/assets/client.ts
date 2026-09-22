@@ -1,7 +1,7 @@
 'use client';
 
 import { sniffMimeType } from '@/lib/uploads';
-import { assetMaxBytes, privateBucket, type AssetVersion, type AssetPublication, type PublishSlot } from './model';
+import { assetMaxBytes, type AssetVersion, type AssetPublication, type PublishSlot } from './model';
 
 export async function assetRequest<T>(body?: Record<string, unknown>, query = '', signal?: AbortSignal): Promise<T> {
   const response = await fetch(`/api/admin/assets${query}`, { method: body ? 'POST' : 'GET', headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined, cache: 'no-store', signal });
@@ -23,42 +23,16 @@ export async function uploadAsset(file: File, options: {
   const mime = sniffMimeType(new Uint8Array(await file.slice(0, 16).arrayBuffer()));
   if (!mime) throw new Error('請選擇 PNG、JPG、WebP、GIF 或 PDF。');
   options.onProgress?.(0, '準備中');
-  const initialized = await assetRequest<{ version: AssetVersion; token: string | null; endpoint: string }>({
+  const initialized = await assetRequest<{ version: AssetVersion; uploadUrl: string | null }>({
     action: 'upload', requestId: options.attempt.requestId, assetId: options.assetId, slot: options.slot, name: file.name, size: file.size, mime,
   }, '', options.signal);
-  const { version, token, endpoint } = initialized;
+  const { version, uploadUrl } = initialized;
   options.attempt.versionId = version.id;
   if (version.status === 'ready') return version;
-  if (!token || version.status !== 'pending') throw new Error('此上傳已取消或未通過驗證，請重新選取檔案。');
-  const { Upload } = await import('tus-js-client');
-  await new Promise<void>((resolve, reject) => {
-    let settled = false;
-    const finish = (error?: Error) => {
-      if (settled) return;
-      settled = true;
-      options.signal?.removeEventListener('abort', abort);
-      if (error) reject(error); else resolve();
-    };
-    const task = new Upload(file, {
-      endpoint, headers: { 'x-signature': token },
-      metadata: { bucketName: privateBucket, objectName: version.object_path, contentType: mime, cacheControl: '0' },
-      chunkSize: 6 * 1024 * 1024, uploadDataDuringCreation: true, removeFingerprintOnSuccess: true,
-      retryDelays: [0, 1000, 3000, 5000],
-      fingerprint: async () => `asset-upload:${version.id}`,
-      onProgress: (sent, total) => options.onProgress?.(Math.round(sent / total * 95), '上傳中'),
-      onError: () => finish(new Error('檔案傳輸未完成，可重試續傳或重新驗證已上傳的版本。')),
-      onSuccess: () => finish(),
-    });
-    const abort = () => { void task.abort().finally(() => finish(new Error('已暫停上傳，可按重試續傳。'))); };
-    if (options.signal?.aborted) { finish(new Error('已暫停上傳。')); return; }
-    options.signal?.addEventListener('abort', abort, { once: true });
-    void task.findPreviousUploads().then(previous => {
-      if (options.signal?.aborted) return;
-      if (previous[0]) task.resumeFromPreviousUpload(previous[0]);
-      task.start();
-    }).catch(() => finish(new Error('無法讀取續傳紀錄，請重新選取檔案。')));
-  }).catch(async error => {
-    // The browser may miss Storage's success response. Verify before offering a new upload.
+  if (!uploadUrl || version.status !== 'pending') throw new Error('此上傳已取消或未通過驗證，請重新選取檔案。');
+  await sendToStorage(file, uploadUrl, mime, options).catch(async error => {
+    // The browser may miss Storage's success response, or the bytes may already be in place from an
+    // earlier attempt. Verify before making the reader upload the file again.
     if (options.signal?.aborted) throw error;
     try { await assetRequest({ action: 'complete', versionId: version.id }); }
     catch { throw error; }
@@ -67,6 +41,45 @@ export async function uploadAsset(file: File, options: {
   const ready = await assetRequest<AssetVersion>({ action: 'complete', versionId: version.id }, '', options.signal);
   options.onProgress?.(100, '已保存');
   return ready;
+}
+
+/**
+ * The file goes to Storage in one PUT against a signed upload URL the server minted.
+ *
+ * XMLHttpRequest rather than fetch, because it is still the only way to read upload progress in
+ * every browser: fetch cannot report how much of a request body has gone out. `x-upsert` matches
+ * the signed URL, so pressing retry overwrites whatever a failed attempt left behind rather than
+ * colliding with it.
+ */
+function sendToStorage(file: File, url: string, mime: string, options: {
+  signal?: AbortSignal;
+  onProgress?: (percentage: number, phase: string) => void;
+}): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const request = new XMLHttpRequest();
+    const abort = () => request.abort();
+    let settled = false;
+    const finish = (error?: Error) => {
+      if (settled) return;
+      settled = true;
+      options.signal?.removeEventListener('abort', abort);
+      if (error) reject(error); else resolve();
+    };
+    if (options.signal?.aborted) { finish(new Error('已暫停上傳。')); return; }
+    options.signal?.addEventListener('abort', abort, { once: true });
+    request.open('PUT', url, true);
+    request.setRequestHeader('content-type', mime);
+    request.setRequestHeader('x-upsert', 'true');
+    request.upload.onprogress = event => {
+      if (event.lengthComputable) options.onProgress?.(Math.round((event.loaded / event.total) * 95), '上傳中');
+    };
+    request.onload = () => finish(request.status >= 200 && request.status < 300
+      ? undefined
+      : new Error(`檔案傳輸未完成（${request.status}），請按重試。`));
+    request.onerror = () => finish(new Error('檔案傳輸未完成，請確認網路後按重試。'));
+    request.onabort = () => finish(new Error('已暫停上傳，可按重試重新上傳。'));
+    request.send(file);
+  });
 }
 
 export async function uploadAndPublish(file: File, slot: PublishSlot, attempt: UploadAttempt, onProgress?: (percent: number, phase: string) => void) {

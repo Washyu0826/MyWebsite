@@ -188,7 +188,7 @@ try {
     }
     if (body.action === 'upload') {
       const previous = assets.find(a => a.current.request_id === body.requestId);
-      if (previous) return respond({ version: previous.current, token: 'test-only', endpoint: `${origin}/storage/v1/upload/resumable` });
+      if (previous) return respond({ version: previous.current, uploadUrl: `${origin}/storage/v1/object/upload/sign/assets-private/test.bin?token=test-only` });
       const n = next++;
       const v = { ...version(n, body.name), request_id: body.requestId, mime_type: body.mime, size_bytes: body.size, status: 'pending' };
       assets.push({
@@ -202,7 +202,7 @@ try {
         created_at: now,
         updated_at: now,
       });
-      return respond({ version: v, token: 'test-only', endpoint: `${origin}/storage/v1/upload/resumable` });
+      return respond({ version: v, uploadUrl: `${origin}/storage/v1/object/upload/sign/assets-private/test.bin?token=test-only` });
     }
     if (body.action === 'complete') {
       asset.current.status = 'ready';
@@ -229,18 +229,16 @@ try {
     throw new Error(`Unhandled action ${body.action}`);
   });
   let uploadBytes = 0;
-  let tusRequests = 0;
-  await page.route('**/storage/v1/upload/resumable**', async route => {
+  let storageRequests = 0;
+  // The file goes straight to Storage on the signed URL the admin API handed back, never through
+  // the admin API itself, which is what the request counts below are checking.
+  await page.route('**/storage/v1/object/upload/sign/**', async route => {
     const request = route.request();
-    tusRequests++;
-    assert.equal(request.headers()['x-signature'], 'test-only');
-    const count = request.postDataBuffer()?.length || 0;
-    uploadBytes += count;
-    assert.ok(count <= 6 * 1024 * 1024, 'TUS chunks must not exceed 6 MiB');
-    return route.fulfill({
-      status: request.method() === 'POST' ? 201 : 204,
-      headers: { 'Tus-Resumable': '1.0.0', Location: `${origin}/storage/v1/upload/resumable/test`, 'Upload-Offset': String(uploadBytes) },
-    });
+    storageRequests++;
+    assert.equal(request.method(), 'PUT');
+    assert.equal(new URL(request.url()).searchParams.get('token'), 'test-only');
+    uploadBytes += request.postDataBuffer()?.length || 0;
+    return route.fulfill({ status: 200, json: { Key: 'assets-private/test.bin' } });
   });
 
   await page.goto(origin);
@@ -294,7 +292,7 @@ try {
   await page.getByRole('button', { name: '上傳', exact: true }).click();
   await expect(page.getByRole('status').filter({ hasText: '已保存' })).toBeVisible({ timeout: 20000 });
   assert.equal(uploadBytes, bytes.length);
-  assert.equal(tusRequests, 2, '7 MiB file uploads in two TUS chunks, never through the admin API');
+  assert.equal(storageRequests, 1, 'the file goes to Storage in one PUT, never through the admin API');
   assert.equal(requests.filter(r => r.action === 'upload').length, 1);
   await page.getByRole('button', { name: '操作紀錄', exact: true }).click();
   await expect(page.getByRole('button', { name: /重新命名/ })).toBeVisible();
@@ -361,7 +359,7 @@ try {
 
   assert.deepEqual(errors, []);
   console.log(
-    'PASS: real components, responsive widths 320-1920, preview pixels, axe, pagination, rename, trash/restore, references, publication retry, audit, legacy, 7 MiB TUS upload, asset picker, revoke, share links',
+    'PASS: real components, responsive widths 320-1920, preview pixels, axe, pagination, rename, trash/restore, references, publication retry, audit, legacy, 7 MiB signed-URL upload, asset picker, revoke, share links',
   );
 } finally {
   await browser?.close();

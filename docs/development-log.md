@@ -891,3 +891,31 @@ Verification: 118 unit tests including the new line-work assertions, `npx tsc --
 not off the boxes: font metrics put the bottom of a line of text about 10px lower than the ink
 actually reaches, which is exactly the size of the error being chased here. No horizontal overflow
 at 1920, 1600, 1440, 1280, 1024, 768 or 390 on the homepage or either listing.
+
+### Uploads Went To A Door That Was Never Open (2026-09-23)
+
+The asset library had never carried a file. Both crests stopped at "待重試" with a progress bar at
+95%, and `asset_versions.last_error` said `OBJECT_NOT_AVAILABLE`: the server looked in Storage after
+the transfer and found nothing there.
+
+The upload went to Storage's resumable (TUS) endpoint with the token from `createSignedUploadUrl` in
+an `x-signature` header. Storage answers that with **`Invalid Compact JWS`**. Sending the same token
+as `Authorization: Bearer` instead gets further and then fails on `new row violates row-level
+security policy` - that endpoint wants a real user's JWT and a policy on `storage.objects`, and this
+bucket has no such policy on purpose, because nothing but the server is meant to reach into it. The
+progress bar was telling the truth about bytes leaving the browser and nothing about where they
+landed; tus-js-client reports progress on a request whose response is a 400.
+
+Signed upload URLs take a single `PUT`, which was verified against the live project before anything
+was changed: `PUT <signedUrl>` returns 200 and the object downloads back at the right size. So the
+transport is now one PUT, sent with `XMLHttpRequest` because it is still the only way to read upload
+progress in a browser - `fetch` cannot report how much of a request body has gone out. `upsert` is
+true on both the URL and the header so that pressing retry overwrites whatever a failed attempt left
+behind; the object path carries the version's own id, so it can collide with nothing else, and
+`finishAssetUpload` re-reads and re-hashes the bytes afterwards whatever they are. Resumability was
+worth little here: an asset is 8 MiB at most. `tus-js-client` is gone from the dependencies.
+
+Verification: the Playwright asset harness uploads a 7 MiB file and asserts it reaches Storage in one
+PUT carrying the signed token, and never through the admin API; 118 unit tests, `npx tsc --noEmit`,
+ESLint and `npm run format:check` pass; and the signed-URL PUT, the overwrite-on-retry path and the
+download-back were each exercised against the live project.
