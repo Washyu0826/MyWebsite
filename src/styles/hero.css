@@ -262,7 +262,13 @@ span.typewriter-line { display: inline-block; }
   grid-template-columns: auto minmax(0, 1fr);
   column-gap: clamp(16px, 1.6vw, 26px);
   row-gap: 14px;
-  align-items: start;
+  /* The block is as tall as the longest principle so it never resizes as they turn, which leaves a
+     shorter one with slack. Centring puts half of that slack above the words and half below, so the
+     two hairlines sit the same distance from them whichever principle is showing; anchoring to the
+     top instead left all of it at the foot, and the gap under the text read as twice the gap over
+     it. The number is centred with them so it keeps its place against the text rather than against
+     the tallest panel's first line. */
+  align-items: center;
   /* The rule above needs air; the title used to sit right on it. */
   margin-top: 22px;
 }
@@ -274,6 +280,7 @@ span.typewriter-line { display: inline-block; }
 .signature-block .principle-rotator[data-rotating='true'] .signature-principle {
   grid-area: 1 / 1;
   grid-template-columns: minmax(0, 1fr);
+  align-content: center;
   gap: 10px;
   border-bottom: 0;
   padding: 0;
@@ -319,7 +326,9 @@ span.typewriter-line { display: inline-block; }
 }
 
 /* The number, and the ring that counts the turn down around it. */
-.principle-marker { grid-row: span 2; }
+/* One row: the marker spanned two while the beads sat under the text, and the row-gap of that
+   empty second row was still being counted at the foot of the block. */
+.principle-marker { grid-row: 1; }
 .principle-number {
   position: relative;
   display: grid;
@@ -356,8 +365,10 @@ span.typewriter-line { display: inline-block; }
   to { transform: perspective(360px) rotateX(0deg); opacity: 1; }
 }
 
-/* The block closes on the same hairline it opens with. */
-.enter-rule-foot { margin-top: 18px; }
+/* The block closes on the same hairline it opens with. Measured on the rendered glyphs rather than
+   on the boxes: 39px of air above the words, 34px below. Equal measures read as bottom-heavy under
+   a line with descenders in it, so the closing rule sits a little closer than the opening one. */
+.enter-rule-foot { margin-top: 16px; }
 @media (prefers-reduced-motion: reduce) {
   .principle-number, .principle-ring-progress { animation: none; }
   .principle-ring-progress { stroke-dashoffset: 0; }
