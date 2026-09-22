@@ -44,6 +44,7 @@ export default async function Articles({ params, searchParams }: Props) {
   const pageHref = (target: number) => ({ pathname: '/articles' as const, query: { ...(tag ? { tag } : {}), ...(target > 1 ? { page: String(target) } : {}) } });
 
   return <Container className="page listing-page">
+    <div className="listing-backdrop" aria-hidden="true"><span /><span /><span /><span /><span /><span /></div>
     <header className="page-heading">
       <h1>{t('title')}</h1>
       <p>{t('description')}</p>

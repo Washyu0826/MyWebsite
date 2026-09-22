@@ -44,10 +44,9 @@ export async function generateMetadata({ params }: Pick<Props, 'params'>): Promi
     // comes in two, so a browser using the tab-strip colour scheme gets a mark it can see.
     icons: {
       icon: [
-        { url: '/icons/icon.svg', type: 'image/svg+xml', media: '(prefers-color-scheme: dark)' },
-        { url: '/icons/icon-light.svg', type: 'image/svg+xml', media: '(prefers-color-scheme: light)' },
-        { url: '/icons/icon-192.png', type: 'image/png', sizes: '192x192' },
-        { url: '/icons/icon-512.png', type: 'image/png', sizes: '512x512' },
+        { url: '/icons/icon-brand-dark.png', type: 'image/png', sizes: '512x512', media: '(prefers-color-scheme: dark)' },
+        { url: '/icons/icon-brand-light.png', type: 'image/png', sizes: '512x512', media: '(prefers-color-scheme: light)' },
+        { url: '/icons/icon-brand-dark.png', type: 'image/png', sizes: '512x512' },
       ],
       apple: '/apple-touch-icon.png',
     },

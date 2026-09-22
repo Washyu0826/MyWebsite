@@ -148,14 +148,17 @@ span.typewriter-line { display: inline-block; }
 /* --- h1 letter reveal ------------------------------------------------------ */
 .letter-word { display: inline-block; white-space: nowrap; }
 /* Padding plus the matching negative margin keeps the mask clear of ascenders and descenders. */
-.letter { display: inline-block; overflow: hidden; padding: 0.14em 0.04em 0.2em; margin: -0.14em -0.04em -0.2em; }
+/* The mask has to clear the deepest descender in the face, or a 'g' loses its tail; the negative
+   margin is the same number, so a taller mask never opens the line up. */
+.letter { display: inline-block; overflow: hidden; padding: 0.18em 0.04em 0.34em; margin: -0.18em -0.04em -0.34em; }
 .letter > span { display: inline-block; }
 @keyframes letter-rise { from { transform: translateY(110%); } to { transform: translateY(0); } }
-@keyframes typewriter-line-in { to { clip-path: inset(0 0 0 0); } }
+/* -0.3em at the bottom: the clip must not cut the descenders the line box already overflows. */
+@keyframes typewriter-line-in { to { clip-path: inset(0 0 -0.3em 0); } }
 @keyframes hero-photo-in { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: no-preference) {
   html[data-js="1"] .hero-typewriter .typewriter-text {
-    clip-path: inset(0 100% 0 0);
+    clip-path: inset(0 100% -0.3em 0);
     animation: typewriter-line-in var(--type-duration, 600ms) steps(var(--type-steps, 16), end) forwards;
     animation-delay: var(--type-line-delay, 0ms);
   }
@@ -175,7 +178,7 @@ span.typewriter-line { display: inline-block; }
 [data-enter="out"] .enter-item { opacity: 0; transform: translateY(10px); }
 [data-enter="out"] .signature-principle > span,
 [data-enter="out"] .signature-principle p { opacity: 0; transform: translateY(8px); }
-.signature-block[data-enter="out"] .signature-principle .typewriter-text { clip-path: inset(0 100% 0 0); }
+.signature-block[data-enter="out"] .signature-principle .typewriter-text { clip-path: inset(0 100% -0.3em 0); }
 [data-enter="in"] .enter-item { transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(300ms + var(--enter-index, 0) * 60ms); }
 .signature-block[data-enter="in"] .signature-principle > span,
 .signature-block[data-enter="in"] .signature-principle p {
@@ -353,17 +356,8 @@ span.typewriter-line { display: inline-block; }
   to { transform: perspective(360px) rotateX(0deg); opacity: 1; }
 }
 
-/* Three small facets at the foot of the block: enough weight to balance the number above it,
-   without a second set of controls or another rule across the column. */
-.principle-beads { grid-column: 2; display: flex; align-items: center; gap: 9px; }
-.principle-beads span {
-  width: 7px;
-  height: 7px;
-  background: color-mix(in srgb, var(--graphite) 45%, transparent);
-  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
-  transition: background-color 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.principle-beads span[data-on] { background: var(--indigo); transform: scale(1.35); }
+/* The block closes on the same hairline it opens with. */
+.enter-rule-foot { margin-top: 18px; }
 @media (prefers-reduced-motion: reduce) {
   .principle-number, .principle-ring-progress { animation: none; }
   .principle-ring-progress { stroke-dashoffset: 0; }

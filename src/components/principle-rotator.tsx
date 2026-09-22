@@ -111,10 +111,5 @@ export function PrincipleRotator({ items, labels }: { items: Principle[]; labels
       })}
     </div>
 
-    {/* Three facets, the shape the backdrop is cut from, to carry the weight at the foot of the
-        block. Position only: the number above is what the reader operates. */}
-    {rotating && items.length > 1 && <div className="principle-beads" aria-hidden="true">
-      {items.map((item, position) => <span key={item.code} data-on={position === index ? 'true' : undefined} />)}
-    </div>}
   </div>;
 }

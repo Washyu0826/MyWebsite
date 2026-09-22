@@ -120,6 +120,8 @@ export default async function Home({ params }: Props) {
                 play: t('principles.play'),
               }}
             />
+            {/* Closes the block with the same hairline that opens it, rather than a second idea. */}
+            <div className="enter-rule enter-rule-foot" aria-hidden="true" />
           </SectionReveal>
           <div className="mt-6 md:hidden"><ResumeLink profile={profile} locale={locale} /></div>
         </div>

@@ -10,7 +10,13 @@
 .site-header { border-bottom: 1px solid var(--rule); background: color-mix(in srgb, var(--paper) 92%, transparent); backdrop-filter: blur(14px); position: sticky; top: 0; z-index: 20; }
 .header-inner { max-width: none; min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .brand { font-size: 1rem; font-weight: 650; min-height: 44px; display: inline-flex; gap: 12px; align-items: center; }
-.brand-mark { height: 32px; width: auto; aspect-ratio: 926 / 1205; flex: 0 0 auto; color: var(--ink); display: block; transition: color 0.18s; }
+.brand-mark { height: 32px; width: auto; flex: 0 0 auto; display: block; }
+/* Both inks ship; the theme class on <html> chooses. Dark is the default, matching ThemeProvider. */
+.brand-mark-pair { position: relative; display: inline-flex; height: 32px; }
+.brand-mark-pair img { height: 32px; width: auto; display: block; }
+.brand-mark-pair .brand-mark-light { display: none; }
+.light .brand-mark-pair .brand-mark-dark { display: none; }
+.light .brand-mark-pair .brand-mark-light { display: block; }
 .brand:hover .brand-mark { color: var(--indigo); }
 .nav-link { min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; padding-inline: 10px; font-size: 0.875rem; color: var(--graphite); transition: color 0.18s, background-color 0.18s; }
 .nav-link:hover, .nav-link[aria-current="page"] { color: var(--ink); }
